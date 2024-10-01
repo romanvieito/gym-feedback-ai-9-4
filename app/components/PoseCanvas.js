@@ -180,7 +180,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
         }}
       ></canvas>
       <Overlay statistics={feedback ? [feedback] : []} visible={true} />
-      <div style={{ position: 'fixed', bottom: 10, right: 10, color: 'black' }}>
+      <div style={{ position: 'fixed', top: 10, right: 10, color: 'white' }}>
         <button 
           onClick={handleFullScreen}
           onPointerDown={handleFullScreen} // Unified event for mouse and touch
