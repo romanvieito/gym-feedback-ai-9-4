@@ -184,8 +184,9 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
           onClick={handleFullScreen}
           onTouchStart={handleFullScreen}  // Add touch event listener
           style={{
-            background: 'transparent',
-            border: 'none',
+            background: '#fff',  // Solid background
+            border: '1px solid #ccc',  // Solid border
+            borderRadius: '5px',  // Rounded corners
             padding: '10px',
             cursor: 'pointer',
             touchAction: 'manipulation',
