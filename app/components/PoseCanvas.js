@@ -57,13 +57,14 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     // The Overlay component will handle the timing now
   }, [setFeedback]);
 
-  const handleFullScreen = () => {
+  const handleFullScreen = (event) => {
+    event.preventDefault(); // Prevent default behavior if necessary
+
+    // Check if the document is already in fullscreen
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
     }
   };
 
@@ -179,27 +180,19 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
         }}
       ></canvas>
       <Overlay statistics={feedback ? [feedback] : []} visible={true} />
-      <div style={{ position: 'fixed', bottom: 10, right: 10, zIndex: 1000 }}>
+      <div style={{ position: 'fixed', bottom: 10, right: 10, color: 'black' }}>
         <button 
           onClick={handleFullScreen}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handleFullScreen();
-          }}
+          onPointerDown={handleFullScreen} // Unified event for mouse and touch
           style={{
-            background: 'rgba(255, 255, 255, 0.7)',
-            border: '1px solid #000',
-            borderRadius: '5px',
-            padding: '15px 20px',  // Increased padding for larger touch target
-            fontSize: '18px',      // Slightly larger font
-            fontWeight: 'bold',
+            background: 'transparent',
+            border: 'none',
+            padding: '10px',
             cursor: 'pointer',
             touchAction: 'manipulation',
-            WebkitTapHighlightColor: 'transparent',
-            WebkitUserSelect: 'none',
-            MsUserSelect: 'none',
             userSelect: 'none',
-            outline: 'none',       // Remove focus outline
+            WebkitTapHighlightColor: 'transparent',
+            float: 'right'
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
