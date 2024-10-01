@@ -237,7 +237,7 @@ function HomePage() {
             ) : (
               loaded ? (
                 <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'center' }}>
-                  <Box sx={{ position: 'relative', marginRight: '20px' }}>
+                  <Box sx={{ position: 'relative', marginRight: '20px', display: 'none' }}>
                     <VideoPlayer
                       videoSrc={videoSrc}
                       useWebcam={useWebcam}
