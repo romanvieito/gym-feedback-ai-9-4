@@ -25,6 +25,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
+import Overlay from './Overlay'; 
 
 // Max width and height constraints
 const MAX_WIDTH = 800;
@@ -46,7 +47,7 @@ function getScaledDimensions(width, height, maxWidth, maxHeight) {
   return { width, height };
 }
 
-const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback }) => {
+const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback }) => {
   const canvasRef = useRef(null);
   const [landmarksData, setLandmarksData] = useState({});
   const [landmarksDatarealworld, setLandmarksDatarealworld] = useState({});
@@ -155,7 +156,12 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback }) 
     };
   }, [videoRef, poseLandmarker, videoDimensions, setTimedFeedback]);
 
-  return <canvas ref={canvasRef} style={{ width: `${videoDimensions.width}px`, height: `${videoDimensions.height}px` }}></canvas>;
+  return (
+    <div style={{ position: 'relative' }}>
+      <canvas ref={canvasRef} style={{ width: `${videoDimensions.width}px`, height: `${videoDimensions.height}px` }}></canvas>
+      <Overlay statistics={feedback ? [feedback] : []} visible={true} />
+    </div>
+  );
 };
 
 export default PoseCanvas;

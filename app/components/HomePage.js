@@ -252,7 +252,8 @@ function HomePage() {
                       videoRef={videoRef}
                       poseLandmarker={poseLandmarker}
                       videoDimensions={videoDimensions}
-                      setFeedback={setFeedback}  // Pass setFeedback to PoseCanvas
+                      setFeedback={setFeedback}
+                      feedback={feedback}  // Pass feedback to VideoPlayer
                     />
                   </Box>
                 </Box>
