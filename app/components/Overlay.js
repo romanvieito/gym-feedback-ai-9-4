@@ -55,7 +55,7 @@ const Overlay = ({ statistics, visible }) => {
           borderRadius: '8px',
           padding: '10px',
           boxSizing: 'border-box',
-          zIndex: 10,
+          // zIndex: 10,
         }}
       >
         {statistics.map((stat, index) => (
