@@ -220,10 +220,27 @@ function HomePage() {
     setOpensnackbar(false);
   };
 
+  useEffect(() => {
+    const fullscreenChangeHandler = () => {
+      const appBar = document.getElementById('app-bar');
+      if (document.fullscreenElement) {
+        appBar.style.display = 'none';
+      } else {
+        appBar.style.display = 'flex';
+      }
+    };
+
+    document.addEventListener('fullscreenchange', fullscreenChangeHandler);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', fullscreenChangeHandler);
+    };
+  }, []);
+
   return (
     <>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <AppBar position="static" sx={{ backgroundColor: '#000' }}>
+        <AppBar id="app-bar" position="static" sx={{ backgroundColor: '#000' }}>
           <Toolbar>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               24up.

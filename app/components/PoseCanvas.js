@@ -50,7 +50,6 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
   const [landmarksDatarealworld, setLandmarksDatarealworld] = useState({});
   const frameIndex = useRef(0);
   const [currentFeedback, setCurrentFeedback] = useState("");
-  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const setTimedFeedback = useCallback((feedback) => {
     console.log("Setting feedback:", feedback);
@@ -59,7 +58,13 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
   }, [setFeedback]);
 
   const handleFullScreen = () => {
-    setIsFullScreen(!isFullScreen);
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
   };
 
   useEffect(() => {
@@ -158,23 +163,11 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     };
   }, [videoRef, poseLandmarker, videoDimensions, setTimedFeedback]);
 
-  useEffect(() => {
-    const fullscreenChangeHandler = () => {
-      setIsFullScreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', fullscreenChangeHandler);
-
-    return () => {
-      document.removeEventListener('fullscreenchange', fullscreenChangeHandler);
-    };
-  }, []);
-
   return (
     <div style={{ 
       position: 'relative',
-      width: isFullScreen ? '100vw' : `${videoDimensions.width}px`,
-      height: isFullScreen ? '100vh' : `${videoDimensions.height}px`,
+      width: '100%',
+      height: '100%',
       overflow: 'hidden'
     }}>
       <canvas 
@@ -199,7 +192,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-            {isFullScreen ? (
+            {document.fullscreenElement ? (
               // Exit fullscreen icon
               <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
             ) : (
@@ -214,4 +207,3 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
 };
 
 export default PoseCanvas;
-
