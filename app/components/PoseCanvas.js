@@ -182,20 +182,24 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
       <div style={{ position: 'fixed', bottom: 10, right: 10, zIndex: 1000 }}>
         <button 
           onClick={handleFullScreen}
-          onTouchEnd={handleFullScreen}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleFullScreen();
+          }}
           style={{
             background: 'rgba(255, 255, 255, 0.7)',
             border: '1px solid #000',
             borderRadius: '5px',
-            padding: '10px 15px',
-            fontSize: '16px',
+            padding: '15px 20px',  // Increased padding for larger touch target
+            fontSize: '18px',      // Slightly larger font
             fontWeight: 'bold',
             cursor: 'pointer',
             touchAction: 'manipulation',
             WebkitTapHighlightColor: 'transparent',
-            WebkitUserSelect: 'none',  // For Safari
-            MsUserSelect: 'none',      // For Internet Explorer/Edge
-            userSelect: 'none',        // Standard
+            WebkitUserSelect: 'none',
+            MsUserSelect: 'none',
+            userSelect: 'none',
+            outline: 'none',       // Remove focus outline
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
