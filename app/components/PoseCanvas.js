@@ -182,20 +182,16 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
       <div style={{ position: 'fixed', bottom: 10, right: 10, color: 'black' }}>
         <button 
           onClick={handleFullScreen}
-          onTouchEnd={handleFullScreen}  // Change to onTouchEnd
+          onTouchStart={handleFullScreen}  // Add touch event listener
           style={{
-            background: 'rgba(255, 255, 255, 0.5)',  // Semi-transparent background
-            border: '1px solid #000',  // Add a border for visibility
-            borderRadius: '5px',  // Rounded corners
-            padding: '15px',  // Increase padding for larger touch target
+            background: 'transparent',
+            border: 'none',
+            padding: '10px',
             cursor: 'pointer',
-            touchAction: 'none',  // Prevent default touch actions
-            float: 'right',
-            zIndex: 1000,  // Ensure it's above other elements
-            WebkitTapHighlightColor: 'transparent',  // Remove tap highlight on iOS
+            float: 'right'
           }}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="30" height="30">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
             {document.fullscreenElement ? (
               // Exit fullscreen icon
               <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
