@@ -188,7 +188,16 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
             padding: '10px',
             cursor: 'pointer',
             touchAction: 'manipulation',
-            float: 'right'
+            float: 'right',
+            transition: 'transform 0.2s ease-in-out, color 0.2s ease-in-out'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.color = '#007bff'; // Change to blue on hover
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.color = 'currentColor'; // Reset to original color
           }}
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
