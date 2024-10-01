@@ -4,8 +4,8 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Demo App",
-  description: "A web application for pose detection using FastAPI and NextJs",
+  title: "24up. AI Workout Coach",
+  description: "An AI Coach for your next workout",
 };
 
 export default function RootLayout({
