@@ -179,27 +179,24 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
         }}
       ></canvas>
       <Overlay statistics={feedback ? [feedback] : []} visible={true} />
-      <div style={{ position: 'fixed', bottom: 10, right: 10, color: 'black' }}>
+      <div style={{ position: 'fixed', bottom: 10, right: 10, zIndex: 1000 }}>
         <button 
           onClick={handleFullScreen}
-          onTouchStart={handleFullScreen}  // Add touch event listener
+          onTouchEnd={handleFullScreen}
           style={{
-            background: 'transparent',
-            border: 'none',
-            padding: '10px',
+            background: 'rgba(255, 255, 255, 0.7)',
+            border: '1px solid #000',
+            borderRadius: '5px',
+            padding: '10px 15px',
+            fontSize: '16px',
+            fontWeight: 'bold',
             cursor: 'pointer',
-            float: 'right'
+            touchAction: 'manipulation',
+            userSelect: 'none',
+            WebkitTapHighlightColor: 'transparent',
           }}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-            {document.fullscreenElement ? (
-              // Exit fullscreen icon
-              <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
-            ) : (
-              // Enter fullscreen icon
-              <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-            )}
-          </svg>
+          {document.fullscreenElement ? 'Exit Full' : 'Full Screen'}
         </button>
       </div>
     </div>
