@@ -28,10 +28,6 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
 import Overlay from './Overlay'; 
 
-// Max width and height constraints
-const MAX_WIDTH = 800;
-const MAX_HEIGHT = 600;
-
 function getScaledDimensions(width, height, maxWidth, maxHeight) {
   let aspectRatio = width / height;
 
@@ -63,11 +59,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
   }, [setFeedback]);
 
   const handleFullScreen = () => {
-    if (!document.fullscreenElement) {
-      canvasRef.current.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
-      });
-    }
+    setIsFullScreen(!isFullScreen);
   };
 
   useEffect(() => {
@@ -179,27 +171,44 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
   }, []);
 
   return (
-    <div style={{ position: 'relative' }}>
-      <canvas ref={canvasRef} style={{ width: `${videoDimensions.width}px`, height: `${videoDimensions.height}px` }}></canvas>
+    <div style={{ 
+      position: 'relative',
+      width: isFullScreen ? '100vw' : `${videoDimensions.width}px`,
+      height: isFullScreen ? '100vh' : `${videoDimensions.height}px`,
+      overflow: 'hidden'
+    }}>
+      <canvas 
+        ref={canvasRef} 
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          objectFit: 'contain'
+        }}
+      ></canvas>
       <Overlay statistics={feedback ? [feedback] : []} visible={true} />
-      {!isFullScreen && (
-        <div style={{ position: 'absolute', bottom: 10, right: 10, color: 'white' }}>
-          <button 
-            onClick={handleFullScreen}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              padding: '10px',
-              cursor: 'pointer',
-              touchAction: 'manipulation'
-            }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+      <div style={{ position: 'fixed', bottom: 10, right: 10, color: 'black' }}>
+        <button 
+          onClick={handleFullScreen}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            padding: '10px',
+            cursor: 'pointer',
+            touchAction: 'manipulation',
+            float: 'right'
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            {isFullScreen ? (
+              // Exit fullscreen icon
+              <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+            ) : (
+              // Enter fullscreen icon
               <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-            </svg>
-          </button>
-        </div>
-      )}
+            )}
+          </svg>
+        </button>
+      </div>
     </div>
   );
 };
