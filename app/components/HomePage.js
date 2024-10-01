@@ -223,10 +223,10 @@ function HomePage() {
   return (
     <>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <AppBar position="static">
+        <AppBar position="static" sx={{ backgroundColor: '#000' }}>
           <Toolbar>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              Demo App
+              24up.
             </Typography>
           </Toolbar>
         </AppBar>
