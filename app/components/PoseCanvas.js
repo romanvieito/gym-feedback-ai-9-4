@@ -182,6 +182,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
       <div style={{ position: 'fixed', bottom: 10, right: 10, color: 'black' }}>
         <button 
           onClick={handleFullScreen}
+          onTouchStart={handleFullScreen}  // Add touch event listener
           style={{
             background: 'transparent',
             border: 'none',
