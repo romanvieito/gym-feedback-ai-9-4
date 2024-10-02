@@ -198,26 +198,6 @@ async def process_landmarks(data: LandmarksData):
             frame_index: processed_landmarks
         }
 
-        # print(f"Processed data for frame {frame_index}: ", json_output)
-
-        openai_response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "user",
-                    "content": OPENAI_PROMPT  # Asegúrate de que esto sea un string
-                },
-                {
-                    "role": "user",
-                    "content": json.dumps(json_output)  # Si json_output es un dict, conviértelo a string
-                }
-            ],
-        )
-
-        # print(f"Response OpenAI: {openai_response.choices[0].message.content}")
-
-        current_feedback = openai_response.choices[0].message.content
-
         # Generate feedback text every 5 seconds
         # current_time = time.time()
         # print("current_time: ", current_time,"\n")
@@ -226,24 +206,37 @@ async def process_landmarks(data: LandmarksData):
         # Generate new feedback text every 5 seconds
         # print("current_time: ", current_time,"\n")
         # print("FEEDBACK_INTERVAL: ", FEEDBACK_INTERVAL,"\n")
-        # if frame_index % FEEDBACK_INTERVAL == 0:
-        #     feedback_texts = [
-        #         "Great posture!",
-        #         "Keep your back straight",
-        #         "Lift your chin slightly",
-        #         "Relax your shoulders",
-        #         "Bend your knees more",
-        #         "Excellent form!",
-        #         "Watch your elbow alignment",
-        #         "Maintain balance",
-        #         "Good job on keeping your core tight",
-        #         "Remember to breathe"
-        #     ]
-        #     current_feedback = random.choice(feedback_texts)
-        #     print("current_feedback: ", current_feedback,"\n")
-        #  else:
-        #     current_feedback = "No feedback yet"
-        #     print("current_feedback: ", current_feedback,"\n")
+        if frame_index % FEEDBACK_INTERVAL == 0:
+            # print(f"Processed data for frame {frame_index}: ", json_output)
+            openai_response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{
+                    "role": "user",
+                    "content": OPENAI_PROMPT  # Asegúrate de que esto sea un string
+                },{
+                    "role": "user",
+                    "content": json.dumps(json_output)  # Si json_output es un dict, conviértelo a string
+                }],
+            )
+            # print(f"Response OpenAI: {openai_response.choices[0].message.content}")                        
+            # feedback_texts = [
+            #     "Great posture!",
+            #     "Keep your back straight",
+            #     "Lift your chin slightly",
+            #     "Relax your shoulders",
+            #     "Bend your knees more",
+            #     "Excellent form!",
+            #     "Watch your elbow alignment",
+            #     "Maintain balance",
+            #     "Good job on keeping your core tight",
+            #     "Remember to breathe"
+            # ]
+            # current_feedback = random.choice(feedback_texts)            
+            current_feedback = openai_response.choices[0].message.content            
+            print("current_feedback: ", current_feedback,"\n")
+        else:
+            current_feedback = "No feedback yet"
+            print("current_feedback: ", current_feedback,"\n")
 
         return {
             "status": "success", 
