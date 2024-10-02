@@ -16,12 +16,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from jose import JWTError, jwt
 import os
-import re
 import secrets
 from pydantic import BaseModel
 from typing import List, Dict
 import random
 import time
+from openai import OpenAI
+from dotenv import load_dotenv
+import json
 
 # Secret key to encode and decode JWT tokens
 # SECRET_KEY is a strong, random string used for encoding and decoding JWT tokens. 
@@ -32,6 +34,18 @@ ALGORITHM = "HS256"
 
 MODEL_DIR = os.path.join("app", "static", "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "pose_landmarker_heavy.task")
+
+DOTENV_PATH = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(DOTENV_PATH)
+
+openai_client = OpenAI(
+    # This is the default and can be omitted
+    api_key=os.getenv("OPENAI_API_KEY"),
+)
+
+OPENAI_PROMPT = """As a fitness expert, analyze a client’s working out using the provided JSON 
+body landmarks. Return a single, precise sentence with actionable feedback that highlights 
+strengths and provides specific form adjustments to optimize technique and minimize injury risk"""
 
 app = FastAPI()
 
@@ -122,7 +136,7 @@ async def refresh_token(request: Request):
 #    return JSONResponse(content={"status": "success", "data": data})
 
 # Define a Pydantic model for the incoming landmark data
-    
+
 class Landmark(BaseModel):
     x: float
     y: float
@@ -160,7 +174,7 @@ async def process_landmarks(data: LandmarksData):
         landmarks = data.landmarks
         realworldlandmarks = data.realworldlandmarks
         # # First, let's print the structure of landmarks to understand it better
-        print("frame_index: ", frame_index,"\n")
+        # print("frame_index: ", frame_index,"\n")
         # print("landmarks: ", landmarks,"\n")
         # print("realworldlandmarks: ", realworldlandmarks,"\n")
         
@@ -186,33 +200,51 @@ async def process_landmarks(data: LandmarksData):
 
         # print(f"Processed data for frame {frame_index}: ", json_output)
 
+        openai_response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": OPENAI_PROMPT  # Asegúrate de que esto sea un string
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(json_output)  # Si json_output es un dict, conviértelo a string
+                }
+            ],
+        )
+
+        # print(f"Response OpenAI: {openai_response.choices[0].message.content}")
+
+        current_feedback = openai_response.choices[0].message.content
+
         # Generate feedback text every 5 seconds
         # current_time = time.time()
         # print("current_time: ", current_time,"\n")
         # print("current_feedback: ", current_feedback,"\n")
         
-       # Generate new feedback text every 5 seconds
+        # Generate new feedback text every 5 seconds
         # print("current_time: ", current_time,"\n")
         # print("FEEDBACK_INTERVAL: ", FEEDBACK_INTERVAL,"\n")
-        if frame_index % FEEDBACK_INTERVAL == 0:
-            feedback_texts = [
-                "Great posture!",
-                "Keep your back straight",
-                "Lift your chin slightly",
-                "Relax your shoulders",
-                "Bend your knees more",
-                "Excellent form!",
-                "Watch your elbow alignment",
-                "Maintain balance",
-                "Good job on keeping your core tight",
-                "Remember to breathe"
-            ]
-            current_feedback = random.choice(feedback_texts)
-            print("current_feedback: ", current_feedback,"\n")
-        else:
-            current_feedback = "No feedback yet"
-            print("current_feedback: ", current_feedback,"\n")
-        
+        # if frame_index % FEEDBACK_INTERVAL == 0:
+        #     feedback_texts = [
+        #         "Great posture!",
+        #         "Keep your back straight",
+        #         "Lift your chin slightly",
+        #         "Relax your shoulders",
+        #         "Bend your knees more",
+        #         "Excellent form!",
+        #         "Watch your elbow alignment",
+        #         "Maintain balance",
+        #         "Good job on keeping your core tight",
+        #         "Remember to breathe"
+        #     ]
+        #     current_feedback = random.choice(feedback_texts)
+        #     print("current_feedback: ", current_feedback,"\n")
+        #  else:
+        #     current_feedback = "No feedback yet"
+        #     print("current_feedback: ", current_feedback,"\n")
+
         return {
             "status": "success", 
             "processed_frame": frame_index, 
