@@ -131,10 +131,10 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
 
         if (result.landmarks) {
           for (const landmarks of result.landmarks) {
-            drawingUtils.drawLandmarks(landmarks, { radius: 5, color: 'red' });
+            drawingUtils.drawLandmarks(landmarks, { radius: 6, color: 'white' });
             drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
-              color: 'green',
-              lineWidth: 2,
+              color: '#40E0D0',
+              lineWidth: 1,
             });
           }
           // Save landmarks data with the frame index
