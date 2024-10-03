@@ -18,12 +18,13 @@ from jose import JWTError, jwt
 import os
 import secrets
 from pydantic import BaseModel
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional, Any
 import random
 import time
 from openai import OpenAI
 from dotenv import load_dotenv
 import json
+import re
 
 # Secret key to encode and decode JWT tokens
 # SECRET_KEY is a strong, random string used for encoding and decoding JWT tokens. 
@@ -153,126 +154,312 @@ current_feedback = "Welcome! Let's get started!"
 FEEDBACK_INTERVAL = 100
 
 # Add these new classes for the multi-agent system
-class FeedbackAnalyzer:
-    def analyze(self, feedback: str) -> Dict[str, str]:
-        # Extract key points from the feedback
-        strengths = []
-        adjustments = []
-        
-        sentences = feedback.split('.')
-        for sentence in sentences:
-            if "great" in sentence.lower() or "excellent" in sentence.lower():
-                strengths.append(sentence.strip())
-            elif "adjust" in sentence.lower() or "improve" in sentence.lower():
-                adjustments.append(sentence.strip())
-        
-        return {
-            "strengths": strengths,
-            "adjustments": adjustments
+class NLUAgent:
+    def __init__(self):
+        self.exercise_keywords = ["plank", "wall sit", "isometric hold", "bridge"]
+        self.body_parts = ["core", "legs", "arms", "back", "shoulders", "glutes"]
+        self.action_verbs = ["hold", "maintain", "keep", "engage", "tighten"]
+        self.positive_words = ["good", "great", "excellent", "well done"]
+        self.constructive_words = ["try", "should", "could", "improve"]
+        self.intensity_words = {
+            "low": ["gentle", "easy", "light"],
+            "medium": ["moderate", "steady"],
+            "high": ["intense", "hard", "challenging"]
         }
 
-class PoseEvaluator:
-    def evaluate(self, landmarks: Dict[str, Dict[str, float]]) -> Dict[str, float]:
-        # Evaluate the pose based on key landmarks
-        evaluation = {}
+    def parse(self, text: str) -> Dict[str, Any]:
+        text = text.lower()
+        parsed_data = {
+            "exercise": None,
+            "body_parts": [],
+            "actions": [],
+            "feedback_type": None,
+            "duration": None,
+            "intensity": None
+        }
+
+        # Extract exercise
+        for exercise in self.exercise_keywords:
+            if exercise in text:
+                parsed_data["exercise"] = exercise
+                break
+
+        # Extract body parts
+        parsed_data["body_parts"] = [part for part in self.body_parts if part in text]
+
+        # Extract actions
+        parsed_data["actions"] = [verb for verb in self.action_verbs if verb in text]
+
+        # Determine feedback type
+        if any(word in text for word in self.positive_words):
+            parsed_data["feedback_type"] = "positive"
+        elif any(word in text for word in self.constructive_words):
+            parsed_data["feedback_type"] = "constructive"
+
+        # Extract duration
+        duration_match = re.search(r'(\d+)\s*(second|minute)', text)
+        if duration_match:
+            parsed_data["duration"] = f"{duration_match.group(1)} {duration_match.group(2)}s"
+
+        # Determine intensity
+        for intensity, words in self.intensity_words.items():
+            if any(word in text for word in words):
+                parsed_data["intensity"] = intensity
+                break
+
+        print("NLU Agent parsing feedback: ", text)
+        print("Parsed data: ", parsed_data, "\n")
+        return parsed_data
+
+class ExerciseRecognitionAgent:
+    def __init__(self):
+        self.exercise_database = {
+            "plank": {
+                "primary_muscles": ["core", "shoulders", "back"],
+                "difficulty": "medium",
+                "recommended_duration": "30-60 seconds"
+            },
+            "wall sit": {
+                "primary_muscles": ["quadriceps", "glutes", "calves"],
+                "difficulty": "medium",
+                "recommended_duration": "30-60 seconds"
+            },
+            "isometric hold": {
+                "primary_muscles": ["varies"],
+                "difficulty": "varies",
+                "recommended_duration": "15-30 seconds"
+            },
+            "bridge": {
+                "primary_muscles": ["glutes", "lower back", "hamstrings"],
+                "difficulty": "easy",
+                "recommended_duration": "30-60 seconds"
+            }
+        }
+
+    def recognize(self, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
+        print("Exercise Recognition Agent recognizing exercise: ", parsed_data, "\n")
         
-        # Example: Check if shoulders are level
-        left_shoulder = landmarks.get("Left Shoulder", {})
-        right_shoulder = landmarks.get("Right Shoulder", {})
-        if left_shoulder and right_shoulder:
-            shoulder_diff = abs(left_shoulder["y"] - right_shoulder["y"])
-            evaluation["shoulder_alignment"] = 1 - min(shoulder_diff * 10, 1)  # 1 is perfect, 0 is poor
-        
-        # Add more pose evaluations here
-        # Example: Check if elbows are bent
-        left_elbow = landmarks.get("Left Elbow", {})
-        right_elbow = landmarks.get("Right Elbow", {})
-        if left_elbow and right_elbow:
-            elbow_diff = abs(left_elbow["x"] - right_elbow["x"])
-            evaluation["elbow_flexion"] = 1 - min(elbow_diff * 10, 1)  # 1 is perfect, 0 is poor
-        
-        # Example: Check if knees are bent
-        left_knee = landmarks.get("Left Knee", {})
-        right_knee = landmarks.get("Right Knee", {})
-        if left_knee and right_knee:
-            knee_diff = abs(left_knee["x"] - right_knee["x"])
-            evaluation["knee_flexion"] = 1 - min(knee_diff * 10, 1)  # 1 is perfect, 0 is poor
-        
-        # Example: Check if ankles are aligned
-        left_ankle = landmarks.get("Left Ankle", {})
-        right_ankle = landmarks.get("Right Ankle", {})
-        if left_ankle and right_ankle:
-            ankle_diff = abs(left_ankle["x"] - right_ankle["x"])
-            evaluation["ankle_alignment"] = 1 - min(ankle_diff * 10, 1)  # 1 is perfect, 0 is poor
+        recognized_exercise = {
+            "name": None,
+            "confidence": 0,
+            "metadata": {}
+        }
 
-        # Example: Check if hips are aligned
-        left_hip = landmarks.get("Left Hip", {})
-        right_hip = landmarks.get("Right Hip", {})
-        if left_hip and right_hip:
-            hip_diff = abs(left_hip["x"] - right_hip["x"])
-            evaluation["hip_alignment"] = 1 - min(hip_diff * 10, 1)  # 1 is perfect, 0 is poor
-        
-       
-        return evaluation
-
-class RecommendationGenerator:
-    def generate(self, analysis: Dict[str, str], evaluation: Dict[str, float]) -> str:
-        recommendation = "Pose Analysis:\n\n"
-
-        # Strengths
-        if analysis["strengths"]:
-            recommendation += "🟢 Strengths:\n"
-            for strength in analysis["strengths"]:
-                recommendation += f"  • {strength}\n"
-            recommendation += "\n"
-
-        # Areas to focus on
-        if analysis["adjustments"]:
-            recommendation += "🔶 Areas to Focus On:\n"
-            for adjustment in analysis["adjustments"]:
-                recommendation += f"  • {adjustment}\n"
-            recommendation += "\n"
-
-        # Pose evaluation
-        if evaluation:
-            recommendation += "📊 Pose Evaluation:\n"
-            for aspect, score in evaluation.items():
-                aspect_name = aspect.replace('_', ' ').title()
-                emoji = self.get_score_emoji(score)
-                recommendation += f"{emoji} {aspect_name}: {score:.2f}/1.00"
-                recommendation += f" - {self.get_score_feedback(aspect, score)}\n"
-
-        # Overall recommendation
-        overall_score = sum(evaluation.values()) / len(evaluation) if evaluation else 0
-        recommendation += f"\n🎯 Overall Performance: {overall_score:.2f}/1.00\n"
-        recommendation += self.get_overall_feedback(overall_score)
-
-        return recommendation
-
-    def get_score_emoji(self, score: float) -> str:
-        if score >= 0.8:
-            return "🟢"
-        elif score >= 0.6:
-            return "🟡"
+        # Check if the exercise is directly mentioned
+        if parsed_data["exercise"] in self.exercise_database:
+            recognized_exercise["name"] = parsed_data["exercise"]
+            recognized_exercise["confidence"] = 1.0
+            recognized_exercise["metadata"] = self.exercise_database[parsed_data["exercise"]]
         else:
-            return "🔴"
+            # If not directly mentioned, try to infer from body parts and actions
+            for exercise, data in self.exercise_database.items():
+                score = 0
+                for body_part in parsed_data["body_parts"]:
+                    if body_part in data["primary_muscles"]:
+                        score += 0.3
+                for action in parsed_data["actions"]:
+                    if action in ["hold", "maintain"]:
+                        score += 0.2
+                if score > recognized_exercise["confidence"]:
+                    recognized_exercise["name"] = exercise
+                    recognized_exercise["confidence"] = score
+                    recognized_exercise["metadata"] = data
 
-    def get_score_feedback(self, aspect: str, score: float) -> str:
-        if score >= 0.8:
-            return "Excellent! Keep it up."
-        elif score >= 0.6:
-            return "Good, but there's room for improvement."
+        # Add additional information from parsed_data
+        recognized_exercise["duration"] = parsed_data.get("duration")
+        recognized_exercise["intensity"] = parsed_data.get("intensity")
+
+        print("Recognized exercise: ", recognized_exercise, "\n")
+        return recognized_exercise
+
+class FormFeedbackAgent:
+    def __init__(self):
+        self.form_criteria = {
+            "plank": {
+                "straight_back": {"shoulders": [11, 12], "hips": [23, 24], "ankles": [27, 28]},
+                "engaged_core": {"shoulders": [11, 12], "hips": [23, 24]},
+            },
+            "wall sit": {
+                "90_degree_knee_angle": {"hips": [23, 24], "knees": [25, 26], "ankles": [27, 28]},
+                "back_against_wall": {"shoulders": [11, 12], "hips": [23, 24]},
+            },
+            "bridge": {
+                "hips_raised": {"shoulders": [11, 12], "hips": [23, 24], "knees": [25, 26]},
+                "shoulders_on_ground": {"shoulders": [11, 12]},
+            },
+        }
+
+    def analyze(self, parsed_data: Dict[str, Any], pose_data: Dict[str, Any]) -> Dict[str, Any]:
+        print("Form Feedback Agent analyzing form feedback: ", parsed_data, pose_data, "\n")
+        
+        exercise = parsed_data.get("exercise")
+        feedback = {
+            "exercise": exercise,
+            "form_score": 0,
+            "feedback": [],
+            "improvements": []
+        }
+
+        if exercise not in self.form_criteria:
+            feedback["feedback"].append("Exercise not recognized for form analysis.")
+            return feedback
+
+        criteria = self.form_criteria[exercise]
+        total_checks = len(criteria)
+        passed_checks = 0
+
+        for check, landmarks in criteria.items():
+            if self.check_alignment(landmarks, pose_data):
+                passed_checks += 1
+                feedback["feedback"].append(f"Good job maintaining {check}.")
+            else:
+                feedback["improvements"].append(f"Try to improve your {check}.")
+
+        feedback["form_score"] = (passed_checks / total_checks) * 100
+
+        # Incorporate NLU parsed feedback
+        if parsed_data.get("feedback_type") == "positive":
+            feedback["feedback"].append("Overall, your form looks good!")
+        elif parsed_data.get("feedback_type") == "constructive":
+            feedback["feedback"].append("There's room for improvement in your form.")
+
+        print("Form feedback: ", feedback, "\n")
+        return feedback
+
+    def check_alignment(self, landmarks: Dict[str, list], pose_data: Dict[str, Any]) -> bool:
+        # This is a simplified alignment check. In a real scenario, you'd implement
+        # more sophisticated geometry calculations here.
+        points = []
+        for body_part, indices in landmarks.items():
+            for index in indices:
+                if index in pose_data:
+                    points.append(pose_data[index])
+                else:
+                    return False  # If any required landmark is missing, assume misalignment
+
+        # Simple check: are all points roughly in a line?
+        # This is an oversimplification and should be replaced with proper geometric calculations
+        if len(points) < 2:
+            return False
+        
+        x_coords = [p['x'] for p in points]
+        y_coords = [p['y'] for p in points]
+        
+        x_range = max(x_coords) - min(x_coords)
+        y_range = max(y_coords) - min(y_coords)
+        
+        return x_range < 0.1 or y_range < 0.1  # Arbitrary threshold, adjust as needed
+
+class MotivationProgressTrackingAgent:
+    def generate_message(self, feedback: Dict[str, Any]) -> str:
+        print("Motivation Progress Tracking Agent generating message: ", feedback, "\n")
+        
+        form_score = feedback.get('form_score', 0)
+        exercise = feedback.get('exercise', 'your exercise')
+        
+        if form_score >= 90:
+            message = f"Excellent work! Your {exercise} form is outstanding at {form_score}%. Keep it up!"
+        elif form_score >= 70:
+            message = f"Great job on your {exercise}! Your form is good at {form_score}%. Small improvements can make it perfect."
+        elif form_score >= 50:
+            message = f"You're making progress with your {exercise}. Your form is at {form_score}%. Focus on the feedback to improve further."
         else:
-            return f"Focus on improving your {aspect.replace('_', ' ')}."
+            message = f"Keep practicing your {exercise}. Your form needs work, but don't get discouraged. Focus on one improvement at a time."
 
-    def get_overall_feedback(self, score: float) -> str:
-        if score >= 0.8:
-            return "Great job! Your form is excellent. Keep maintaining this level of performance."
-        elif score >= 0.6:
-            return "Good effort! You're on the right track. Focus on the areas mentioned above to improve further."
+        if feedback.get('improvements'):
+            message += f" Try to {feedback['improvements'][0].lower()}"
+
+        return message
+
+class IsometricSpecificAnalysisAgent:
+    def analyze(self, exercise_data: Dict[str, Any], form_feedback: Dict[str, Any]) -> Dict[str, Any]:
+        print("Isometric Specific Analysis Agent analyzing isometric specific data: ", exercise_data, form_feedback, "\n")
+        
+        analysis = {
+            "exercise": exercise_data.get("name"),
+            "hold_quality": 0,
+            "stability": 0,
+            "endurance": 0,
+            "recommendations": []
+        }
+
+        # Assess hold quality based on form score
+        form_score = form_feedback.get("form_score", 0)
+        if form_score >= 90:
+            analysis["hold_quality"] = "Excellent"
+        elif form_score >= 70:
+            analysis["hold_quality"] = "Good"
+        elif form_score >= 50:
+            analysis["hold_quality"] = "Fair"
         else:
-            return "There's significant room for improvement. Pay close attention to the feedback and keep practicing."
+            analysis["hold_quality"] = "Needs Improvement"
 
+        # Assess stability
+        improvements = form_feedback.get("improvements", [])
+        if not improvements:
+            analysis["stability"] = "High"
+        elif len(improvements) <= 2:
+            analysis["stability"] = "Moderate"
+        else:
+            analysis["stability"] = "Low"
+
+        # Assess endurance (this would ideally use data from multiple frames)
+        # For now, we'll use a placeholder based on the exercise difficulty
+        difficulty = exercise_data.get("metadata", {}).get("difficulty", "medium")
+        if difficulty == "easy":
+            analysis["endurance"] = "High"
+        elif difficulty == "medium":
+            analysis["endurance"] = "Moderate"
+        else:
+            analysis["endurance"] = "Challenging"
+
+        # Generate recommendations
+        if analysis["hold_quality"] != "Excellent":
+            analysis["recommendations"].append(f"Focus on maintaining proper form throughout the {exercise_data.get('name')} hold.")
+        
+        if analysis["stability"] != "High":
+            analysis["recommendations"].append("Work on stabilizing your core and key muscle groups to improve overall stability.")
+        
+        if analysis["endurance"] != "High":
+            analysis["recommendations"].append(f"Gradually increase your hold time to improve endurance in the {exercise_data.get('name')}.")
+
+        return analysis
+
+class ResponseCoordinationAgent:
+    def compile_response(self, agent_outputs: List[Dict[str, Any]]) -> str:
+        print("Response Coordination Agent compiling response: ", agent_outputs, "\n")
+        
+        parsed_data, exercise_data, form_feedback, isometric_analysis, motivation_message = agent_outputs
+        
+        exercise_name = exercise_data.get("name", "your exercise")
+        
+        response = f"Exercise: {exercise_name.capitalize()}\n\n"
+        
+        # Form feedback
+        response += f"Form Score: {form_feedback.get('form_score', 0)}%\n"
+        if form_feedback.get('feedback'):
+            response += "Positive Points:\n- " + "\n- ".join(form_feedback['feedback']) + "\n"
+        if form_feedback.get('improvements'):
+            response += "Areas for Improvement:\n- " + "\n- ".join(form_feedback['improvements']) + "\n"
+        
+        response += "\n"
+        
+        # Isometric analysis
+        response += f"Hold Quality: {isometric_analysis.get('hold_quality', 'N/A')}\n"
+        response += f"Stability: {isometric_analysis.get('stability', 'N/A')}\n"
+        response += f"Endurance: {isometric_analysis.get('endurance', 'N/A')}\n"
+        
+        if isometric_analysis.get('recommendations'):
+            response += "Recommendations:\n- " + "\n- ".join(isometric_analysis['recommendations']) + "\n"
+        
+        response += "\n"
+        
+        # Motivation message
+        response += f"Motivation: {motivation_message}\n"
+        
+        return response.strip()
+
+# Modify the process_landmarks function
 @app.post("/api/py/process_landmarks")
 async def process_landmarks(data: LandmarksData):
     
@@ -343,15 +530,24 @@ async def process_landmarks(data: LandmarksData):
             feedback = openai_response.choices[0].message.content
             
             # Use the multi-agent system to process the feedback
-            analyzer = FeedbackAnalyzer()
-            evaluator = PoseEvaluator()
-            recommender = RecommendationGenerator()
+            nlu_agent = NLUAgent()
+            exercise_agent = ExerciseRecognitionAgent()
+            form_agent = FormFeedbackAgent()
+            motivation_agent = MotivationProgressTrackingAgent()
+            isometric_agent = IsometricSpecificAnalysisAgent()
+            response_agent = ResponseCoordinationAgent()
             
-            analysis = analyzer.analyze(feedback)
-            evaluation = evaluator.evaluate(processed_landmarks)
-            recommendation = recommender.generate(analysis, evaluation)
+            parsed_data = nlu_agent.parse(feedback)
+            exercise_data = exercise_agent.recognize(parsed_data)
+            form_feedback = form_agent.analyze(parsed_data, processed_landmarks)
+            isometric_analysis = isometric_agent.analyze(exercise_data, form_feedback)
+            motivation_message = motivation_agent.generate_message(isometric_analysis)
             
-            current_feedback = recommendation
+            final_response = response_agent.compile_response([
+                parsed_data, exercise_data, form_feedback, isometric_analysis, motivation_message
+            ])
+            
+            current_feedback = final_response
         else:
             current_feedback = "No feedback yet"
             print("current_feedback: ", current_feedback,"\n")
