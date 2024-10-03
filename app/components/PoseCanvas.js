@@ -175,13 +175,14 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
       position: 'relative',
       width: '100%',
       height: '100%',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      paddingTop: '40px', // Add padding to accommodate the close button
     }}>
       <canvas 
         ref={canvasRef} 
         style={{ 
           width: '100%', 
-          height: '100%', 
+          height: 'calc(100% - 40px)', // Adjust height to account for padding
           objectFit: 'contain'
         }}
       ></canvas>

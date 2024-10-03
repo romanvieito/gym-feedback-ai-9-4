@@ -39,6 +39,8 @@ import { Box, Typography, AppBar, Toolbar } from '@mui/material';
 import LinearProgressWithLabel from './LinearProgressWithLabel';
 import Snackbar from '@mui/material/Snackbar';
 import LoadingIndicator from './LoadingIndicator';
+import CloseIcon from '@mui/icons-material/Close';
+import IconButton from '@mui/material/IconButton';
 
 async function getToken() {
   const tokenResponse = await fetch('/api/py/token', {
@@ -153,6 +155,7 @@ function HomePage() {
   const [videoDimensions, setVideoDimensions] = useState({ width: 480, height: 360 });
   const [feedback, setFeedback] = useState('');
   const videoRef = useRef(null);
+  const [showCloseButton, setShowCloseButton] = useState(false);
 
   useEffect(() => {
     let landmarker;
@@ -182,6 +185,7 @@ function HomePage() {
     }
 
     if (sourceSelected) {
+      setShowCloseButton(true);
       loadPoseLandmarker();
     }
 
@@ -220,6 +224,16 @@ function HomePage() {
     setOpensnackbar(false);
   };
 
+  const handleClose = () => {
+    setSourceSelected(false);
+    setUseWebcam(false);
+    setVideoSrc(null);
+    setPoseLandmarker(null);
+    setLoaded(false);
+    setProgress(0);
+    setShowCloseButton(false);
+  };
+
   const renderContent = () => {
     if (!sourceSelected) {
       return (
@@ -236,16 +250,33 @@ function HomePage() {
     }
 
     return (
-      <PoseDetectionView
-        videoSrc={videoSrc}
-        useWebcam={useWebcam}
-        videoRef={videoRef}
-        setVideoDimensions={setVideoDimensions}
-        videoDimensions={videoDimensions}
-        feedback={feedback}
-        poseLandmarker={poseLandmarker}
-        setFeedback={setFeedback}
-      />
+      <>
+        {showCloseButton && (
+          <IconButton
+            aria-label="close"
+            onClick={handleClose}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: 'white',
+              zIndex: 1000,
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        )}
+        <PoseDetectionView
+          videoSrc={videoSrc}
+          useWebcam={useWebcam}
+          videoRef={videoRef}
+          setVideoDimensions={setVideoDimensions}
+          videoDimensions={videoDimensions}
+          feedback={feedback}
+          poseLandmarker={poseLandmarker}
+          setFeedback={setFeedback}
+        />
+      </>
     );
   };
 
