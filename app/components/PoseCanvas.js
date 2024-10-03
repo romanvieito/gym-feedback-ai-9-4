@@ -47,32 +47,32 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
 
     document.addEventListener('fullscreenchange', handleFullScreenChange);
 
-    // Initial fullscreen request
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-      });
-    }
-
     return () => {
       document.removeEventListener('fullscreenchange', handleFullScreenChange);
     };
   }, []);
 
+  const handleFullScreen = useCallback((event) => {
+    event.preventDefault();
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }, []);
+
   useEffect(() => {
+    const canvasElement = canvasRef.current;
     if (isFullScreen) {
-      // Adjust canvas size for fullscreen if needed
-      const canvasElement = canvasRef.current;
       canvasElement.width = window.innerWidth;
       canvasElement.height = window.innerHeight;
     } else {
-      // Reset to original size when exiting fullscreen
-      const canvasElement = canvasRef.current;
       canvasElement.width = videoDimensions.width;
       canvasElement.height = videoDimensions.height;
     }
   }, [isFullScreen, videoDimensions]);
-
 
   useEffect(() => {
     let animationId;
@@ -176,15 +176,15 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
       width: '100%',
       height: '100%',
       overflow: 'hidden',
-      paddingTop: '40px', // Add padding to accommodate the close button
     }}>
       <canvas 
         ref={canvasRef} 
         style={{ 
           width: '100%', 
-          height: 'calc(100% - 40px)', // Adjust height to account for padding
+          height: '100%',
           objectFit: 'contain'
         }}
+        onClick={handleFullScreen}
       ></canvas>
       <Overlay statistics={feedback ? [feedback] : []} visible={true} />
     </div>
