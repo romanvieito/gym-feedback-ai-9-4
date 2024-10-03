@@ -131,7 +131,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
 
         if (result.landmarks) {
           for (const landmarks of result.landmarks) {
-            drawingUtils.drawLandmarks(landmarks, { radius: 6, color: 'white' });
+            drawingUtils.drawLandmarks(landmarks, { radius: 4, color: 'white' });
             drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
               color: '#40E0D0',
               lineWidth: 1,
