@@ -28,9 +28,18 @@ import { Box, Typography, Fade } from '@mui/material';
 const Overlay = ({ statistics, visible }) => {
   const [show, setShow] = useState(false);
 
+  const [isSupported, setIsSupported] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   useEffect(() => {
+    if (!('speechSynthesis' in window)) {
+      setIsSupported(false);
+    }
     if (statistics.length > 0 && statistics[0] !== "") {
       setShow(true);
+
+      speak();
+
       // Set a timeout to hide the overlay after 5 seconds
       const timer = setTimeout(() => setShow(false), 5000);
       return () => clearTimeout(timer);
@@ -38,6 +47,23 @@ const Overlay = ({ statistics, visible }) => {
       setShow(false);
     }
   }, [statistics]);
+
+  const speak = () => {
+    if (isSupported && statistics.length > 0 && currentIndex < statistics.length) {
+      const utterance = new SpeechSynthesisUtterance(statistics[currentIndex]);
+
+      // Manejar el evento end
+      utterance.onend = () => {
+        setCurrentIndex((prevIndex) => prevIndex + 1); // Aumentar el índice para el siguiente texto
+        speak(); // Hablar el siguiente texto
+      };
+
+      speechSynthesis.speak(utterance);
+    } else if (currentIndex >= statistics.length) {
+      // Resetear el índice si se ha llegado al final
+      setCurrentIndex(0);
+    }
+  };
 
   if (!visible || !show) return null;
 
