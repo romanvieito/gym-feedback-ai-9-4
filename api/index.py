@@ -184,25 +184,94 @@ class PoseEvaluator:
             evaluation["shoulder_alignment"] = 1 - min(shoulder_diff * 10, 1)  # 1 is perfect, 0 is poor
         
         # Add more pose evaluations here
+        # Example: Check if elbows are bent
+        left_elbow = landmarks.get("Left Elbow", {})
+        right_elbow = landmarks.get("Right Elbow", {})
+        if left_elbow and right_elbow:
+            elbow_diff = abs(left_elbow["x"] - right_elbow["x"])
+            evaluation["elbow_flexion"] = 1 - min(elbow_diff * 10, 1)  # 1 is perfect, 0 is poor
         
+        # Example: Check if knees are bent
+        left_knee = landmarks.get("Left Knee", {})
+        right_knee = landmarks.get("Right Knee", {})
+        if left_knee and right_knee:
+            knee_diff = abs(left_knee["x"] - right_knee["x"])
+            evaluation["knee_flexion"] = 1 - min(knee_diff * 10, 1)  # 1 is perfect, 0 is poor
+        
+        # Example: Check if ankles are aligned
+        left_ankle = landmarks.get("Left Ankle", {})
+        right_ankle = landmarks.get("Right Ankle", {})
+        if left_ankle and right_ankle:
+            ankle_diff = abs(left_ankle["x"] - right_ankle["x"])
+            evaluation["ankle_alignment"] = 1 - min(ankle_diff * 10, 1)  # 1 is perfect, 0 is poor
+
+        # Example: Check if hips are aligned
+        left_hip = landmarks.get("Left Hip", {})
+        right_hip = landmarks.get("Right Hip", {})
+        if left_hip and right_hip:
+            hip_diff = abs(left_hip["x"] - right_hip["x"])
+            evaluation["hip_alignment"] = 1 - min(hip_diff * 10, 1)  # 1 is perfect, 0 is poor
+        
+       
         return evaluation
 
 class RecommendationGenerator:
     def generate(self, analysis: Dict[str, str], evaluation: Dict[str, float]) -> str:
-        recommendation = "Based on the analysis:\n"
-        
+        recommendation = "Pose Analysis:\n\n"
+
+        # Strengths
         if analysis["strengths"]:
-            recommendation += "Strengths: " + "; ".join(analysis["strengths"]) + "\n"
-        
+            recommendation += "🟢 Strengths:\n"
+            for strength in analysis["strengths"]:
+                recommendation += f"  • {strength}\n"
+            recommendation += "\n"
+
+        # Areas to focus on
         if analysis["adjustments"]:
-            recommendation += "Areas to focus on: " + "; ".join(analysis["adjustments"]) + "\n"
-        
+            recommendation += "🔶 Areas to Focus On:\n"
+            for adjustment in analysis["adjustments"]:
+                recommendation += f"  • {adjustment}\n"
+            recommendation += "\n"
+
+        # Pose evaluation
         if evaluation:
-            recommendation += "Pose evaluation:\n"
+            recommendation += "📊 Pose Evaluation:\n"
             for aspect, score in evaluation.items():
-                recommendation += f"- {aspect.replace('_', ' ').title()}: {score:.2f}/1.00\n"
-        
+                aspect_name = aspect.replace('_', ' ').title()
+                emoji = self.get_score_emoji(score)
+                recommendation += f"{emoji} {aspect_name}: {score:.2f}/1.00"
+                recommendation += f" - {self.get_score_feedback(aspect, score)}\n"
+
+        # Overall recommendation
+        overall_score = sum(evaluation.values()) / len(evaluation) if evaluation else 0
+        recommendation += f"\n🎯 Overall Performance: {overall_score:.2f}/1.00\n"
+        recommendation += self.get_overall_feedback(overall_score)
+
         return recommendation
+
+    def get_score_emoji(self, score: float) -> str:
+        if score >= 0.8:
+            return "🟢"
+        elif score >= 0.6:
+            return "🟡"
+        else:
+            return "🔴"
+
+    def get_score_feedback(self, aspect: str, score: float) -> str:
+        if score >= 0.8:
+            return "Excellent! Keep it up."
+        elif score >= 0.6:
+            return "Good, but there's room for improvement."
+        else:
+            return f"Focus on improving your {aspect.replace('_', ' ')}."
+
+    def get_overall_feedback(self, score: float) -> str:
+        if score >= 0.8:
+            return "Great job! Your form is excellent. Keep maintaining this level of performance."
+        elif score >= 0.6:
+            return "Good effort! You're on the right track. Focus on the areas mentioned above to improve further."
+        else:
+            return "There's significant room for improvement. Pay close attention to the feedback and keep practicing."
 
 @app.post("/api/py/process_landmarks")
 async def process_landmarks(data: LandmarksData):
