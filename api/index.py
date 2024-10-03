@@ -150,7 +150,7 @@ class LandmarksData(BaseModel):
 
 # Add these global variables at the top of your file
 current_feedback = "Welcome! Let's get started!"
-FEEDBACK_INTERVAL = 200  # Changed from 100 to 200 for 10 seconds interval
+FEEDBACK_INTERVAL = 100
 
 @app.post("/api/py/process_landmarks")
 async def process_landmarks(data: LandmarksData):
