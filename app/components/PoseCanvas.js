@@ -69,8 +69,21 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
       canvasElement.width = window.innerWidth;
       canvasElement.height = window.innerHeight;
     } else {
-      canvasElement.width = videoDimensions.width;
-      canvasElement.height = videoDimensions.height;
+      // Adjust for mobile view
+      const aspectRatio = videoDimensions.width / videoDimensions.height;
+      const screenWidth = window.innerWidth;
+      const screenHeight = window.innerHeight;
+      const screenAspectRatio = screenWidth / screenHeight;
+
+      if (screenAspectRatio < aspectRatio) {
+        // Width constrained
+        canvasElement.width = screenWidth;
+        canvasElement.height = screenWidth / aspectRatio;
+      } else {
+        // Height constrained
+        canvasElement.height = screenHeight;
+        canvasElement.width = screenHeight * aspectRatio;
+      }
     }
   }, [isFullScreen, videoDimensions]);
 
@@ -174,14 +187,17 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     <div style={{ 
       position: 'relative',
       width: '100%',
-      height: '100%',
+      height: '100vh', // Use full viewport height
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
       overflow: 'hidden',
     }}>
       <canvas 
         ref={canvasRef} 
         style={{ 
-          width: '100%', 
-          height: '100%',
+          maxWidth: '100%', 
+          maxHeight: '100%',
           objectFit: 'contain'
         }}
         onClick={handleFullScreen}
