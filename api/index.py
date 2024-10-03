@@ -18,7 +18,7 @@ from jose import JWTError, jwt
 import os
 import secrets
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import random
 import time
 from openai import OpenAI
@@ -152,100 +152,94 @@ class LandmarksData(BaseModel):
 current_feedback = "Welcome! Let's get started!"
 FEEDBACK_INTERVAL = 100
 
+# New classes for the Multi-Agent System
+
+class LandmarkAnalysisAgent:
+    @staticmethod
+    def process_landmarks(landmarks: Dict[str, Dict[float, float, float, float]]) -> Dict[str, float]:
+        # Example implementation - you'd need to expand this based on your specific requirements
+        hip_angle = calculate_hip_angle(landmarks)
+        shoulder_hip_alignment = calculate_shoulder_hip_alignment(landmarks)
+        
+        return {
+            "hip_angle": hip_angle,
+            "shoulder_hip_alignment": shoulder_hip_alignment,
+            # Add more metrics as needed
+        }
+
+class LLMFeedbackAgent:
+    @staticmethod
+    async def generate_feedback(pose_metrics: Dict[str, float]) -> str:
+        prompt = f"""As a fitness expert, analyze the following metrics for an isometric workout:
+        Hip Angle: {pose_metrics['hip_angle']}°
+        Shoulder-Hip Alignment: {pose_metrics['shoulder_hip_alignment']}
+        
+        In one short sentence (no more than 20 words), provide feedback that highlights key strengths and
+        offers specific adjustments to body alignment or muscle engagement to maximize stability and reduce strain during static holds."""
+        
+        response = await openai_client.chat.completions.create(
+            model="gpt-4-turbo-preview",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response.choices[0].message.content
+
+class CoordinationAgent:
+    @staticmethod
+    def combine_feedback(llm_feedback: str, pose_metrics: Dict[str, float]) -> str:
+        # You can add more logic here to combine the feedback with additional information or motivational messages
+        return f"{llm_feedback} Keep up the great work!"
+
+# Update the process_landmarks function to use the new agents
+
 @app.post("/api/py/process_landmarks")
 async def process_landmarks(data: LandmarksData):
-    
-    # print("test_frame: ", data.frameIndex,"\n")
-    # print("test_landmarks: ", data.landmarks,"\n")
-    # print("test_realworldlandmarks: ", data.realworldlandmarks,"\n")
     try:
-        # Make sure landmarkNames is defined correctly
-        landmarkNames = [
-            'Nose', 'Left Eye (Inner)', 'Left Eye', 'Left Eye (Outer)', 'Right Eye (Inner)',
+        landmarkNames = ['Nose', 'Left Eye (Inner)', 'Left Eye', 'Left Eye (Outer)', 'Right Eye (Inner)',
             'Right Eye', 'Right Eye (Outer)', 'Left Ear', 'Right Ear', 'Mouth (Left)',
             'Mouth (Right)', 'Left Shoulder', 'Right Shoulder', 'Left Elbow', 'Right Elbow',
             'Left Wrist', 'Right Wrist', 'Left Pinky', 'Right Pinky', 'Left Index',
             'Right Index', 'Left Thumb', 'Right Thumb', 'Left Hip', 'Right Hip',
             'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle', 'Left Heel',
-            'Right Heel', 'Left Foot Index', 'Right Foot Index'
-        ]
-         # Your processing logic here
+            'Right Heel', 'Left Foot Index', 'Right Foot Index']  # Add this line
         frame_index = data.frameIndex
-        landmarks = data.landmarks
-        realworldlandmarks = data.realworldlandmarks
-        # # First, let's print the structure of landmarks to understand it better
-        # print("frame_index: ", frame_index,"\n")
-        # print("landmarks: ", landmarks,"\n")
-        # print("realworldlandmarks: ", realworldlandmarks,"\n")
+        landmarks = {name: landmark for name, landmark in zip(landmarkNames, data.landmarks)}
         
-         # Process the landmarks for this frame
-        processed_landmarks = {}
+        # Use the Landmark Analysis Agent
+        landmark_agent = LandmarkAnalysisAgent()
+        pose_metrics = landmark_agent.process_landmarks(landmarks)
         
-        for landmark_index, landmark_data in enumerate(landmarks):
-            landmark_name = landmarkNames[int(landmark_index)]
-            # print(landmark_name,"idx: ",landmark_index,"data :",landmark_data,"\n")
-            processed_landmarks[landmark_name] = {
-                "x": round(landmark_data.x, 3),  # rounding to 3 decimal places to reduce character count
-                "y": round(landmark_data.y, 3),  # rounding to 3 decimal places to reduce character count
-                "z": round(landmark_data.z, 3),  # rounding to 3 decimal places to reduce character count
-                "visibility": landmark_data.visibility
-            }
-
-        # Here we can do the same for realworldlandmarks if needed
-
-        # Create the output structure for this frame
-        json_output = {
-            frame_index: processed_landmarks
-        }
-
-        # Generate feedback text every 5 seconds
-        # current_time = time.time()
-        # print("current_time: ", current_time,"\n")
-        # print("current_feedback: ", current_feedback,"\n")
-        
-        # Generate new feedback text every 5 seconds
-        # print("current_time: ", current_time,"\n")
-        # print("FEEDBACK_INTERVAL: ", FEEDBACK_INTERVAL,"\n")
+        # Generate feedback every FEEDBACK_INTERVAL frames
         if frame_index % FEEDBACK_INTERVAL == 0:
-            # print(f"Processed data for frame {frame_index}: ", json_output)
-            openai_response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{
-                    "role": "user",
-                    "content": OPENAI_PROMPT  # Asegúrate de que esto sea un string
-                },{
-                    "role": "user",
-                    "content": json.dumps(json_output)  # Si json_output es un dict, conviértelo a string
-                }],
-            )
-            # print(f"Response OpenAI: {openai_response.choices[0].message.content}")                        
-            # feedback_texts = [
-            #     "Great posture!",
-            #     "Keep your back straight",
-            #     "Lift your chin slightly",
-            #     "Relax your shoulders",
-            #     "Bend your knees more",
-            #     "Excellent form!",
-            #     "Watch your elbow alignment",
-            #     "Maintain balance",
-            #     "Good job on keeping your core tight",
-            #     "Remember to breathe"
-            # ]
-            # current_feedback = random.choice(feedback_texts)            
-            current_feedback = openai_response.choices[0].message.content            
-            print("current_feedback: ", current_feedback,"\n")
+            # Use the LLM Feedback Agent
+            llm_agent = LLMFeedbackAgent()
+            llm_feedback = await llm_agent.generate_feedback(pose_metrics)
+            
+            # Use the Coordination Agent
+            coordination_agent = CoordinationAgent()
+            final_feedback = coordination_agent.combine_feedback(llm_feedback, pose_metrics)
         else:
-            current_feedback = "No feedback yet"
-            print("current_feedback: ", current_feedback,"\n")
+            final_feedback = "Analyzing your form..."
 
         return {
             "status": "success", 
             "processed_frame": frame_index, 
-            "feedback": current_feedback,
+            "feedback": final_feedback,
         }
         
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+# Helper functions for LandmarkAnalysisAgent (you'll need to implement these)
+
+def calculate_hip_angle(landmarks: Dict[str, Dict[float, float, float, float]]) -> float:
+    # Implement the calculation of hip angle using the landmarks
+    # This is a placeholder implementation
+    return 160.0
+
+def calculate_shoulder_hip_alignment(landmarks: Dict[str, Dict[float, float, float, float]]) -> str:
+    # Implement the calculation of shoulder-hip alignment using the landmarks
+    # This is a placeholder implementation
+    return "good"
 
 def create_access_token(data: dict):
     to_encode = data.copy()
