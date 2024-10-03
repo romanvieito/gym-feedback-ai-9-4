@@ -176,7 +176,7 @@ class LandmarkPreProcessingAgent:
 class LLMAnalysisAgent:
     async def analyze(self, processed_landmarks: Dict[str, Any]) -> str:
         openai_response = await openai_client.chat.completions.acreate(
-            model="gpt-4-0125-preview",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "user", "content": OPENAI_PROMPT},
                 {"role": "user", "content": json.dumps(processed_landmarks)}
