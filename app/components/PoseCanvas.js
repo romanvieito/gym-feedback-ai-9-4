@@ -187,7 +187,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     <div style={{ 
       position: 'relative',
       width: '100%',
-      height: '100vh', // Use full viewport height
+      height: 'calc(100vh - 64px)', // Subtract AppBar height (usually 64px)
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
@@ -196,8 +196,8 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
       <canvas 
         ref={canvasRef} 
         style={{ 
-          maxWidth: '100%', 
-          maxHeight: '100%',
+          width: '100%',
+          height: '100%',
           objectFit: 'contain'
         }}
         onClick={handleFullScreen}

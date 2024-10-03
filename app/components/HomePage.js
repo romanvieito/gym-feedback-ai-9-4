@@ -281,35 +281,27 @@ function HomePage() {
   };
 
   return (
-    <>
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <AppBar id="app-bar" position="static" sx={{ backgroundColor: '#000' }}>
-          <Toolbar>
-            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              24up.
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Box sx={{ flexGrow: 1, display: 'flex' }}>
-          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
-            {renderContent()}
-          </Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <AppBar position="static" sx={{ backgroundColor: '#000' }}>
+        <Toolbar>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            24up.
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
+          {renderContent()}
         </Box>
       </Box>
-      <Snackbar
-        open={opensnackbar}
-        autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
-        message="Failed to download model"
-      />
-    </>
+    </Box>
   );
 }
 
 // New component to encapsulate the pose detection view
 function PoseDetectionView({ videoSrc, useWebcam, videoRef, setVideoDimensions, videoDimensions, feedback, poseLandmarker, setFeedback }) {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'center' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', height: '100%', justifyContent: 'center' }}>
       <Box sx={{ position: 'relative', marginRight: '20px', display: 'none' }}>
         <VideoPlayer
           videoSrc={videoSrc}
@@ -320,7 +312,7 @@ function PoseDetectionView({ videoSrc, useWebcam, videoRef, setVideoDimensions, 
           feedback={feedback}
         />
       </Box>
-      <Box sx={{ position: 'relative' }}>
+      <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
         <PoseCanvas
           videoRef={videoRef}
           poseLandmarker={poseLandmarker}
