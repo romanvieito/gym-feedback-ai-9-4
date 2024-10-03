@@ -157,10 +157,22 @@ FEEDBACK_INTERVAL = 100
 class LandmarkPreProcessingAgent:
     def process(self, landmarks: List[Landmark]) -> Dict[str, Any]:
         landmarkNames = [
-            "nose", "left_eye", "right_eye", "left_ear", "right_ear",
-            "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
-            "left_wrist", "right_wrist", "left_hip", "right_hip",
-            "left_knee", "right_knee", "left_ankle", "right_ankle"
+            "Right Shoulder",
+            "Right Elbow",
+            "Right Wrist",
+            "Left Shoulder",
+            "Left Elbow",
+            "Left Wrist",
+            "Right Hip",
+            "Right Knee",
+            "Right Ankle",
+            "Left Hip",
+            "Left Knee",
+            "Left Ankle",
+            "Right Eye",
+            "Left Eye",
+            "Right Ear",
+            "Left Ear",
         ]
         processed_landmarks = {}
         for landmark_index, landmark_data in enumerate(landmarks):
