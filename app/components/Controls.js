@@ -38,14 +38,30 @@ function Controls({ setVideoSrc, setUseWebcam }) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-      <Typography variant="h6" sx={{ marginBottom: 2 }}>
+      <Typography variant="h6" sx={{ marginBottom: 2, color: '#fff' }}>
         Choose Your Next Move!
       </Typography>
-      <Button variant="contained" sx={{ backgroundColor: '#000', ":hover": { backgroundColor: 'gray' } }} onClick={handleWebcam}>
+      <Button 
+        variant="contained" 
+        sx={{ 
+          backgroundColor: '#fff', 
+          color: '#000',
+          ":hover": { backgroundColor: '#e0e0e0' } 
+        }} 
+        onClick={handleWebcam}
+      >
         Realtime Webcam
       </Button>
-      or
-      <Button variant="outlined" onClick={() => document.getElementById('videoFileInput').click()}>
+      <Typography sx={{ color: '#fff' }}>or</Typography>
+      <Button 
+        variant="outlined" 
+        sx={{ 
+          color: '#fff', 
+          borderColor: '#fff',
+          ":hover": { borderColor: '#e0e0e0', backgroundColor: 'rgba(255, 255, 255, 0.08)' } 
+        }} 
+        onClick={() => document.getElementById('videoFileInput').click()}
+      >
         Upload Video
       </Button>
       <input

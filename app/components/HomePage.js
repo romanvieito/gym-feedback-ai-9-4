@@ -247,7 +247,7 @@ function HomePage() {
           </Toolbar>
         </AppBar>
         <Box sx={{ flexGrow: 1, display: 'flex' }}>
-          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
             {!sourceSelected ? (
               <Controls setVideoSrc={handleVideoUpload} setUseWebcam={setUseWebcam} onSourceSelect={handleSourceSelect} />
             ) : (

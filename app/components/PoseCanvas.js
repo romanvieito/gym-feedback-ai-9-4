@@ -19,30 +19,12 @@
  * - The useEffect hook is used to set up the pose detection logic. It continuously draws the video frames onto the canvas and applies pose detection using the PoseLandmarker.
  * - The canvas is updated in an animation loop, where each frame is processed to detect poses and draw the results on the canvas.
  * 
- * Utility Functions:
- * - getScaledDimensions: A helper function that calculates the appropriate dimensions for the canvas based on the video dimensions and specified maximum constraints.
  */
 
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
 import Overlay from './Overlay'; 
-
-function getScaledDimensions(width, height, maxWidth, maxHeight) {
-  let aspectRatio = width / height;
-
-  if (width > maxWidth) {
-    width = maxWidth;
-    height = width / aspectRatio;
-  }
-
-  if (height > maxHeight) {
-    height = maxHeight;
-    width = height * aspectRatio;
-  }
-
-  return { width, height };
-}
 
 const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback }) => {
   const canvasRef = useRef(null);
@@ -54,19 +36,43 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
   const setTimedFeedback = useCallback((feedback) => {
     console.log("Setting feedback:", feedback);
     setFeedback(feedback);
-    // The Overlay component will handle the timing now
   }, [setFeedback]);
 
-  const handleFullScreen = (event) => {
-    event.preventDefault(); // Prevent default behavior if necessary
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
-    // Check if the document is already in fullscreen
+  useEffect(() => {
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullScreenChange);
+
+    // Initial fullscreen request
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+      });
     }
-  };
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullScreenChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isFullScreen) {
+      // Adjust canvas size for fullscreen if needed
+      const canvasElement = canvasRef.current;
+      canvasElement.width = window.innerWidth;
+      canvasElement.height = window.innerHeight;
+    } else {
+      // Reset to original size when exiting fullscreen
+      const canvasElement = canvasRef.current;
+      canvasElement.width = videoDimensions.width;
+      canvasElement.height = videoDimensions.height;
+    }
+  }, [isFullScreen, videoDimensions]);
+
 
   useEffect(() => {
     let animationId;
@@ -180,32 +186,6 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
         }}
       ></canvas>
       <Overlay statistics={feedback ? [feedback] : []} visible={true} />
-      <div style={{ position: 'fixed', top: 10, right: 10, color: 'white' }}>
-        <button 
-          onClick={handleFullScreen}
-          onPointerDown={handleFullScreen} // Unified event for mouse and touch
-          style={{
-            background: 'transparent',
-            border: 'none',
-            padding: '10px',
-            cursor: 'pointer',
-            touchAction: 'manipulation',
-            userSelect: 'none',
-            WebkitTapHighlightColor: 'transparent',
-            float: 'right'
-          }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-            {document.fullscreenElement ? (
-              // Exit fullscreen icon
-              <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
-            ) : (
-              // Enter fullscreen icon
-              <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-            )}
-          </svg>
-        </button>
-      </div>
     </div>
   );
 };
