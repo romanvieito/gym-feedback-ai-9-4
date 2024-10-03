@@ -18,7 +18,7 @@ from jose import JWTError, jwt
 import os
 import secrets
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import random
 import time
 from openai import OpenAI
@@ -152,6 +152,58 @@ class LandmarksData(BaseModel):
 current_feedback = "Welcome! Let's get started!"
 FEEDBACK_INTERVAL = 100
 
+# Add these new classes for the multi-agent system
+class FeedbackAnalyzer:
+    def analyze(self, feedback: str) -> Dict[str, str]:
+        # Extract key points from the feedback
+        strengths = []
+        adjustments = []
+        
+        sentences = feedback.split('.')
+        for sentence in sentences:
+            if "great" in sentence.lower() or "excellent" in sentence.lower():
+                strengths.append(sentence.strip())
+            elif "adjust" in sentence.lower() or "improve" in sentence.lower():
+                adjustments.append(sentence.strip())
+        
+        return {
+            "strengths": strengths,
+            "adjustments": adjustments
+        }
+
+class PoseEvaluator:
+    def evaluate(self, landmarks: Dict[str, Dict[str, float]]) -> Dict[str, float]:
+        # Evaluate the pose based on key landmarks
+        evaluation = {}
+        
+        # Example: Check if shoulders are level
+        left_shoulder = landmarks.get("Left Shoulder", {})
+        right_shoulder = landmarks.get("Right Shoulder", {})
+        if left_shoulder and right_shoulder:
+            shoulder_diff = abs(left_shoulder["y"] - right_shoulder["y"])
+            evaluation["shoulder_alignment"] = 1 - min(shoulder_diff * 10, 1)  # 1 is perfect, 0 is poor
+        
+        # Add more pose evaluations here
+        
+        return evaluation
+
+class RecommendationGenerator:
+    def generate(self, analysis: Dict[str, str], evaluation: Dict[str, float]) -> str:
+        recommendation = "Based on the analysis:\n"
+        
+        if analysis["strengths"]:
+            recommendation += "Strengths: " + "; ".join(analysis["strengths"]) + "\n"
+        
+        if analysis["adjustments"]:
+            recommendation += "Areas to focus on: " + "; ".join(analysis["adjustments"]) + "\n"
+        
+        if evaluation:
+            recommendation += "Pose evaluation:\n"
+            for aspect, score in evaluation.items():
+                recommendation += f"- {aspect.replace('_', ' ').title()}: {score:.2f}/1.00\n"
+        
+        return recommendation
+
 @app.post("/api/py/process_landmarks")
 async def process_landmarks(data: LandmarksData):
     
@@ -218,22 +270,19 @@ async def process_landmarks(data: LandmarksData):
                     "content": json.dumps(json_output)  # Si json_output es un dict, conviértelo a string
                 }],
             )
-            # print(f"Response OpenAI: {openai_response.choices[0].message.content}")                        
-            # feedback_texts = [
-            #     "Great posture!",
-            #     "Keep your back straight",
-            #     "Lift your chin slightly",
-            #     "Relax your shoulders",
-            #     "Bend your knees more",
-            #     "Excellent form!",
-            #     "Watch your elbow alignment",
-            #     "Maintain balance",
-            #     "Good job on keeping your core tight",
-            #     "Remember to breathe"
-            # ]
-            # current_feedback = random.choice(feedback_texts)            
-            current_feedback = openai_response.choices[0].message.content            
-            print("current_feedback: ", current_feedback,"\n")
+            
+            feedback = openai_response.choices[0].message.content
+            
+            # Use the multi-agent system to process the feedback
+            analyzer = FeedbackAnalyzer()
+            evaluator = PoseEvaluator()
+            recommender = RecommendationGenerator()
+            
+            analysis = analyzer.analyze(feedback)
+            evaluation = evaluator.evaluate(processed_landmarks)
+            recommendation = recommender.generate(analysis, evaluation)
+            
+            current_feedback = recommendation
         else:
             current_feedback = "No feedback yet"
             print("current_feedback: ", current_feedback,"\n")
