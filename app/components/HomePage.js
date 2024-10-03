@@ -38,6 +38,7 @@ import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { Box, Typography, AppBar, Toolbar } from '@mui/material';
 import LinearProgressWithLabel from './LinearProgressWithLabel';
 import Snackbar from '@mui/material/Snackbar';
+import LoadingIndicator from './LoadingIndicator';
 
 async function getToken() {
   const tokenResponse = await fetch('/api/py/token', {
@@ -219,6 +220,35 @@ function HomePage() {
     setOpensnackbar(false);
   };
 
+  const renderContent = () => {
+    if (!sourceSelected) {
+      return (
+        <Controls
+          setVideoSrc={handleVideoUpload}
+          setUseWebcam={setUseWebcam}
+          onSourceSelect={handleSourceSelect}
+        />
+      );
+    }
+
+    if (!loaded) {
+      return <LoadingIndicator progress={progress} />;
+    }
+
+    return (
+      <PoseDetectionView
+        videoSrc={videoSrc}
+        useWebcam={useWebcam}
+        videoRef={videoRef}
+        setVideoDimensions={setVideoDimensions}
+        videoDimensions={videoDimensions}
+        feedback={feedback}
+        poseLandmarker={poseLandmarker}
+        setFeedback={setFeedback}
+      />
+    );
+  };
+
   return (
     <>
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -231,46 +261,7 @@ function HomePage() {
         </AppBar>
         <Box sx={{ flexGrow: 1, display: 'flex' }}>
           <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: 'black' }}>
-            {!sourceSelected ? (
-              <Controls setVideoSrc={handleVideoUpload} setUseWebcam={setUseWebcam} onSourceSelect={handleSourceSelect} />
-            ) : (
-              loaded ? (
-                <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'center' }}>
-                  <Box sx={{ position: 'relative', marginRight: '20px', display: 'none' }}>
-                    <VideoPlayer
-                      videoSrc={videoSrc}
-                      useWebcam={useWebcam}
-                      videoRef={videoRef}
-                      setVideoDimensions={setVideoDimensions}
-                      videoDimensions={videoDimensions}
-                      feedback={feedback}  // Pass feedback to VideoPlayer
-                    />
-                  </Box>
-                  <Box sx={{ position: 'relative' }}>
-                    <PoseCanvas
-                      videoRef={videoRef}
-                      poseLandmarker={poseLandmarker}
-                      videoDimensions={videoDimensions}
-                      setFeedback={setFeedback}
-                      feedback={feedback}  // Pass feedback to VideoPlayer
-                    />
-                  </Box>
-                </Box>
-              ) : (
-                <>
-                  {progress > 0 && progress < 100 ? (
-                    <>
-                      <p>Downloading model to process poses ... </p>
-                      <LinearProgressWithLabel value={progress} />
-                    </>
-                  ) : progress == 100 ? (
-                    <p>Downloaded model</p>
-                  ) : (
-                    <p>Getting started</p>
-                  )}
-                </>
-              )
-            )}
+            {renderContent()}
           </Box>
         </Box>
       </Box>
@@ -281,6 +272,34 @@ function HomePage() {
         message="Failed to download model"
       />
     </>
+  );
+}
+
+// New component to encapsulate the pose detection view
+function PoseDetectionView({ videoSrc, useWebcam, videoRef, setVideoDimensions, videoDimensions, feedback, poseLandmarker, setFeedback }) {
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'center' }}>
+      <Box sx={{ position: 'relative', marginRight: '20px', display: 'none' }}>
+        <VideoPlayer
+          videoSrc={videoSrc}
+          useWebcam={useWebcam}
+          videoRef={videoRef}
+          setVideoDimensions={setVideoDimensions}
+          videoDimensions={videoDimensions}
+          feedback={feedback}
+        />
+      </Box>
+      <Box sx={{ position: 'relative' }}>
+        <PoseCanvas
+          videoRef={videoRef}
+          poseLandmarker={poseLandmarker}
+          videoDimensions={videoDimensions}
+          setFeedback={setFeedback}
+          feedback={feedback}
+          useWebcam={useWebcam}
+        />
+      </Box>
+    </Box>
   );
 }
 
