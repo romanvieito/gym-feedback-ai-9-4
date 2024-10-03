@@ -40,8 +40,8 @@ const Overlay = ({ statistics, visible }) => {
 
       speak();
 
-      // Set a timeout to hide the overlay after 5 seconds
-      const timer = setTimeout(() => setShow(false), 5000);
+      // Set a timeout to hide the overlay after 10 seconds
+      const timer = setTimeout(() => setShow(false), 10000);
       return () => clearTimeout(timer);
     } else {
       setShow(false);
