@@ -44,8 +44,8 @@ openai_client = OpenAI(
 )
 
 OPENAI_PROMPT = """As a fitness expert, analyze a client’s isometric workout using the provided JSON
-body landmarks. Provide a concise sentence of feedback that highlights key strengths and offers specific
-adjustments to body alignment or muscle engagement to maximize stability and reduce strain during static holds."""
+body landmarks. In one short sentence (no more than 20 words), provide feedback that highlights key strengths and
+offers specific adjustments to body alignment or muscle engagement to maximize stability and reduce strain during static holds."""
 
 app = FastAPI()
 
@@ -149,7 +149,7 @@ class LandmarksData(BaseModel):
     realworldlandmarks: List[Landmark]
 
 # Add these global variables at the top of your file
-current_feedback = "Welcome! Starting pose analysis..."
+current_feedback = "Welcome! Let's get started!"
 FEEDBACK_INTERVAL = 200  # Changed from 100 to 200 for 10 seconds interval
 
 @app.post("/api/py/process_landmarks")
