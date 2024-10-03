@@ -43,9 +43,9 @@ openai_client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
 )
 
-OPENAI_PROMPT = """As a fitness expert, analyze a client’s working out using the provided JSON 
-body landmarks. Return a single, precise sentence with actionable feedback that highlights 
-strengths and provides specific form adjustments to optimize technique and minimize injury risk"""
+OPENAI_PROMPT = """As a fitness expert, analyze a client’s isometric workout using the provided JSON
+body landmarks. Provide a concise sentence of feedback that highlights key strengths and offers specific
+adjustments to body alignment or muscle engagement to maximize stability and reduce strain during static holds."""
 
 app = FastAPI()
 
