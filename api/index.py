@@ -156,9 +156,15 @@ FEEDBACK_INTERVAL = 100
 # Define agent classes
 class LandmarkPreProcessingAgent:
     def process(self, landmarks: List[Landmark]) -> Dict[str, Any]:
+        landmarkNames = [
+            "nose", "left_eye", "right_eye", "left_ear", "right_ear",
+            "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+            "left_wrist", "right_wrist", "left_hip", "right_hip",
+            "left_knee", "right_knee", "left_ankle", "right_ankle"
+        ]
         processed_landmarks = {}
         for landmark_index, landmark_data in enumerate(landmarks):
-            landmark_name = landmarkNames[int(landmark_index)]
+            landmark_name = landmarkNames[landmark_index]
             processed_landmarks[landmark_name] = {
                 "x": round(landmark_data.x, 3),
                 "y": round(landmark_data.y, 3),
