@@ -18,12 +18,13 @@ from jose import JWTError, jwt
 import os
 import secrets
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Any
 import random
 import time
 from openai import OpenAI
 from dotenv import load_dotenv
 import json
+import asyncio
 
 # Secret key to encode and decode JWT tokens
 # SECRET_KEY is a strong, random string used for encoding and decoding JWT tokens. 
@@ -152,98 +153,103 @@ class LandmarksData(BaseModel):
 current_feedback = "Welcome! Let's get started!"
 FEEDBACK_INTERVAL = 100
 
-@app.post("/api/py/process_landmarks")
-async def process_landmarks(data: LandmarksData):
-    
-    # print("test_frame: ", data.frameIndex,"\n")
-    # print("test_landmarks: ", data.landmarks,"\n")
-    # print("test_realworldlandmarks: ", data.realworldlandmarks,"\n")
-    try:
-        # Make sure landmarkNames is defined correctly
-        landmarkNames = [
-            'Nose', 'Left Eye (Inner)', 'Left Eye', 'Left Eye (Outer)', 'Right Eye (Inner)',
-            'Right Eye', 'Right Eye (Outer)', 'Left Ear', 'Right Ear', 'Mouth (Left)',
-            'Mouth (Right)', 'Left Shoulder', 'Right Shoulder', 'Left Elbow', 'Right Elbow',
-            'Left Wrist', 'Right Wrist', 'Left Pinky', 'Right Pinky', 'Left Index',
-            'Right Index', 'Left Thumb', 'Right Thumb', 'Left Hip', 'Right Hip',
-            'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle', 'Left Heel',
-            'Right Heel', 'Left Foot Index', 'Right Foot Index'
-        ]
-         # Your processing logic here
-        frame_index = data.frameIndex
-        landmarks = data.landmarks
-        realworldlandmarks = data.realworldlandmarks
-        # # First, let's print the structure of landmarks to understand it better
-        # print("frame_index: ", frame_index,"\n")
-        # print("landmarks: ", landmarks,"\n")
-        # print("realworldlandmarks: ", realworldlandmarks,"\n")
-        
-         # Process the landmarks for this frame
+# Define agent classes
+class LandmarkPreProcessingAgent:
+    def process(self, landmarks: List[Landmark]) -> Dict[str, Any]:
         processed_landmarks = {}
-        
         for landmark_index, landmark_data in enumerate(landmarks):
             landmark_name = landmarkNames[int(landmark_index)]
-            # print(landmark_name,"idx: ",landmark_index,"data :",landmark_data,"\n")
             processed_landmarks[landmark_name] = {
-                "x": round(landmark_data.x, 3),  # rounding to 3 decimal places to reduce character count
-                "y": round(landmark_data.y, 3),  # rounding to 3 decimal places to reduce character count
-                "z": round(landmark_data.z, 3),  # rounding to 3 decimal places to reduce character count
+                "x": round(landmark_data.x, 3),
+                "y": round(landmark_data.y, 3),
+                "z": round(landmark_data.z, 3),
                 "visibility": landmark_data.visibility
             }
+        return processed_landmarks
 
-        # Here we can do the same for realworldlandmarks if needed
+class LLMAnalysisAgent:
+    async def analyze(self, processed_landmarks: Dict[str, Any]) -> str:
+        openai_response = await openai_client.chat.completions.acreate(
+            model="gpt-4-0125-preview",
+            messages=[
+                {"role": "user", "content": OPENAI_PROMPT},
+                {"role": "user", "content": json.dumps(processed_landmarks)}
+            ],
+        )
+        return openai_response.choices[0].message.content
 
-        # Create the output structure for this frame
-        json_output = {
-            frame_index: processed_landmarks
-        }
+class PoseFeedbackAgent:
+    def generate_feedback(self, llm_analysis: str) -> str:
+        # For now, we'll just return the LLM analysis as feedback
+        return llm_analysis
 
-        # Generate feedback text every 5 seconds
-        # current_time = time.time()
-        # print("current_time: ", current_time,"\n")
-        # print("current_feedback: ", current_feedback,"\n")
+class FeedbackVerificationAgent:
+    def verify(self, feedback: str) -> bool:
+        # Implement verification logic here
+        # For now, we'll just return True
+        return True
+
+class MotivationProgressTrackingAgent:
+    def __init__(self):
+        self.progress_history = []
+
+    def update_progress(self, feedback: str):
+        self.progress_history.append(feedback)
+
+    def get_motivation_message(self) -> str:
+        # Implement motivation logic based on progress history
+        return "Keep up the good work!"
+
+class CoordinationAgent:
+    def __init__(self):
+        self.landmark_agent = LandmarkPreProcessingAgent()
+        self.llm_agent = LLMAnalysisAgent()
+        self.feedback_agent = PoseFeedbackAgent()
+        self.verification_agent = FeedbackVerificationAgent()
+        self.motivation_agent = MotivationProgressTrackingAgent()
+
+    async def process_frame(self, landmarks: List[Landmark], frame_index: int) -> Dict[str, Any]:
+        processed_landmarks = self.landmark_agent.process(landmarks)
+        llm_analysis = await self.llm_agent.analyze(processed_landmarks)
+        feedback = self.feedback_agent.generate_feedback(llm_analysis)
         
-        # Generate new feedback text every 5 seconds
-        # print("current_time: ", current_time,"\n")
-        # print("FEEDBACK_INTERVAL: ", FEEDBACK_INTERVAL,"\n")
-        if frame_index % FEEDBACK_INTERVAL == 0:
-            # print(f"Processed data for frame {frame_index}: ", json_output)
-            openai_response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{
-                    "role": "user",
-                    "content": OPENAI_PROMPT  # Asegúrate de que esto sea un string
-                },{
-                    "role": "user",
-                    "content": json.dumps(json_output)  # Si json_output es un dict, conviértelo a string
-                }],
-            )
-            # print(f"Response OpenAI: {openai_response.choices[0].message.content}")                        
-            # feedback_texts = [
-            #     "Great posture!",
-            #     "Keep your back straight",
-            #     "Lift your chin slightly",
-            #     "Relax your shoulders",
-            #     "Bend your knees more",
-            #     "Excellent form!",
-            #     "Watch your elbow alignment",
-            #     "Maintain balance",
-            #     "Good job on keeping your core tight",
-            #     "Remember to breathe"
-            # ]
-            # current_feedback = random.choice(feedback_texts)            
-            current_feedback = openai_response.choices[0].message.content            
-            print("current_feedback: ", current_feedback,"\n")
+        if self.verification_agent.verify(feedback):
+            self.motivation_agent.update_progress(feedback)
+            motivation_message = self.motivation_agent.get_motivation_message()
+            
+            return {
+                "status": "success",
+                "processed_frame": frame_index,
+                "feedback": feedback,
+                "motivation": motivation_message
+            }
         else:
-            current_feedback = "No feedback yet"
-            print("current_feedback: ", current_feedback,"\n")
+            return {
+                "status": "error",
+                "message": "Feedback verification failed"
+            }
 
-        return {
-            "status": "success", 
-            "processed_frame": frame_index, 
-            "feedback": current_feedback,
-        }
-        
+# Initialize the coordination agent
+coordination_agent = CoordinationAgent()
+
+# Update the process_landmarks endpoint
+@app.post("/api/py/process_landmarks")
+async def process_landmarks(data: LandmarksData):
+    try:
+        frame_index = data.frameIndex
+        landmarks = data.landmarks
+
+        if frame_index % FEEDBACK_INTERVAL == 0:
+            result = await coordination_agent.process_frame(landmarks, frame_index)
+            return result
+        else:
+            return {
+                "status": "success",
+                "processed_frame": frame_index,
+                "feedback": "No feedback yet",
+                "motivation": "Keep going!"
+            }
+
     except Exception as e:
         raise HTTPException(status_code=422, detail=str(e))
 
