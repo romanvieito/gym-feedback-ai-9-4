@@ -35,7 +35,7 @@ import VideoPlayer from './VideoPlayer';
 import PoseCanvas from './PoseCanvas';
 import Controls from './Controls';
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
-import { Box, Typography, AppBar, Toolbar, Button, Modal } from '@mui/material';
+import { Box, Typography, AppBar, Toolbar } from '@mui/material';
 import LinearProgressWithLabel from './LinearProgressWithLabel';
 import Snackbar from '@mui/material/Snackbar';
 
