@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Box, Typography, AppBar, Toolbar, Container, Button } from '@mui/material';
+import { Box, Typography, AppBar, Toolbar, Container, Button, TextField } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import PoseCanvas from './PoseCanvas';
@@ -13,6 +13,7 @@ function App() {
   const [poseLandmarker, setPoseLandmarker] = useState(null);
   const [videoDimensions, setVideoDimensions] = useState({ width: 640, height: 480 });
   const [feedback, setFeedback] = useState('');
+  const [videoId, setVideoId] = useState('');
 
   useEffect(() => {
     async function loadPoseLandmarker() {
@@ -66,6 +67,13 @@ function App() {
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ mt: 4, textAlign: 'center' }}>
+        <TextField
+          label="YouTube Video ID"
+          variant="outlined"
+          value={videoId}
+          onChange={(e) => setVideoId(e.target.value)}
+          sx={{ mb: 2 }}
+        />
         <Box sx={{ 
           mt: 4, 
           width: '100%', 
@@ -76,6 +84,18 @@ function App() {
           overflow: 'hidden',
           position: 'relative'
         }}>
+          {videoId && (
+            <Box sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1 }}>
+              <iframe
+                width="100%"
+                height="100%"
+                src={`https://www.youtube.com/embed/${videoId}`}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </Box>
+          )}
           <video 
             ref={videoRef} 
             autoPlay 
