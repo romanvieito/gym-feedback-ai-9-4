@@ -42,8 +42,6 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     setFeedback(feedback);
   }, [setFeedback]);
 
-  // Remove fullscreen-related state and effects
-
   useEffect(() => {
     let animationId;
     const canvasElement = canvasRef.current;

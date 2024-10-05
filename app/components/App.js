@@ -14,8 +14,6 @@ function App() {
   const webcamRef = useRef(null);
   const uploadedVideoRef = useRef(null);
   const [isWebcamStreaming, setIsWebcamStreaming] = useState(false);
-  const [isUploadedVideoPlaying, setIsUploadedVideoPlaying] = useState(false);
-  const [isUploadedVideoPaused, setIsUploadedVideoPaused] = useState(true);
   const [webcamPoseLandmarker, setWebcamPoseLandmarker] = useState(null);
   const [uploadedVideoPoseLandmarker, setUploadedVideoPoseLandmarker] = useState(null);
   const [videoDimensions, setVideoDimensions] = useState({ width: 640, height: 480 });
@@ -87,8 +85,6 @@ function App() {
         uploadedVideoRef.current.onloadedmetadata = () => {
           // Start playing the video immediately after it's loaded
           uploadedVideoRef.current.play();
-          setIsUploadedVideoPaused(false);
-          setIsUploadedVideoPlaying(true);
           // Start the webcam as well
           startWebcam();
         };
@@ -98,37 +94,11 @@ function App() {
     }
   };
 
-  const toggleUploadedVideo = () => {
-    if (uploadedVideoRef.current) {
-      if (isUploadedVideoPaused) {
-        uploadedVideoRef.current.play();
-        setIsUploadedVideoPlaying(true);
-        setIsUploadedVideoPaused(false);
-        startWebcam();
-      } else {
-        uploadedVideoRef.current.pause();
-        setIsUploadedVideoPlaying(false);
-        setIsUploadedVideoPaused(true);
-        stopWebcam();
-      }
-    }
-  };
-
   const toggleWebcam = () => {
     if (isWebcamStreaming) {
       stopWebcam();
-      if (uploadedVideoRef.current && !isUploadedVideoPaused) {
-        uploadedVideoRef.current.pause();
-        setIsUploadedVideoPlaying(false);
-        setIsUploadedVideoPaused(true);
-      }
     } else {
       startWebcam();
-      if (uploadedVideoRef.current && isUploadedVideoPaused) {
-        uploadedVideoRef.current.play();
-        setIsUploadedVideoPlaying(true);
-        setIsUploadedVideoPaused(false);
-      }
     }
   };
 
@@ -173,14 +143,7 @@ function App() {
                   display: 'none'
                 }}
                 onPlay={() => {
-                  setIsUploadedVideoPlaying(true);
-                  setIsUploadedVideoPaused(false);
                   startWebcam();
-                }}
-                onPause={() => {
-                  setIsUploadedVideoPlaying(false);
-                  setIsUploadedVideoPaused(true);
-                  stopWebcam();
                 }}
               />
               {uploadedVideo && uploadedVideoPoseLandmarker && (
@@ -196,12 +159,11 @@ function App() {
                 />
               )}
             </Box>
-            {isUploadedVideoPaused && (
-              <Button
-                variant="contained"
-                component="label"
-                sx={{ my: 2, mr: 2, padding: '12px 24px', fontSize: '1.2rem' }}
-                startIcon={<CloudUploadIcon />}
+            <Button
+              variant="contained"
+              component="label"
+              sx={{ my: 2, mr: 2, padding: '12px 24px', fontSize: '1.2rem' }}
+              startIcon={<CloudUploadIcon />}
             >
               Upload Video To Compare with Your Workout
               <input
@@ -211,17 +173,6 @@ function App() {
                 onChange={handleVideoUpload}
               />
             </Button>
-            )}
-            {uploadedVideo && (
-              <Button
-                variant="contained"
-                sx={{ my: 2, backgroundColor: 'black' }}
-                startIcon={isUploadedVideoPaused ? <PlayArrowIcon /> : <PauseIcon />}
-                onClick={toggleUploadedVideo}
-              >
-                {isUploadedVideoPaused ? 'Play' : 'Pause'}
-              </Button>
-            )}
           </Box>
 
           {/* Webcam Section */}
