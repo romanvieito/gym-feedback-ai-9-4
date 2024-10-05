@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Box, Typography, AppBar, Toolbar, Container, Button, Grid } from '@mui/material';
+import { Box, Typography, AppBar, Toolbar, Container, Button, Stack } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import PoseCanvas from './PoseCanvas';
@@ -140,44 +140,9 @@ function App() {
         </Toolbar>
       </AppBar>
       <Container maxWidth="lg" sx={{ mt: 4, textAlign: 'center' }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <Box sx={{ 
-              mt: 4, 
-              width: '100%', 
-              maxWidth: '640px', 
-              margin: '0 auto',
-              boxShadow: 3,
-              borderRadius: 2,
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <video 
-                ref={webcamRef} 
-                autoPlay 
-                playsInline 
-                style={{ width: '100%', height: 'auto', display: 'none' }}
-              />
-              {isWebcamStreaming && webcamPoseLandmarker && (
-                <PoseCanvas
-                  videoRef={webcamRef}
-                  poseLandmarker={webcamPoseLandmarker}
-                  videoDimensions={videoDimensions}
-                  setFeedback={setWebcamFeedback}
-                  feedback={webcamFeedback}
-                />
-              )}
-            </Box>
-            <Button 
-              variant="contained"
-              sx={{ my: 2, backgroundColor: 'black' }}
-              startIcon={isWebcamStreaming ? <VideocamOffIcon /> : <VideocamIcon />}
-              onClick={toggleWebcam}
-            >
-              {isWebcamStreaming ? 'Stop Webcam' : 'Start Webcam'}
-            </Button>
-          </Grid>
-          <Grid item xs={12} md={6}>
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+          {/* Uploaded Video Section */}
+          <Box sx={{ flex: 1 }}>
             <Box sx={{ 
               mt: 4, 
               width: '100%', 
@@ -217,8 +182,9 @@ function App() {
                 />
               )}
             </Box>
-            <Button
-              variant="contained"
+            {isUploadedVideoPaused && (
+              <Button
+                variant="contained"
               component="label"
               sx={{ my: 2, mr: 2 }}
               startIcon={<CloudUploadIcon />}
@@ -231,6 +197,7 @@ function App() {
                 onChange={handleVideoUpload}
               />
             </Button>
+            )}
             {uploadedVideo && (
               <Button
                 variant="contained"
@@ -241,8 +208,46 @@ function App() {
                 {isUploadedVideoPaused ? 'Play' : 'Pause'}
               </Button>
             )}
-          </Grid>
-        </Grid>
+          </Box>
+
+          {/* Webcam Section */}
+          <Box sx={{ flex: 1 }}>
+            <Box sx={{ 
+              mt: 4, 
+              width: '100%', 
+              maxWidth: '640px', 
+              margin: '0 auto',
+              boxShadow: 3,
+              borderRadius: 2,
+              overflow: 'hidden',
+              position: 'relative'
+            }}>
+              <video 
+                ref={webcamRef} 
+                autoPlay 
+                playsInline 
+                style={{ width: '100%', height: 'auto', display: 'none' }}
+              />
+              {isWebcamStreaming && webcamPoseLandmarker && (
+                <PoseCanvas
+                  videoRef={webcamRef}
+                  poseLandmarker={webcamPoseLandmarker}
+                  videoDimensions={videoDimensions}
+                  setFeedback={setWebcamFeedback}
+                  feedback={webcamFeedback}
+                />
+              )}
+            </Box>
+            {/* <Button 
+              variant="contained"
+              sx={{ my: 2, backgroundColor: 'black' }}
+              startIcon={isWebcamStreaming ? <VideocamOffIcon /> : <VideocamIcon />}
+              onClick={toggleWebcam}
+            >
+              {isWebcamStreaming ? 'Stop Webcam' : 'Start Webcam'}
+            </Button> */}
+          </Box>
+        </Stack>
       </Container>
     </Box>
   );
