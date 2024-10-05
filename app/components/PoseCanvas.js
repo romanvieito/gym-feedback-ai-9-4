@@ -161,8 +161,8 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
 
           setPoseMatchPercentage(matchPercentage);
 
-          // Determine color based on match percentage
-          const color = getColorFromPercentage(matchPercentage);
+          // Determine color based on match percentage only for webcam
+          const color = isWebcam ? getColorFromPercentage(matchPercentage) : 'rgb(255, 255, 255)';
 
           drawingUtils.drawLandmarks(currentLandmarks, { radius: 4, color: color });
           drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
