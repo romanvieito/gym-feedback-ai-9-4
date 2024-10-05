@@ -112,9 +112,6 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
           // Update landmarks in the parent component
           updateLandmarks(isWebcam, currentLandmarks);
 
-          console.log("Current Landmarks:", currentLandmarks);
-          console.log("Other Landmarks:", otherLandmarks);
-
           if (otherLandmarks && otherLandmarks.length > 0) {
             const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
               const otherLandmark = otherLandmarks[index];

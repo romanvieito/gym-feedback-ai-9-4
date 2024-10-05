@@ -24,6 +24,7 @@ import time
 from openai import OpenAI
 from dotenv import load_dotenv
 import json
+from unittest.mock import Mock
 
 # Secret key to encode and decode JWT tokens
 # SECRET_KEY is a strong, random string used for encoding and decoding JWT tokens. 
@@ -38,10 +39,21 @@ MODEL_PATH = os.path.join(MODEL_DIR, "pose_landmarker_heavy.task")
 DOTENV_PATH = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(DOTENV_PATH)
 
-openai_client = OpenAI(
-    # This is the default and can be omitted
-    api_key=os.getenv("OPENAI_API_KEY"),
-)
+# openai_client = OpenAI(
+#     # This is the default and can be omitted
+#     api_key=os.getenv("OPENAI_API_KEY"),
+# )
+
+# Mock the OpenAI client
+openai_client = Mock()
+
+# Define the mock response
+mock_response = Mock()
+mock_response.choices = [Mock()]
+mock_response.choices[0].message.content = "Mocked feedback message."
+
+# Set the return value of the mock OpenAI API call
+openai_client.chat.completions.create.return_value = mock_response
 
 OPENAI_PROMPT = """As a fitness expert, analyze a client’s isometric workout using the provided JSON
 body landmarks. In one short sentence (no more than 20 words), provide feedback that highlights key strengths and
@@ -207,7 +219,7 @@ async def process_landmarks(data: LandmarksData):
         # print("current_time: ", current_time,"\n")
         # print("FEEDBACK_INTERVAL: ", FEEDBACK_INTERVAL,"\n")
         if frame_index % FEEDBACK_INTERVAL == 0:
-            # print(f"Processed data for frame {frame_index}: ", json_output)
+            # Use the mocked OpenAI API call
             openai_response = openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{
@@ -218,25 +230,11 @@ async def process_landmarks(data: LandmarksData):
                     "content": json.dumps(json_output)  # Si json_output es un dict, conviértelo a string
                 }],
             )
-            # print(f"Response OpenAI: {openai_response.choices[0].message.content}")                        
-            # feedback_texts = [
-            #     "Great posture!",
-            #     "Keep your back straight",
-            #     "Lift your chin slightly",
-            #     "Relax your shoulders",
-            #     "Bend your knees more",
-            #     "Excellent form!",
-            #     "Watch your elbow alignment",
-            #     "Maintain balance",
-            #     "Good job on keeping your core tight",
-            #     "Remember to breathe"
-            # ]
-            # current_feedback = random.choice(feedback_texts)            
-            current_feedback = openai_response.choices[0].message.content            
-            print("current_feedback: ", current_feedback,"\n")
+            current_feedback = openai_response.choices[0].message.content
+            print("current_feedback: ", current_feedback, "\n")
         else:
             current_feedback = "No feedback yet"
-            print("current_feedback: ", current_feedback,"\n")
+            print("current_feedback: ", current_feedback, "\n")
 
         return {
             "status": "success", 
