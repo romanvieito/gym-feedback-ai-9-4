@@ -193,7 +193,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     // Red: rgb(255, 0, 0) to White: rgb(255, 255, 255)
     const value = Math.round(255 * (percentage / 100));
     console.log("Value:", value);
-    return `rgb(255, ${value}, ${value})`;
+    return `rgb(${value}, ${value}, ${value})`;
   }
 
   return (
