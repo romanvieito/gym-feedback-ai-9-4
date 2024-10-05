@@ -31,14 +31,12 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
   const [landmarksData, setLandmarksData] = useState({});
   const [landmarksDatarealworld, setLandmarksDatarealworld] = useState({});
   const frameIndex = useRef(0);
-  const [currentFeedback, setCurrentFeedback] = useState("");
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const setTimedFeedback = useCallback((feedback) => {
     console.log("Setting feedback:", feedback);
     setFeedback(feedback);
   }, [setFeedback]);
-
-  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     const handleFullScreenChange = () => {
@@ -129,33 +127,18 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
           performance.now()
         );
 
-        if (result.landmarks) {
-          for (const landmarks of result.landmarks) {
-            drawingUtils.drawLandmarks(landmarks, { radius: 4, color: 'white' });
-            drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
-              color: '#40E0D0',
-              lineWidth: 1,
-            });
-          }
-          // Save landmarks data with the frame index
-          const landmarksData = result.landmarks.reduce((acc, landmark) => {
-            acc = landmark;
-            return acc;
-          }, {});
-          // Save landmarks data with the frame index
+        if (result.landmarks && result.landmarks.length > 0) {
+          drawingUtils.drawLandmarks(result.landmarks[0], { radius: 4, color: 'white' });
+          drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
+            color: '#40E0D0',
+            lineWidth: 1,
+          });
 
-          const landmarksDatarealworld = result.worldLandmarks.reduce((acc, worldlandmark) => {
-            acc = worldlandmark;
-            return acc;
-          }, {});
-          setLandmarksData(landmarksData);
-          setLandmarksDatarealworld(landmarksDatarealworld);
+          setLandmarksData(result.landmarks[0]);
+          setLandmarksDatarealworld(result.worldLandmarks[0]);
+          
           // Send landmarks to backend for every frame
-          sendLandmarksToBackend(landmarksData, landmarksDatarealworld);
-          // // Send landmarks to backend every 10 frames
-          // if (frameIndex.current % 10 === 0) {
-          //   sendLandmarksToBackend(landmarksData,landmarksDatarealworld);
-          // }
+          sendLandmarksToBackend(result.landmarks[0], result.worldLandmarks[0]);
 
           frameIndex.current += 1;  // Increment the frame index
         }

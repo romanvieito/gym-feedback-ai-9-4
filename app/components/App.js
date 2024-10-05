@@ -16,19 +16,20 @@ function App() {
   const [isWebcamStreaming, setIsWebcamStreaming] = useState(false);
   const [isUploadedVideoPlaying, setIsUploadedVideoPlaying] = useState(false);
   const [isUploadedVideoPaused, setIsUploadedVideoPaused] = useState(true);
-  const [poseLandmarker, setPoseLandmarker] = useState(null);
+  const [webcamPoseLandmarker, setWebcamPoseLandmarker] = useState(null);
+  const [uploadedVideoPoseLandmarker, setUploadedVideoPoseLandmarker] = useState(null);
   const [videoDimensions, setVideoDimensions] = useState({ width: 640, height: 480 });
   const [webcamFeedback, setWebcamFeedback] = useState('');
   const [uploadedVideoFeedback, setUploadedVideoFeedback] = useState('');
   const [uploadedVideo, setUploadedVideo] = useState(null);
 
   useEffect(() => {
-    async function loadPoseLandmarker() {
+    async function loadPoseLandmarkers() {
       const vision = await FilesetResolver.forVisionTasks(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
       );
 
-      const landmarker = await PoseLandmarker.createFromOptions(vision, {
+      const webcamLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
           delegate: 'GPU'
@@ -37,10 +38,20 @@ function App() {
         numPoses: 1
       });
 
-      setPoseLandmarker(landmarker);
+      const uploadedVideoLandmarker = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+          delegate: 'GPU'
+        },
+        runningMode: 'VIDEO',
+        numPoses: 1
+      });
+
+      setWebcamPoseLandmarker(webcamLandmarker);
+      setUploadedVideoPoseLandmarker(uploadedVideoLandmarker);
     }
 
-    loadPoseLandmarker();
+    loadPoseLandmarkers();
   }, []);
 
   const startWebcam = async () => {
@@ -124,10 +135,10 @@ function App() {
                 playsInline 
                 style={{ width: '100%', height: 'auto', display: 'none' }}
               />
-              {isWebcamStreaming && poseLandmarker && (
+              {isWebcamStreaming && webcamPoseLandmarker && (
                 <PoseCanvas
                   videoRef={webcamRef}
-                  poseLandmarker={poseLandmarker}
+                  poseLandmarker={webcamPoseLandmarker}
                   videoDimensions={videoDimensions}
                   setFeedback={setWebcamFeedback}
                   feedback={webcamFeedback}
@@ -171,10 +182,10 @@ function App() {
                   setIsUploadedVideoPaused(true);
                 }}
               />
-              {uploadedVideo && poseLandmarker && (
+              {uploadedVideo && uploadedVideoPoseLandmarker && (
                 <PoseCanvas
                   videoRef={uploadedVideoRef}
-                  poseLandmarker={poseLandmarker}
+                  poseLandmarker={uploadedVideoPoseLandmarker}
                   videoDimensions={videoDimensions}
                   setFeedback={setUploadedVideoFeedback}
                   feedback={uploadedVideoFeedback}
