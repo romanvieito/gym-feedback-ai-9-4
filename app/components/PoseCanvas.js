@@ -204,7 +204,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
         }}
         onClick={handleFullScreen}
       ></canvas>
-      <Overlay statistics={feedback ? [feedback] : []} visible={true} />
+      {/* <Overlay statistics={feedback ? [feedback] : []} visible={true} /> */}
     </div>
   );
 };
