@@ -286,7 +286,7 @@ function HomePage() {
         <AppBar id="app-bar" position="static" sx={{ backgroundColor: '#000' }}>
           <Toolbar>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              24up.
+              24up. Variante A
             </Typography>
           </Toolbar>
         </AppBar>

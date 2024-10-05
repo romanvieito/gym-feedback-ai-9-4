@@ -146,7 +146,7 @@ function App() {
       <AppBar position="static" sx={{ backgroundColor: '#000' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            24up.
+            24up. Variante B 
           </Typography>
         </Toolbar>
       </AppBar>
@@ -199,11 +199,11 @@ function App() {
             {isUploadedVideoPaused && (
               <Button
                 variant="contained"
-              component="label"
-              sx={{ my: 2, mr: 2 }}
-              startIcon={<CloudUploadIcon />}
+                component="label"
+                sx={{ my: 2, mr: 2, padding: '12px 24px', fontSize: '1.2rem' }}
+                startIcon={<CloudUploadIcon />}
             >
-              Upload Video
+              Upload Video To Compare with Your Workout
               <input
                 type="file"
                 hidden
