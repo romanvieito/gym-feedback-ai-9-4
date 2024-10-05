@@ -156,7 +156,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
               return sum + euclideanDistance(landmark, otherLandmark);
             }, 0);
 
-            matchPercentage = Math.max(0, 100 - (totalDistance / currentLandmarks.length) * 100);
+            matchPercentage = Math.max(0, 100 - (totalDistance / currentLandmarks.length) * 200);
           }
 
           setPoseMatchPercentage(matchPercentage);
