@@ -132,6 +132,15 @@ function App() {
     }
   };
 
+  // Add this new function to update landmarks
+  const updateLandmarks = (isWebcam, newLandmarks) => {
+    if (isWebcam) {
+      setWebcamLandmarks(newLandmarks);
+    } else {
+      setUploadedVideoLandmarks(newLandmarks);
+    }
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static" sx={{ backgroundColor: '#000' }}>
@@ -183,7 +192,7 @@ function App() {
                   feedback={uploadedVideoFeedback}
                   isWebcam={false}
                   otherLandmarks={webcamLandmarks}
-                  setLandmarks={setUploadedVideoLandmarks}
+                  updateLandmarks={updateLandmarks}
                 />
               )}
             </Box>
@@ -242,7 +251,7 @@ function App() {
                   feedback={webcamFeedback}
                   isWebcam={true}
                   otherLandmarks={uploadedVideoLandmarks}
-                  setLandmarks={setWebcamLandmarks}
+                  updateLandmarks={updateLandmarks}
                 />
               )}
             </Box>

@@ -11,6 +11,7 @@
  * - setFeedback: A function to set the feedback received from the backend.
  * - isWebcam: A boolean indicating whether the video is from a webcam or an uploaded video.
  * - otherLandmarks: An array of landmarks from the uploaded video, used for comparison with the webcam landmarks.
+ * - updateLandmarks: A function to update the landmarks in the parent component.
  * 
  * State:
  * - canvasDimensions: An object that holds the current width and height of the canvas, initialized to 480x360.
@@ -29,7 +30,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
 import Overlay from './Overlay'; 
 
-const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback, isWebcam, otherLandmarks }) => {
+const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback, isWebcam, otherLandmarks, updateLandmarks }) => {
   const canvasRef = useRef(null);
   const [landmarksData, setLandmarksData] = useState({});
   const [landmarksDatarealworld, setLandmarksDatarealworld] = useState({});
@@ -142,6 +143,12 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
         if (result.landmarks && result.landmarks.length > 0) {
           const currentLandmarks = result.landmarks[0];
           let matchPercentage = 100;
+          
+          // Update landmarks in the parent component
+          updateLandmarks(isWebcam, currentLandmarks);
+
+          console.log("Current Landmarks:", currentLandmarks);
+          console.log("Other Landmarks:", otherLandmarks);
 
           if (otherLandmarks && otherLandmarks.length > 0) {
             const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
@@ -157,7 +164,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
           // Determine color based on match percentage
           const color = getColorFromPercentage(matchPercentage);
 
-          drawingUtils.drawLandmarks(currentLandmarks, { radius: 4, color: 'white' });
+          drawingUtils.drawLandmarks(currentLandmarks, { radius: 4, color: color });
           drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
             color: color,
             lineWidth: 2,
@@ -180,11 +187,12 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [videoRef, poseLandmarker, videoDimensions, setTimedFeedback, otherLandmarks]);
+  }, [videoRef, poseLandmarker, videoDimensions, setTimedFeedback, otherLandmarks, updateLandmarks, isWebcam]);
 
   function getColorFromPercentage(percentage) {
     // Red: rgb(255, 0, 0) to White: rgb(255, 255, 255)
     const value = Math.round(255 * (percentage / 100));
+    console.log("Value:", value);
     return `rgb(255, ${value}, ${value})`;
   }
 
