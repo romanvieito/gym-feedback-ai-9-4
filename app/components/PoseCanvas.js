@@ -35,7 +35,6 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
   const [landmarksData, setLandmarksData] = useState({});
   const [landmarksDatarealworld, setLandmarksDatarealworld] = useState({});
   const frameIndex = useRef(0);
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const [poseMatchPercentage, setPoseMatchPercentage] = useState(100);
 
   const setTimedFeedback = useCallback((feedback) => {
@@ -43,39 +42,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     setFeedback(feedback);
   }, [setFeedback]);
 
-  useEffect(() => {
-    const handleFullScreenChange = () => {
-      setIsFullScreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullScreenChange);
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullScreenChange);
-    };
-  }, []);
-
-  const handleFullScreen = useCallback((event) => {
-    event.preventDefault();
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-      });
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
-    }
-  }, []);
-
-  useEffect(() => {
-    const canvasElement = canvasRef.current;
-    if (isFullScreen) {
-      canvasElement.width = window.innerWidth;
-      canvasElement.height = window.innerHeight;
-    } else {
-      canvasElement.width = videoDimensions.width;
-      canvasElement.height = videoDimensions.height;
-    }
-  }, [isFullScreen, videoDimensions]);
+  // Remove fullscreen-related state and effects
 
   useEffect(() => {
     let animationId;
@@ -190,7 +157,7 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
   }, [videoRef, poseLandmarker, videoDimensions, setTimedFeedback, otherLandmarks, updateLandmarks, isWebcam]);
 
   function getColorFromPercentage(percentage) {
-    // Red: rgb(255, 0, 0) to White: rgb(255, 255, 255)
+    // Black: rgb(0, 0, 0) to White: rgb(255, 255, 255)
     const value = Math.round(255 * (percentage / 100));
     console.log("Value:", value);
     return `rgb(${value}, ${value}, ${value})`;
@@ -210,7 +177,6 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
           height: '100%',
           objectFit: 'contain'
         }}
-        onClick={handleFullScreen}
       ></canvas>
       {/* <Overlay statistics={feedback ? [feedback] : []} visible={true} /> */}
     </div>
