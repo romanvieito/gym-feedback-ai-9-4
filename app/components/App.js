@@ -83,9 +83,12 @@ function App() {
       if (uploadedVideoRef.current) {
         uploadedVideoRef.current.src = videoUrl;
         uploadedVideoRef.current.onloadedmetadata = () => {
+          // Start playing the video immediately after it's loaded
           uploadedVideoRef.current.play();
-          setIsUploadedVideoPlaying(true);
           setIsUploadedVideoPaused(false);
+          setIsUploadedVideoPlaying(true);
+          // Start the webcam as well
+          startWebcam();
         };
       }
     } else {
@@ -99,10 +102,30 @@ function App() {
         uploadedVideoRef.current.play();
         setIsUploadedVideoPlaying(true);
         setIsUploadedVideoPaused(false);
+        startWebcam();
       } else {
         uploadedVideoRef.current.pause();
         setIsUploadedVideoPlaying(false);
         setIsUploadedVideoPaused(true);
+        stopWebcam();
+      }
+    }
+  };
+
+  const toggleWebcam = () => {
+    if (isWebcamStreaming) {
+      stopWebcam();
+      if (uploadedVideoRef.current && !isUploadedVideoPaused) {
+        uploadedVideoRef.current.pause();
+        setIsUploadedVideoPlaying(false);
+        setIsUploadedVideoPaused(true);
+      }
+    } else {
+      startWebcam();
+      if (uploadedVideoRef.current && isUploadedVideoPaused) {
+        uploadedVideoRef.current.play();
+        setIsUploadedVideoPlaying(true);
+        setIsUploadedVideoPaused(false);
       }
     }
   };
@@ -147,9 +170,9 @@ function App() {
             </Box>
             <Button 
               variant="contained"
-              sx={{ my: 2 }}
+              sx={{ my: 2, backgroundColor: 'black' }}
               startIcon={isWebcamStreaming ? <VideocamOffIcon /> : <VideocamIcon />}
-              onClick={isWebcamStreaming ? stopWebcam : startWebcam}
+              onClick={toggleWebcam}
             >
               {isWebcamStreaming ? 'Stop Webcam' : 'Start Webcam'}
             </Button>
@@ -171,15 +194,17 @@ function App() {
                 style={{ 
                   width: '100%', 
                   height: 'auto', 
-                  display: 'none' 
+                  display: 'none'
                 }}
                 onPlay={() => {
                   setIsUploadedVideoPlaying(true);
                   setIsUploadedVideoPaused(false);
+                  startWebcam();
                 }}
                 onPause={() => {
                   setIsUploadedVideoPlaying(false);
                   setIsUploadedVideoPaused(true);
+                  stopWebcam();
                 }}
               />
               {uploadedVideo && uploadedVideoPoseLandmarker && (
@@ -209,7 +234,7 @@ function App() {
             {uploadedVideo && (
               <Button
                 variant="contained"
-                sx={{ my: 2 }}
+                sx={{ my: 2, backgroundColor: 'black' }}
                 startIcon={isUploadedVideoPaused ? <PlayArrowIcon /> : <PauseIcon />}
                 onClick={toggleUploadedVideo}
               >
