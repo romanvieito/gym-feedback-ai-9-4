@@ -9,11 +9,14 @@
  * - poseLandmarker: An instance of the PoseLandmarker from the MediaPipe library, which is used to process the video frames and detect poses.
  * - videoDimensions: An object that holds the current width and height of the video, passed down from the parent component.
  * - setFeedback: A function to set the feedback received from the backend.
+ * - isWebcam: A boolean indicating whether the video is from a webcam or an uploaded video.
+ * - otherLandmarks: An array of landmarks from the uploaded video, used for comparison with the webcam landmarks.
  * 
  * State:
  * - canvasDimensions: An object that holds the current width and height of the canvas, initialized to 480x360.
  * - currentFeedback: A string to store the current feedback message.
  * - isFullScreen: A boolean to track whether the screen is in fullscreen mode.
+ * - poseMatchPercentage: A number between 0 and 100 representing the percentage of match between webcam and uploaded video landmarks.
  * 
  * Effects:
  * - The useEffect hook is used to set up the pose detection logic. It continuously draws the video frames onto the canvas and applies pose detection using the PoseLandmarker.
@@ -26,12 +29,13 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
 import Overlay from './Overlay'; 
 
-const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback }) => {
+const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback, isWebcam, otherLandmarks }) => {
   const canvasRef = useRef(null);
   const [landmarksData, setLandmarksData] = useState({});
   const [landmarksDatarealworld, setLandmarksDatarealworld] = useState({});
   const frameIndex = useRef(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [poseMatchPercentage, setPoseMatchPercentage] = useState(100);
 
   const setTimedFeedback = useCallback((feedback) => {
     console.log("Setting feedback:", feedback);
@@ -77,6 +81,14 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     const canvasElement = canvasRef.current;
     const canvasCtx = canvasElement.getContext('2d');
     const drawingUtils = new DrawingUtils(canvasCtx);
+
+    function euclideanDistance(point1, point2) {
+      return Math.sqrt(
+        Math.pow(point1.x - point2.x, 2) +
+        Math.pow(point1.y - point2.y, 2) +
+        Math.pow(point1.z - point2.z, 2)
+      );
+    }
 
     const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
       try {
@@ -128,17 +140,34 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
         );
 
         if (result.landmarks && result.landmarks.length > 0) {
-          drawingUtils.drawLandmarks(result.landmarks[0], { radius: 4, color: 'white' });
-          drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
-            color: '#40E0D0',
-            lineWidth: 1,
+          const currentLandmarks = result.landmarks[0];
+          let matchPercentage = 100;
+
+          if (otherLandmarks && otherLandmarks.length > 0) {
+            const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
+              const otherLandmark = otherLandmarks[index];
+              return sum + euclideanDistance(landmark, otherLandmark);
+            }, 0);
+
+            matchPercentage = Math.max(0, 100 - (totalDistance / currentLandmarks.length) * 100);
+          }
+
+          setPoseMatchPercentage(matchPercentage);
+
+          // Determine color based on match percentage
+          const color = getColorFromPercentage(matchPercentage);
+
+          drawingUtils.drawLandmarks(currentLandmarks, { radius: 4, color: 'white' });
+          drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
+            color: color,
+            lineWidth: 2,
           });
 
-          setLandmarksData(result.landmarks[0]);
+          setLandmarksData(currentLandmarks);
           setLandmarksDatarealworld(result.worldLandmarks[0]);
           
           // Send landmarks to backend for every frame
-          sendLandmarksToBackend(result.landmarks[0], result.worldLandmarks[0]);
+          sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
 
           frameIndex.current += 1;  // Increment the frame index
         }
@@ -151,7 +180,13 @@ const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, fe
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [videoRef, poseLandmarker, videoDimensions, setTimedFeedback]);
+  }, [videoRef, poseLandmarker, videoDimensions, setTimedFeedback, otherLandmarks]);
+
+  function getColorFromPercentage(percentage) {
+    // Red: rgb(255, 0, 0) to White: rgb(255, 255, 255)
+    const value = Math.round(255 * (percentage / 100));
+    return `rgb(255, ${value}, ${value})`;
+  }
 
   return (
     <div style={{ 

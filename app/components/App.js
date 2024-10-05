@@ -22,6 +22,8 @@ function App() {
   const [webcamFeedback, setWebcamFeedback] = useState('');
   const [uploadedVideoFeedback, setUploadedVideoFeedback] = useState('');
   const [uploadedVideo, setUploadedVideo] = useState(null);
+  const [webcamLandmarks, setWebcamLandmarks] = useState([]);
+  const [uploadedVideoLandmarks, setUploadedVideoLandmarks] = useState([]);
 
   useEffect(() => {
     async function loadPoseLandmarkers() {
@@ -179,6 +181,9 @@ function App() {
                   videoDimensions={videoDimensions}
                   setFeedback={setUploadedVideoFeedback}
                   feedback={uploadedVideoFeedback}
+                  isWebcam={false}
+                  otherLandmarks={webcamLandmarks}
+                  setLandmarks={setUploadedVideoLandmarks}
                 />
               )}
             </Box>
@@ -235,6 +240,9 @@ function App() {
                   videoDimensions={videoDimensions}
                   setFeedback={setWebcamFeedback}
                   feedback={webcamFeedback}
+                  isWebcam={true}
+                  otherLandmarks={uploadedVideoLandmarks}
+                  setLandmarks={setWebcamLandmarks}
                 />
               )}
             </Box>
