@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Box, Typography, AppBar, Toolbar, Container, Button, Stack } from '@mui/material';
+import { Slider, Box, Typography, AppBar, Toolbar, Container, Button, Stack, IconButton } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import PoseCanvas from './PoseCanvas';
@@ -9,6 +9,7 @@ import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
+import StopIcon from '@mui/icons-material/Stop';
 
 function App() {
   const webcamRef = useRef(null);
@@ -22,6 +23,12 @@ function App() {
   const [uploadedVideo, setUploadedVideo] = useState(null);
   const [webcamLandmarks, setWebcamLandmarks] = useState([]);
   const [uploadedVideoLandmarks, setUploadedVideoLandmarks] = useState([]);
+
+  const poseCanvasRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [drawing, setDrawing] = useState(false); // Local state to control drawing
 
   useEffect(() => {
     async function loadPoseLandmarkers() {
@@ -54,6 +61,22 @@ function App() {
     loadPoseLandmarkers();
   }, []);
 
+  useEffect(() => {
+    const videoElement = uploadedVideoRef.current;
+    if (videoElement) {
+      const handleVideoEnded = () => {
+        toggleStop()
+      };
+
+      videoElement.addEventListener('ended', handleVideoEnded);
+
+      // Limpia el evento cuando el componente se desmonta
+      return () => {
+        videoElement.removeEventListener('ended', handleVideoEnded);
+      };
+    }
+  }, [uploadedVideoRef]);
+
   const startWebcam = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -76,6 +99,7 @@ function App() {
   };
 
   const handleVideoUpload = (event) => {
+    toggleStop();
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('video/')) {
       const videoUrl = URL.createObjectURL(file);
@@ -84,13 +108,60 @@ function App() {
         uploadedVideoRef.current.src = videoUrl;
         uploadedVideoRef.current.onloadedmetadata = () => {
           // Start playing the video immediately after it's loaded
-          uploadedVideoRef.current.play();
+          // ***uploadedVideoRef.current.play(); 
           // Start the webcam as well
           startWebcam();
+          // Establece la duración al cargar los metadatos
+          setDuration(uploadedVideoRef.current.duration);
+
+          // Actualiza el tiempo actual del video mientras se reproduce
+          uploadedVideoRef.current.ontimeupdate = () => {
+            setCurrentTime(uploadedVideoRef.current.currentTime);
+          };
         };
       }
     } else {
       console.error("Please upload a valid video file.");
+    }
+  };
+
+  const handleSliderChange = (event, newValue) => {
+    if (uploadedVideoRef.current) {
+      uploadedVideoRef.current.currentTime = newValue; // Cambia el tiempo actual del video
+      setCurrentTime(newValue); // Actualiza el estado para reflejar el cambio
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (uploadedVideoRef.current) {
+      if (isPlaying) {
+        uploadedVideoRef.current.pause();
+        setIsPlaying(false); // Cambia el estado a 'pausado'
+        if (poseCanvasRef.current) {
+          poseCanvasRef.current.stopPoseDetection(); // Llama a la función para detener la detección
+          poseCanvasRef.current.setVideoReady(false);
+        }
+      } else {
+        if (poseCanvasRef.current) {
+          poseCanvasRef.current.startPoseDetection(); // Llama a la función para iniciar la detección
+          poseCanvasRef.current.setVideoReady(true); // Establecer el video como listo
+        }
+        uploadedVideoRef.current.play();
+        setIsPlaying(true); // Cambia el estado a 'reproduciendo'
+      }
+    }
+  };
+
+  const toggleStop = () => {
+    if (uploadedVideoRef.current) {
+      uploadedVideoRef.current.pause();
+      if (poseCanvasRef.current) {
+        poseCanvasRef.current.stopPoseDetection(); // Llama a la función para detener la detección
+        poseCanvasRef.current.clearCanvas();
+      }
+      uploadedVideoRef.current.currentTime = 0; // Reinicia el video
+      setCurrentTime(0); // Actualiza el estado
+      setIsPlaying(false); // Cambia el estado a 'pausado'
     }
   };
 
@@ -116,7 +187,7 @@ function App() {
       <AppBar position="static" sx={{ backgroundColor: '#000' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            24up. Variante B 
+            24up. Variante B
           </Typography>
         </Toolbar>
       </AppBar>
@@ -124,30 +195,31 @@ function App() {
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
           {/* Uploaded Video Section */}
           <Box sx={{ flex: 1 }}>
-            <Box sx={{ 
-              mt: 4, 
-              width: '100%', 
-              maxWidth: '640px', 
+            <Box sx={{
+              mt: 4,
+              width: '100%',
+              maxWidth: '640px',
               margin: '0 auto',
               boxShadow: 3,
               borderRadius: 2,
               overflow: 'hidden',
               position: 'relative'
             }}>
-              <video 
-                ref={uploadedVideoRef} 
-                playsInline 
-                style={{ 
-                  width: '100%', 
-                  height: 'auto', 
-                  display: 'none'
+              <video
+                ref={uploadedVideoRef}
+                playsInline
+                style={{
+                  width: '100%',
+                  height: '0',
+                  visibility: 'hidden'
                 }}
-                onPlay={() => {
-                  startWebcam();
-                }}
+              /*onPlay={() => {
+                startWebcam();
+              }}*/
               />
               {uploadedVideo && uploadedVideoPoseLandmarker && (
                 <PoseCanvas
+                  ref={poseCanvasRef}
                   videoRef={uploadedVideoRef}
                   poseLandmarker={uploadedVideoPoseLandmarker}
                   videoDimensions={videoDimensions}
@@ -158,6 +230,37 @@ function App() {
                   updateLandmarks={updateLandmarks}
                 />
               )}
+              {/* Control deslizante para moverse en el video */}
+              {
+                uploadedVideo && uploadedVideoPoseLandmarker ?
+                  <>
+                    <Slider
+                      value={currentTime}
+                      max={duration}
+                      onChange={handleSliderChange}
+                      aria-labelledby="video-slider"
+                      style={{ marginTop: 20 }}
+                    />
+                    <Box display="flex" justifyContent="center" mt={2}>
+                      <IconButton onClick={togglePlayPause}>
+                        {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
+                      </IconButton>
+                      {isPlaying &&
+                        <>
+                          <IconButton onClick={toggleStop}>
+                            <StopIcon fontSize="large" />
+                          </IconButton>
+                        </>}
+                    </Box>
+                  </>
+                  : uploadedVideo && !uploadedVideoPoseLandmarker ?
+                    <>
+                      <p>Waiting for the video pose landmasks to load</p>
+                    </>
+                    :
+                    <>
+                    </>
+              }
             </Box>
             <Button
               variant="contained"
@@ -177,24 +280,25 @@ function App() {
 
           {/* Webcam Section */}
           <Box sx={{ flex: 1 }}>
-            <Box sx={{ 
-              mt: 4, 
-              width: '100%', 
-              maxWidth: '640px', 
+            <Box sx={{
+              mt: 4,
+              width: '100%',
+              maxWidth: '640px',
               margin: '0 auto',
               boxShadow: 3,
               borderRadius: 2,
               overflow: 'hidden',
               position: 'relative'
             }}>
-              <video 
-                ref={webcamRef} 
-                autoPlay 
-                playsInline 
-                style={{ width: '100%', height: 'auto', display: 'none' }}
+              <video
+                ref={webcamRef}
+                autoPlay
+                playsInline
+                style={{ width: '100%', height: '0', visibility: 'hidden' }}
               />
               {isWebcamStreaming && webcamPoseLandmarker && (
                 <PoseCanvas
+                  ref={poseCanvasRef}
                   videoRef={webcamRef}
                   poseLandmarker={webcamPoseLandmarker}
                   videoDimensions={videoDimensions}

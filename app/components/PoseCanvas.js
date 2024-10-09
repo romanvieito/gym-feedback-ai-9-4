@@ -25,157 +25,169 @@
  * 
  */
 
-
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
-import Overlay from './Overlay'; 
 
-const PoseCanvas = ({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback, isWebcam, otherLandmarks, updateLandmarks }) => {
+const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setFeedback, isWebcam, updateLandmarks }, ref) => {
   const canvasRef = useRef(null);
-  const [landmarksData, setLandmarksData] = useState({});
-  const [landmarksDatarealworld, setLandmarksDatarealworld] = useState({});
   const frameIndex = useRef(0);
-  const [poseMatchPercentage, setPoseMatchPercentage] = useState(100);
+  const animationIdRef = useRef(null);
+  const drawingUtilsRef = useRef(null);
+  const videoReadyRef = useRef(false);
 
   const setTimedFeedback = useCallback((feedback) => {
     console.log("Setting feedback:", feedback);
     setFeedback(feedback);
   }, [setFeedback]);
 
-  useEffect(() => {
-    let animationId;
-    const canvasElement = canvasRef.current;
-    const canvasCtx = canvasElement.getContext('2d');
-    const drawingUtils = new DrawingUtils(canvasCtx);
+  const stopPoseDetection = useCallback(() => {
+    if (animationIdRef.current) {
+      cancelAnimationFrame(animationIdRef.current);
+      animationIdRef.current = null;
+    }
+  }, []);
 
-    function euclideanDistance(point1, point2) {
-      return Math.sqrt(
-        Math.pow(point1.x - point2.x, 2) +
-        Math.pow(point1.y - point2.y, 2) +
-        Math.pow(point1.z - point2.z, 2)
-      );
+  const startPoseDetection = useCallback(() => {
+    if (videoReadyRef.current) {
+      detectPose();
+    }
+  }, []);
+
+  const clearCanvas = useCallback(() => {
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) return;
+    const canvasCtx = canvasElement.getContext('2d');
+    if (!canvasCtx) return;
+
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    stopPoseDetection,
+    startPoseDetection,
+    clearCanvas,
+    setVideoReady: (ready) => {
+      videoReadyRef.current = ready;
+      if (ready) {
+        clearCanvas(); // Limpiar el canvas cuando el video está listo
+        stopPoseDetection(); // Detener cualquier detección anterior
+        frameIndex.current = 0; // Reiniciar el índice del frame
+        startPoseDetection(); // Iniciar la detección con el nuevo video
+      }
+    }
+  }));
+
+  const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
+    try {
+      const response = await fetch('/api/py/process_landmarks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          frameIndex: frameIndex.current,
+          landmarks: landmarks,
+          realworldlandmarks: realworldlandmarks
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Processed Data:', data);
+      if (data.feedback && data.feedback !== "No feedback yet") {
+        setTimedFeedback(data.feedback);
+      }
+    } catch (error) {
+      console.error('Error sending landmarks:', error);
+    }
+  };
+
+  async function detectPose() {
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) {
+      console.warn("Canvas element is null");
+      return;
+    }
+    const canvasCtx = canvasElement.getContext('2d');
+    if (!canvasCtx) {
+      console.warn("Canvas context is null");
+      return;
     }
 
-    const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
-      try {
-        const response = await fetch('/api/py/process_landmarks', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            frameIndex: frameIndex.current,
-            landmarks: landmarks,
-            realworldlandmarks: realworldlandmarks
-          }),
+    const videoWidth = videoDimensions.width;
+    const videoHeight = videoDimensions.height;
+
+    if (!videoWidth || !videoHeight) {
+      console.warn("Invalid video dimensions:", videoDimensions);
+      return;
+    }
+
+    // Update canvas dimensions
+    canvasElement.width = videoWidth;
+    canvasElement.height = videoHeight;
+
+    // Clear the canvas before drawing
+    clearCanvas();
+
+    // Draw video on canvas
+    canvasCtx.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+
+    if (videoRef.current && poseLandmarker && videoRef.current.readyState >= 2) {
+      const result = await poseLandmarker.detectForVideo(videoRef.current, performance.now());
+
+      if (result.landmarks && result.landmarks.length > 0) {
+        const currentLandmarks = result.landmarks[0];
+
+        // Update landmarks in the parent component
+        updateLandmarks(isWebcam, currentLandmarks);
+
+        // Call the function to send landmarks to the backend
+        sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
+
+        // Dibujar landmarks
+        drawingUtilsRef.current = new DrawingUtils(canvasCtx);
+        drawingUtilsRef.current.drawLandmarks(currentLandmarks, { radius: 4, color: 'rgb(0, 255, 0)' });
+        drawingUtilsRef.current.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
+          color: 'rgb(255, 0, 0)',
+          lineWidth: 2,
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Processed Data:', data);
-        if (data.feedback && data.feedback !== "No feedback yet") {
-          setTimedFeedback(data.feedback);
-        }
-      } catch (error) {
-        console.error('Error sending landmarks:', error);
+        frameIndex.current += 1; // Increment frame index
+      } else {
+        console.warn("No landmarks detected");
       }
-    };
-
-    async function detectPose() {
-      if (
-        videoRef.current &&
-        poseLandmarker &&
-        videoRef.current.readyState >= 2
-      ) {
-        const videoWidth = videoDimensions.width;
-        const videoHeight = videoDimensions.height;
-
-        // Update canvas dimensions
-        canvasElement.width = videoWidth;
-        canvasElement.height = videoHeight;
-
-        // Draw video on canvas
-        canvasCtx.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
-
-        const result = await poseLandmarker.detectForVideo(
-          videoRef.current,
-          performance.now()
-        );
-
-        if (result.landmarks && result.landmarks.length > 0) {
-          const currentLandmarks = result.landmarks[0];
-          let matchPercentage = 100;
-          
-          // Update landmarks in the parent component
-          updateLandmarks(isWebcam, currentLandmarks);
-
-          if (otherLandmarks && otherLandmarks.length > 0) {
-            const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
-              const otherLandmark = otherLandmarks[index];
-              return sum + euclideanDistance(landmark, otherLandmark);
-            }, 0);
-
-            matchPercentage = Math.max(0, 100 - (totalDistance / currentLandmarks.length) * 200);
-          }
-
-          setPoseMatchPercentage(matchPercentage);
-
-          // Determine color based on match percentage only for webcam
-          const color = isWebcam ? getColorFromPercentage(matchPercentage) : 'rgb(255, 255, 255)';
-
-          drawingUtils.drawLandmarks(currentLandmarks, { radius: 4, color: color });
-          drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
-            color: color,
-            lineWidth: 2,
-          });
-
-          setLandmarksData(currentLandmarks);
-          setLandmarksDatarealworld(result.worldLandmarks[0]);
-          
-          // Send landmarks to backend for every frame
-          sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
-
-          frameIndex.current += 1;  // Increment the frame index
-        }
-      }
-      animationId = requestAnimationFrame(detectPose);
+    } else {
+      console.warn("Video not ready or poseLandmarker not available");
     }
-
-    detectPose();
-
-    return () => {
-      cancelAnimationFrame(animationId);
-    };
-  }, [videoRef, poseLandmarker, videoDimensions, setTimedFeedback, otherLandmarks, updateLandmarks, isWebcam]);
-
-  function getColorFromPercentage(percentage) {
-    // Black: rgb(0, 0, 0) to White: rgb(255, 255, 255)
-    const value = Math.round(255 * (percentage / 100));
-    console.log("Value:", value);
-    return `rgb(${value}, ${value}, ${value})`;
+    animationIdRef.current = requestAnimationFrame(detectPose);
   }
 
+  useEffect(() => {
+    return () => {
+      stopPoseDetection(); // Stop animation when the component unmounts
+    };
+  }, [stopPoseDetection]);
+
   return (
-    <div style={{ 
+    <div style={{
       position: 'relative',
       width: '100%',
       height: '100%',
       overflow: 'hidden',
     }}>
-      <canvas 
-        ref={canvasRef} 
-        style={{ 
-          width: '100%', 
+      <canvas
+        ref={canvasRef}
+        style={{
+          width: '100%',
           height: '100%',
           objectFit: 'contain'
         }}
       ></canvas>
-      {/* <Overlay statistics={feedback ? [feedback] : []} visible={true} /> */}
     </div>
   );
-};
+});
 
 export default PoseCanvas;
