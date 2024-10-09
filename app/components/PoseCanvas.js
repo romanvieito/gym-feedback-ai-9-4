@@ -149,10 +149,10 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
 
         // Dibujar landmarks
         drawingUtilsRef.current = new DrawingUtils(canvasCtx);
-        drawingUtilsRef.current.drawLandmarks(currentLandmarks, { radius: 4, color: 'rgb(0, 255, 0)' });
+        drawingUtilsRef.current.drawLandmarks(currentLandmarks, { radius: 6, color: 'rgb(0, 255, 0)' });
         drawingUtilsRef.current.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
           color: 'rgb(255, 0, 0)',
-          lineWidth: 2,
+          lineWidth: 6,
         });
 
         frameIndex.current += 1; // Increment frame index
