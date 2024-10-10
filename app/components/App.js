@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Slider, Box, Typography, AppBar, Toolbar, Container, Button, Stack, IconButton } from '@mui/material';
-import VideocamIcon from '@mui/icons-material/Videocam';
-import VideocamOffIcon from '@mui/icons-material/VideocamOff';
+import { Slider, Box, Typography, AppBar, Toolbar, Container, Button, IconButton } from '@mui/material';
 import PoseCanvas from './PoseCanvas';
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -189,15 +187,36 @@ function App() {
           </Typography>
         </Toolbar>
       </AppBar>
-      <Container maxWidth="lg" sx={{ mt: 4, textAlign: 'center' }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+      <Container maxWidth="lg" sx={{ mt: 1, textAlign: 'center' }}>
+        <Box sx={{ mb: 2 }}>
+          <Button
+            variant="contained"
+            component="label"
+            sx={{ backgroundColor: '#000' }}
+            startIcon={<CloudUploadIcon />}
+          >
+            Upload your Video
+            <input
+              type="file"
+              hidden
+              accept="video/*"
+              onChange={handleVideoUpload}
+            />
+          </Button>
+        </Box>
+        
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: 2,
+            justifyContent: 'center'
+          }}
+        >
           {/* Uploaded Video Section */}
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ flex: 1, maxWidth: '640px' }}>
             <Box sx={{
-              mt: 4,
               width: '100%',
-              maxWidth: '640px',
-              margin: '0 auto',
               boxShadow: 3,
               borderRadius: 2,
               overflow: 'hidden',
@@ -257,29 +276,12 @@ function App() {
                     </>
               }
             </Box>
-            <Button
-              variant="contained"
-              component="label"
-              sx={{ backgroundColor: '#000' }}
-              startIcon={<CloudUploadIcon />}
-            >
-              Upload your Video
-              <input
-                type="file"
-                hidden
-                accept="video/*"
-                onChange={handleVideoUpload}
-              />
-            </Button>
           </Box>
 
           {/* Webcam Section */}
-          <Box sx={{ flex: 1 }}>
+          <Box sx={{ flex: 1, maxWidth: '640px' }}>
             <Box sx={{
-              mt: 4,
               width: '100%',
-              maxWidth: '640px',
-              margin: '0 auto',
               boxShadow: 3,
               borderRadius: 2,
               overflow: 'hidden',
@@ -310,16 +312,8 @@ function App() {
               )
               }
             </Box>
-            {/* <Button 
-              variant="contained"
-              sx={{ my: 2, backgroundColor: 'black' }}
-              startIcon={isWebcamStreaming ? <VideocamOffIcon /> : <VideocamIcon />}
-              onClick={toggleWebcam}
-            >
-              {isWebcamStreaming ? 'Stop Webcam' : 'Start Webcam'}
-            </Button> */}
           </Box>
-        </Stack>
+        </Box>
       </Container>
     </Box>
   );
