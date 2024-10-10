@@ -34,12 +34,14 @@ function App() {
       description: 'On the floor',
       image: '/images/2.png',
       color: '#4CAF50',
+      video: '/videos/get_down.mp4', // Add this line
     },
     {
       title: 'Standing out',
       description: 'On my feet',
       image: '/images/1.png',
       color: '#607D8B',
+      video: '/videos/standing_out.mp4', // Add this line
     },
   ];
 
@@ -210,6 +212,32 @@ function App() {
     window.location.reload();
   };
 
+  const handleCardClick = (videoUrl) => {
+    setUploadedVideo(videoUrl);
+    if (uploadedVideoRef.current) {
+      uploadedVideoRef.current.src = videoUrl;
+      uploadedVideoRef.current.onloadedmetadata = () => {
+        startWebcam().then(() => {
+          uploadedVideoRef.current.play().then(() => {
+            setIsPlaying(true);
+            setIsWebcamStreaming(true);
+            if (poseCanvasRef.current) {
+              poseCanvasRef.current.startPoseDetection();
+            }
+          }).catch(error => {
+            console.error("Autoplay failed:", error);
+            setIsPlaying(false);
+          });
+        });
+
+        setDuration(uploadedVideoRef.current.duration);
+        uploadedVideoRef.current.ontimeupdate = () => {
+          setCurrentTime(uploadedVideoRef.current.currentTime);
+        };
+      };
+    }
+  };
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static" sx={{ backgroundColor: '#000' }}>
@@ -228,18 +256,21 @@ function App() {
           <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ margin: -1.5 }}>
             {therapyTypes.map((type, index) => (
               <Box key={index} flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
-                <Card sx={{
-                  maxWidth: 345,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: type.color,
-                  color: 'white',
-                  '&:hover': {
-                    cursor: 'pointer',
-                    boxShadow: 6,
-                  },
-                }}>
+                <Card 
+                  sx={{
+                    maxWidth: 345,
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    backgroundColor: type.color,
+                    color: 'white',
+                    '&:hover': {
+                      cursor: 'pointer',
+                      boxShadow: 6,
+                    },
+                  }}
+                  onClick={() => handleCardClick(type.video)} // Add this line
+                >
                   <CardMedia
                     component="img"
                     height="140"
