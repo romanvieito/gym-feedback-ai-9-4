@@ -59,6 +59,23 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     startPoseDetection,
   }));
 
+  const [poseMatchPercentage, setPoseMatchPercentage] = useState(100);
+
+  // Add euclideanDistance function
+  function euclideanDistance(point1, point2) {
+    return Math.sqrt(
+      Math.pow(point1.x - point2.x, 2) +
+      Math.pow(point1.y - point2.y, 2) +
+      Math.pow(point1.z - point2.z, 2)
+    );
+  }
+
+  // Add getColorFromPercentage function
+  function getColorFromPercentage(percentage) {
+    const value = Math.round(255 * (percentage / 100));
+    return `rgb(${value}, ${value}, ${value})`;
+  }
+
   const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
     try {
       const response = await fetch('/api/py/process_landmarks', {
@@ -129,15 +146,31 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
 
       if (result.landmarks && result.landmarks.length > 0) {
         const currentLandmarks = result.landmarks[0];
-        const drawingUtils = new DrawingUtils(canvasCtx);
-
-        // Actualizar landmarks en el componente padre
+        let matchPercentage = 100;
+        
+        // Update landmarks in the parent component
         updateLandmarks(isWebcam, currentLandmarks);
 
+        if (otherLandmarks && otherLandmarks.length > 0) {
+          const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
+            const otherLandmark = otherLandmarks[index];
+            return sum + euclideanDistance(landmark, otherLandmark);
+          }, 0);
+
+          matchPercentage = Math.max(0, 100 - (totalDistance / currentLandmarks.length) * 200);
+        }
+
+        setPoseMatchPercentage(matchPercentage);
+
+        // Determine color based on match percentage only for webcam
+        const color = isWebcam ? getColorFromPercentage(matchPercentage) : 'rgb(255, 255, 255)';
+
+        const drawingUtils = new DrawingUtils(canvasCtx);
+
         // Dibuja los landmarks y los conectores en el canvas
-        drawingUtils.drawLandmarks(currentLandmarks, { radius: 6, color: 'rgb(0, 255, 0)' });
+        drawingUtils.drawLandmarks(currentLandmarks, { radius: 6, color: color });
         drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
-          color: 'rgb(255, 0, 0)',
+          color: color,
           lineWidth: 6,
         });
 
