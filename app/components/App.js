@@ -30,14 +30,14 @@ function App() {
 
   const therapyTypes = [
     {
-      title: 'Get down',
-      description: 'On the floor',
+      title: 'Pilates',
+      description: 'In the Grove',
       image: '/images/2.png',
       color: '#4CAF50',
       video: '/videos/get_down.mp4', // Add this line
     },
     {
-      title: 'Standing out',
+      title: 'Isometrics',
       description: 'On my feet',
       image: '/images/1.png',
       color: '#607D8B',
