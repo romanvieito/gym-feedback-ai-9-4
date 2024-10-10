@@ -200,7 +200,7 @@ function App() {
           </Typography>
         </Toolbar>
       </AppBar>
-      <Container maxWidth="lg" sx={{ mt: 1, textAlign: 'center' }}>
+      <Container maxWidth="xl" sx={{ mt: 1, textAlign: 'center' }}>
         <Box sx={{ mb: 2 }}>
           <Button
             variant="contained"
@@ -223,11 +223,12 @@ function App() {
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
             gap: 2,
-            justifyContent: 'center'
+            justifyContent: 'center',
+            width: '100%'
           }}
         >
           {/* Uploaded Video Section */}
-          <Box sx={{ flex: 1, maxWidth: '640px' }}>
+          <Box sx={{ flex: 1, width: '100%' }}>
             <Box sx={{
               width: '100%',
               boxShadow: 3,
@@ -292,7 +293,7 @@ function App() {
           </Box>
 
           {/* Webcam Section */}
-          <Box sx={{ flex: 1, maxWidth: '640px' }}>
+          <Box sx={{ flex: 1, width: '100%' }}>
             <Box sx={{
               width: '100%',
               boxShadow: 3,
