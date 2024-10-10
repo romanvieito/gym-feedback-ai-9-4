@@ -289,18 +289,21 @@ function App() {
               </Box>
             ))}
             <Box flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
-              <Card sx={{
-                maxWidth: 345,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                backgroundColor: '#FF9800',
-                color: 'white',
-                '&:hover': {
-                  cursor: 'pointer',
-                  boxShadow: 6,
-                },
-              }}>
+              <Card 
+                sx={{
+                  maxWidth: 345,
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  backgroundColor: '#FF9800',
+                  color: 'white',
+                  '&:hover': {
+                    cursor: 'pointer',
+                    boxShadow: 6,
+                  },
+                }}
+                onClick={() => document.getElementById('fileInput').click()}
+              >
                 <CardMedia
                   component="img"
                   height="140"
@@ -315,22 +318,14 @@ function App() {
                     Upload your own video →
                   </Typography>
                 </CardContent>
-                <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
-                  <Button
-                    variant="contained"
-                    component="label"
-                    sx={{ backgroundColor: '#000' }}
-                    startIcon={<CloudUploadIcon />}
-                  >
-                    <input
-                      type="file"
-                      hidden
-                      accept="video/*"
-                      onChange={handleVideoUpload}
-                    />
-                  </Button>
-                </CardActions>
               </Card>
+              <input
+                id="fileInput"
+                type="file"
+                hidden
+                accept="video/*"
+                onChange={handleVideoUpload}
+              />
             </Box>
           </Box>
         </Box>
