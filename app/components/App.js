@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Slider, Box, Typography, AppBar, Toolbar, Container, Button, IconButton } from '@mui/material';
+import { Slider, Box, Typography, AppBar, Toolbar, Container, Button, IconButton, Card, CardContent, CardMedia, Grid, CardActions } from '@mui/material';
 import PoseCanvas from './PoseCanvas';
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
@@ -26,6 +26,21 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
+  const therapyTypes = [
+    {
+      title: 'Get up',
+      description: 'On the floor',
+      image: '/images/2.png',
+      color: '#4CAF50',
+    },
+    {
+      title: 'Standing out',
+      description: 'On my feet',
+      image: '/images/1.png',
+      color: '#607D8B',
+    },
+  ];
 
   useEffect(() => {
     async function loadPoseLandmarkers() {
@@ -196,26 +211,90 @@ function App() {
       <AppBar position="static" sx={{ backgroundColor: '#000' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            24up. Variante B
+            24up.
           </Typography>
         </Toolbar>
       </AppBar>
-      <Container maxWidth="xl" sx={{ mt: 1, textAlign: 'center' }}>
-        <Box sx={{ mb: 2 }}>
-          <Button
-            variant="contained"
-            component="label"
-            sx={{ backgroundColor: '#000' }}
-            startIcon={<CloudUploadIcon />}
-          >
-            Upload your Video
-            <input
-              type="file"
-              hidden
-              accept="video/*"
-              onChange={handleVideoUpload}
-            />
-          </Button>
+      <Container maxWidth="xl" sx={{ mt: 4, textAlign: 'center' }}>
+        <Typography variant="h5" component="h2" gutterBottom>
+          What type of exercise are you looking for?
+        </Typography>
+        <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ margin: -1.5 }}>
+          {therapyTypes.map((type, index) => (
+            <Box key={index} flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
+              <Card sx={{ 
+                maxWidth: 345, 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
+                backgroundColor: type.color,
+                color: 'white',
+                '&:hover': {
+                  cursor: 'pointer',
+                  boxShadow: 6,
+                },
+              }}>
+                <CardMedia
+                  component="img"
+                  height="140"
+                  image={type.image}
+                  alt={type.title}
+                />
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography gutterBottom variant="h5" component="div">
+                    {type.title}
+                  </Typography>
+                  <Typography variant="body2">
+                    {type.description} →
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Box>
+          ))}
+          <Box flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
+            <Card sx={{ 
+              maxWidth: 345, 
+              height: '100%', 
+              display: 'flex', 
+              flexDirection: 'column',
+              backgroundColor: '#FF9800',
+              color: 'white',
+              '&:hover': {
+                cursor: 'pointer',
+                boxShadow: 6,
+              },
+            }}>
+              <CardMedia
+                component="img"
+                height="140"
+                image="/images/3.png"
+                alt="Upload Video"
+              />
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography gutterBottom variant="h5" component="div">
+                  Upload Video
+                </Typography>
+                <Typography variant="body2">
+                  Upload your own video →
+                </Typography>
+              </CardContent>
+              <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
+                <Button
+                  variant="contained"
+                  component="label"
+                  sx={{ backgroundColor: '#000' }}
+                  startIcon={<CloudUploadIcon />}
+                >
+                  <input
+                    type="file"
+                    hidden
+                    accept="video/*"
+                    onChange={handleVideoUpload}
+                  />
+                </Button>
+              </CardActions>
+            </Card>
+          </Box>
         </Box>
         
         <Box
