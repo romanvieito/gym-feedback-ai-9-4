@@ -181,4 +181,6 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
   );
 });
 
+PoseCanvas.displayName = "PoseCanvas";
+
 export default PoseCanvas;
