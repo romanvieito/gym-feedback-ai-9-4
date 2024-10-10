@@ -259,7 +259,7 @@ function App() {
           <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ margin: -1.5 }}>
             {therapyTypes.map((type, index) => (
               <Box key={index} flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
-                <Card 
+                <Card
                   sx={{
                     maxWidth: 345,
                     height: '100%',
@@ -292,7 +292,7 @@ function App() {
               </Box>
             ))}
             <Box flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
-              <Card 
+              <Card
                 sx={{
                   maxWidth: 345,
                   height: '100%',
@@ -333,7 +333,7 @@ function App() {
           </Box>
         </Box>
 
-        {/* Video Section */} 
+        {/* Video Section */}
         <Box
           sx={{
             display: 'flex',
@@ -409,18 +409,18 @@ function App() {
           </Box>
 
           <IconButton
-              onClick={handleCloseVideo}
-              sx={{
-                position: 'absolute',
-                top: 7,
-                right: 9,
-                backgroundColor: 'white',
-                '&:hover': { backgroundColor: '#e0e0e0' },
-                display: uploadedVideo ? 'block' : 'none'
-              }}
-            >
-              <CloseIcon />
-            </IconButton>
+            onClick={handleCloseVideo}
+            sx={{
+              position: 'absolute',
+              top: 7,
+              right: 9,
+              backgroundColor: 'white',
+              '&:hover': { backgroundColor: '#e0e0e0' },
+              display: uploadedVideo ? 'block' : 'none'
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
 
           {/* Webcam Section */}
           <Box sx={{ flex: 1, width: '100%' }}>
