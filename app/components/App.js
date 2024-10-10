@@ -41,7 +41,7 @@ function App() {
       description: 'On my feet',
       image: '/images/1.png',
       color: '#607D8B',
-      video: '/videos/standing_out.mp4', // Add this line
+      video: '/videos/iso.mp4', // Add this line
     },
   ];
 

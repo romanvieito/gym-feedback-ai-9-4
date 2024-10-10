@@ -162,8 +162,8 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
 
         setPoseMatchPercentage(matchPercentage);
 
-        // Determine color based on match percentage only for webcam
-        const color = isWebcam ? getColorFromPercentage(matchPercentage) : 'rgb(255, 255, 255)';
+        // Apply color change for all videos
+        const color = getColorFromPercentage(matchPercentage);
 
         const drawingUtils = new DrawingUtils(canvasCtx);
 
