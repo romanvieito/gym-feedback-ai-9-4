@@ -260,10 +260,10 @@ function App() {
             <Button
               variant="contained"
               component="label"
-              sx={{ my: 2, mr: 2, padding: '12px 24px', fontSize: '1.2rem' }}
+              sx={{ backgroundColor: '#000' }}
               startIcon={<CloudUploadIcon />}
             >
-              Upload Video To Compare with Your Workout
+              Upload your Video
               <input
                 type="file"
                 hidden
