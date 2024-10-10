@@ -70,10 +70,23 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     );
   }
 
-  // Add getColorFromPercentage function
+  // Update getColorFromPercentage function
   function getColorFromPercentage(percentage) {
-    const value = Math.round(255 * (percentage / 100));
-    return `rgb(${value}, ${value}, ${value})`;
+    // Ensure percentage is between 0 and 100
+    percentage = Math.max(0, Math.min(100, percentage));
+    
+    let r, g;
+    if (percentage < 50) {
+      // Red to Yellow (0-50%)
+      r = 255;
+      g = Math.round((percentage / 50) * 255);
+    } else {
+      // Yellow to Green (50-100%)
+      r = Math.round(255 - ((percentage - 50) / 50) * 255);
+      g = 255;
+    }
+    
+    return `rgb(${r}, ${g}, 0)`;
   }
 
   const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
