@@ -34,14 +34,14 @@ function App() {
       description: 'In the Grove',
       image: '/images/2.png',
       color: '#4CAF50',
-      video: '/videos/get_down.mp4', // Add this line
+      video: '/videos/get_down.mp4',
     },
     {
       title: 'Isometrics',
       description: 'On my feet',
       image: '/images/1.png',
       color: '#607D8B',
-      video: '/videos/iso.mp4', // Add this line
+      video: '/videos/iso.mp4',
     },
   ];
 
@@ -272,7 +272,7 @@ function App() {
                       boxShadow: 6,
                     },
                   }}
-                  onClick={() => handleCardClick(type.video)} // Add this line
+                  onClick={() => handleCardClick(type.video)}
                 >
                   <CardMedia
                     component="img"
@@ -280,11 +280,11 @@ function App() {
                     image={type.image}
                     alt={type.title}
                   />
-                  <CardContent sx={{ flexGrow: 1 }}>
+                  <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <Typography gutterBottom variant="h5" component="div">
                       {type.title}
                     </Typography>
-                    <Typography variant="body2">
+                    <Typography variant="body2" sx={{ mt: 'auto' }}>
                       {type.description} →
                     </Typography>
                   </CardContent>
@@ -313,11 +313,11 @@ function App() {
                   image="/images/3.png"
                   alt="Upload Video"
                 />
-                <CardContent sx={{ flexGrow: 1 }}>
+                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <Typography gutterBottom variant="h5" component="div">
                     Upload Video
                   </Typography>
-                  <Typography variant="body2">
+                  <Typography variant="body2" sx={{ mt: 'auto' }}>
                     Upload your own video →
                   </Typography>
                 </CardContent>
