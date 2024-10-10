@@ -28,7 +28,6 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [drawing, setDrawing] = useState(false); // Local state to control drawing
 
   useEffect(() => {
     async function loadPoseLandmarkers() {
@@ -82,7 +81,7 @@ function App() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (webcamRef.current) {
         webcamRef.current.srcObject = stream;
-        setIsWebcamStreaming(true);
+        //setIsWebcamStreaming(true);
       }
     } catch (error) {
       console.error("Error accessing webcam:", error);
@@ -108,7 +107,7 @@ function App() {
         uploadedVideoRef.current.src = videoUrl;
         uploadedVideoRef.current.onloadedmetadata = () => {
           // Start playing the video immediately after it's loaded
-          // ***uploadedVideoRef.current.play(); 
+          // uploadedVideoRef.current.play(); 
           // Start the webcam as well
           startWebcam();
           // Establece la duración al cargar los metadatos
@@ -139,13 +138,12 @@ function App() {
         setIsPlaying(false); // Cambia el estado a 'pausado'
         if (poseCanvasRef.current) {
           poseCanvasRef.current.stopPoseDetection(); // Llama a la función para detener la detección
-          poseCanvasRef.current.setVideoReady(false);
         }
       } else {
         if (poseCanvasRef.current) {
           poseCanvasRef.current.startPoseDetection(); // Llama a la función para iniciar la detección
-          poseCanvasRef.current.setVideoReady(true); // Establecer el video como listo
         }
+        if (!isWebcamStreaming) setIsWebcamStreaming(true);
         uploadedVideoRef.current.play();
         setIsPlaying(true); // Cambia el estado a 'reproduciendo'
       }
@@ -154,10 +152,10 @@ function App() {
 
   const toggleStop = () => {
     if (uploadedVideoRef.current) {
+      setIsWebcamStreaming(false);
       uploadedVideoRef.current.pause();
       if (poseCanvasRef.current) {
         poseCanvasRef.current.stopPoseDetection(); // Llama a la función para detener la detección
-        poseCanvasRef.current.clearCanvas();
       }
       uploadedVideoRef.current.currentTime = 0; // Reinicia el video
       setCurrentTime(0); // Actualiza el estado
@@ -213,9 +211,6 @@ function App() {
                   height: '0',
                   visibility: 'hidden'
                 }}
-              /*onPlay={() => {
-                startWebcam();
-              }}*/
               />
               {uploadedVideo && uploadedVideoPoseLandmarker && (
                 <PoseCanvas
@@ -294,7 +289,11 @@ function App() {
                 ref={webcamRef}
                 autoPlay
                 playsInline
-                style={{ width: '100%', height: '0', visibility: 'hidden' }}
+                style={{
+                  width: '100%',
+                  height: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? '0' : 'auto',
+                  visibility: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? 'hidden' : 'visible'
+                }}
               />
               {isWebcamStreaming && webcamPoseLandmarker && (
                 <PoseCanvas
@@ -308,7 +307,8 @@ function App() {
                   otherLandmarks={uploadedVideoLandmarks}
                   updateLandmarks={updateLandmarks}
                 />
-              )}
+              )
+              }
             </Box>
             {/* <Button 
               variant="contained"

@@ -25,21 +25,20 @@
  * 
  */
 
-import React, { useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
 
-const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setFeedback, isWebcam, updateLandmarks }, ref) => {
+const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback, isWebcam, otherLandmarks, updateLandmarks }, ref) => {
   const canvasRef = useRef(null);
   const frameIndex = useRef(0);
-  const animationIdRef = useRef(null);
-  const drawingUtilsRef = useRef(null);
-  const videoReadyRef = useRef(false);
+  const animationIdRef = useRef(null); // Almacenar el ID de la animación
 
   const setTimedFeedback = useCallback((feedback) => {
     console.log("Setting feedback:", feedback);
     setFeedback(feedback);
   }, [setFeedback]);
 
+  // Función para detener la detección de poses
   const stopPoseDetection = useCallback(() => {
     if (animationIdRef.current) {
       cancelAnimationFrame(animationIdRef.current);
@@ -47,34 +46,17 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     }
   }, []);
 
+  // Función para iniciar la detección de poses
   const startPoseDetection = useCallback(() => {
-    if (videoReadyRef.current) {
-      detectPose();
+    if (!animationIdRef.current) {
+      detectPose(); // Iniciar la detección de poses
     }
   }, []);
 
-  const clearCanvas = useCallback(() => {
-    const canvasElement = canvasRef.current;
-    if (!canvasElement) return;
-    const canvasCtx = canvasElement.getContext('2d');
-    if (!canvasCtx) return;
-
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-  }, []);
-
+  // Expone las funciones stopPoseDetection y startPoseDetection al componente padre
   useImperativeHandle(ref, () => ({
     stopPoseDetection,
     startPoseDetection,
-    clearCanvas,
-    setVideoReady: (ready) => {
-      videoReadyRef.current = ready;
-      if (ready) {
-        clearCanvas(); // Limpiar el canvas cuando el video está listo
-        stopPoseDetection(); // Detener cualquier detección anterior
-        frameIndex.current = 0; // Reiniciar el índice del frame
-        startPoseDetection(); // Iniciar la detección con el nuevo video
-      }
-    }
   }));
 
   const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
@@ -106,56 +88,63 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
   };
 
   async function detectPose() {
-    const canvasElement = canvasRef.current;
-    if (!canvasElement) {
-      console.warn("Canvas element is null");
-      return;
-    }
-    const canvasCtx = canvasElement.getContext('2d');
-    if (!canvasCtx) {
-      console.warn("Canvas context is null");
-      return;
-    }
+    if (
+      videoRef.current &&
+      poseLandmarker &&
+      videoRef.current.readyState >= 2
+    ) {
+      const canvasElement = canvasRef.current;
+      if (!canvasElement) {
+        console.warn("Canvas element is null");
+        return;
+      }
+      const canvasCtx = canvasElement.getContext('2d');
+      if (!canvasCtx) {
+        console.warn("Canvas context is null");
+        return;
+      }
 
-    const videoWidth = videoDimensions.width;
-    const videoHeight = videoDimensions.height;
+      const videoWidth = videoDimensions.width;
+      const videoHeight = videoDimensions.height;
 
-    if (!videoWidth || !videoHeight) {
-      console.warn("Invalid video dimensions:", videoDimensions);
-      return;
-    }
+      if (!videoWidth || !videoHeight) {
+        console.warn("Invalid video dimensions:", videoDimensions);
+        return;
+      }
 
-    // Update canvas dimensions
-    canvasElement.width = videoWidth;
-    canvasElement.height = videoHeight;
+      // Update canvas dimensions
+      canvasElement.width = videoWidth;
+      canvasElement.height = videoHeight;
 
-    // Clear the canvas before drawing
-    clearCanvas();
+      // Clear the canvas before drawing
+      canvasCtx.clearRect(0, 0, videoWidth, videoHeight);
 
-    // Draw video on canvas
-    canvasCtx.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
+      // Draw video on canvas
+      canvasCtx.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
 
-    if (videoRef.current && poseLandmarker && videoRef.current.readyState >= 2) {
-      const result = await poseLandmarker.detectForVideo(videoRef.current, performance.now());
+      const result = await poseLandmarker.detectForVideo(
+        videoRef.current,
+        performance.now()
+      );
 
       if (result.landmarks && result.landmarks.length > 0) {
         const currentLandmarks = result.landmarks[0];
+        const drawingUtils = new DrawingUtils(canvasCtx);
 
-        // Update landmarks in the parent component
+        // Actualizar landmarks en el componente padre
         updateLandmarks(isWebcam, currentLandmarks);
 
-        // Call the function to send landmarks to the backend
-        sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
-
-        // Dibujar landmarks
-        drawingUtilsRef.current = new DrawingUtils(canvasCtx);
-        drawingUtilsRef.current.drawLandmarks(currentLandmarks, { radius: 6, color: 'rgb(0, 255, 0)' });
-        drawingUtilsRef.current.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
+        // Dibuja los landmarks y los conectores en el canvas
+        drawingUtils.drawLandmarks(currentLandmarks, { radius: 6, color: 'rgb(0, 255, 0)' });
+        drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
           color: 'rgb(255, 0, 0)',
           lineWidth: 6,
         });
 
-        frameIndex.current += 1; // Increment frame index
+        // Llamar a la función para enviar los landmarks al backend
+        sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
+
+        frameIndex.current += 1;  // Incrementar el índice del frame
       } else {
         console.warn("No landmarks detected");
       }
@@ -166,10 +155,12 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
   }
 
   useEffect(() => {
+    startPoseDetection(); // Iniciar la detección al montar el componente
+
     return () => {
-      stopPoseDetection(); // Stop animation when the component unmounts
+      stopPoseDetection(); // Detener la animación al desmontar el componente
     };
-  }, [stopPoseDetection]);
+  }, [startPoseDetection, stopPoseDetection]);
 
   return (
     <div style={{
