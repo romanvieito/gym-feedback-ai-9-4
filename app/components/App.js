@@ -105,7 +105,20 @@ function App() {
         uploadedVideoRef.current.src = videoUrl;
         uploadedVideoRef.current.onloadedmetadata = () => {
           // Start playing the video immediately after it's loaded
-          // uploadedVideoRef.current.play(); 
+          uploadedVideoRef.current.play().then(() => {
+            setIsPlaying(true);
+            if (poseCanvasRef.current) {
+              poseCanvasRef.current.startPoseDetection();
+            }
+          }).catch(error => {
+            console.error("Autoplay failed:", error);
+            // Handle autoplay failure (e.g., show a play button)
+            setIsPlaying(false);
+            if (poseCanvasRef.current) {
+              poseCanvasRef.current.stopPoseDetection();
+            }
+          });
+          
           // Start the webcam as well
           startWebcam();
           // Establece la duración al cargar los metadatos
