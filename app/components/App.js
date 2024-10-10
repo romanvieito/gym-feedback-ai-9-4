@@ -250,7 +250,7 @@ function App() {
                   </>
                   : uploadedVideo && !uploadedVideoPoseLandmarker ?
                     <>
-                      <p>Waiting for the video pose landmasks to load</p>
+                      <p>Loading video...</p>
                     </>
                     :
                     <>
