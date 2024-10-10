@@ -5,3 +5,6 @@
 *.wmv
 *.flv
 *.webm
+
+
+public/videos/*

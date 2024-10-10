@@ -25,6 +25,10 @@ const nextConfig = {
       },
     ];
   },
+  // New experimental configuration
+  experimental: {
+    outputFileTracingIgnores: ['public/videos/*']
+  }
 };
 
 module.exports = nextConfig;
