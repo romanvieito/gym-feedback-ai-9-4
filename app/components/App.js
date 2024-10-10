@@ -95,7 +95,10 @@ function App() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       if (webcamRef.current) {
         webcamRef.current.srcObject = stream;
-        //setIsWebcamStreaming(true);
+        // Wait for the webcam stream to be ready
+        await new Promise((resolve) => {
+          webcamRef.current.onloadedmetadata = resolve;
+        });
       }
     } catch (error) {
       console.error("Error accessing webcam:", error);
@@ -120,27 +123,23 @@ function App() {
       if (uploadedVideoRef.current) {
         uploadedVideoRef.current.src = videoUrl;
         uploadedVideoRef.current.onloadedmetadata = () => {
-          // Start playing the video immediately after it's loaded
-          uploadedVideoRef.current.play().then(() => {
-            setIsPlaying(true);
-            if (poseCanvasRef.current) {
-              poseCanvasRef.current.startPoseDetection();
-            }
-          }).catch(error => {
-            console.error("Autoplay failed:", error);
-            // Handle autoplay failure (e.g., show a play button)
-            setIsPlaying(false);
-            if (poseCanvasRef.current) {
-              poseCanvasRef.current.stopPoseDetection();
-            }
+          // Start the webcam first
+          startWebcam().then(() => {
+            // Then play the video and start pose detection
+            uploadedVideoRef.current.play().then(() => {
+              setIsPlaying(true);
+              setIsWebcamStreaming(true);
+              if (poseCanvasRef.current) {
+                poseCanvasRef.current.startPoseDetection();
+              }
+            }).catch(error => {
+              console.error("Autoplay failed:", error);
+              setIsPlaying(false);
+            });
           });
 
-          // Start the webcam as well
-          startWebcam();
-          // Establece la duración al cargar los metadatos
+          // Set duration and time update
           setDuration(uploadedVideoRef.current.duration);
-
-          // Actualiza el tiempo actual del video mientras se reproduce
           uploadedVideoRef.current.ontimeupdate = () => {
             setCurrentTime(uploadedVideoRef.current.currentTime);
           };
