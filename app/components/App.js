@@ -250,8 +250,11 @@ function App() {
       <Container maxWidth="xl" sx={{ mt: 4, textAlign: 'center' }}>
         {/* Pick your exercise section */}
         <Box sx={{ display: uploadedVideo ? 'none' : 'block' }}>
-          <Typography variant="h5" component="h2" gutterBottom>
-            What type of exercise are you looking for?
+          <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 2, fontWeight: 'bold' }}>
+            Ready for some fun and fitness?
+          </Typography>
+          <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 6, color: 'gray' }}>
+            Pick your exercise or upload your own video.
           </Typography>
           <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ margin: -1.5 }}>
             {therapyTypes.map((type, index) => (
