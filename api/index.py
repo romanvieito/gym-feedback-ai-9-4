@@ -33,8 +33,8 @@ from unittest.mock import Mock
 SECRET_KEY = secrets.token_hex(32)  
 ALGORITHM = "HS256"
 
-MODEL_DIR = os.path.join("app", "static", "models")
-MODEL_PATH = os.path.join(MODEL_DIR, "pose_landmarker_heavy.task")
+# MODEL_DIR = os.path.join("app", "static", "models")
+# MODEL_PATH = os.path.join(MODEL_DIR, "pose_landmarker_heavy.task")
 
 DOTENV_PATH = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(DOTENV_PATH)
@@ -70,7 +70,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory=MODEL_DIR), name="static") # Mount the static files directory 
+# app.mount("/static", StaticFiles(directory=MODEL_DIR), name="static") # Mount the static files directory 
 
 # Middleware for authentication (example)
 
@@ -101,7 +101,7 @@ async def authenticate(request: Request, call_next):
 async def root():
     return {"message": "Welcome to the Pose Detection API"}
 
-
+"""
 @app.get("/api/py/model")
 async def get_model():
     # Make sure the path to the model is consistent with your static directory
@@ -112,7 +112,7 @@ async def get_model():
     # if not os.path.exists(model_path):
     #     raise HTTPException(status_code=404, detail="Model file not found")
     # return FileResponse(model_path)
-
+"""
 
 @app.post("/api/py/token")
 async def login():
