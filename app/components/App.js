@@ -45,7 +45,6 @@ function App() {
     },
   ];
 
-  /*
   useEffect(() => {
     async function loadPoseLandmarkers() {
       const vision = await FilesetResolver.forVisionTasks(
@@ -76,7 +75,6 @@ function App() {
 
     loadPoseLandmarkers();
   }, []);
-  */
 
   useEffect(() => {
     const videoElement = uploadedVideoRef.current;
