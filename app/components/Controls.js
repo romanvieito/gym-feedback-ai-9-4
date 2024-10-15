@@ -36,6 +36,14 @@ function Controls({ setVideoSrc, setUseWebcam }) {
     setUseWebcam(true);
   };
 
+  const handleUrlInput = () => {
+    const url = prompt("Enter the video URL:");
+    if (url) {
+      setVideoSrc(url);
+      setUseWebcam(false);
+    }
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
       <Typography variant="h6" sx={{ marginBottom: 2, color: '#fff' }}>
@@ -71,6 +79,17 @@ function Controls({ setVideoSrc, setUseWebcam }) {
         style={{ display: 'none' }}
         onChange={handleVideoUpload}
       />
+      <Button 
+        variant="outlined" 
+        sx={{ 
+          color: '#fff', 
+          borderColor: '#fff',
+          ":hover": { borderColor: '#e0e0e0', backgroundColor: 'rgba(255, 255, 255, 0.08)' } 
+        }} 
+        onClick={handleUrlInput}
+      >
+        Enter Video URL
+      </Button>
     </Box>
   );
 }

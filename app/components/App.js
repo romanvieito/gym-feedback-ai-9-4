@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
+import ReactPlayer from 'react-player';
 import { Slider, Box, Typography, AppBar, Toolbar, Container, Button, IconButton, Card, CardContent, CardMedia, Grid, CardActions } from '@mui/material';
 import PoseCanvas from './PoseCanvas';
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
@@ -27,6 +28,13 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const playerRef = useRef(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // Set isClient to true after the component mounts
+    setIsClient(true);
+  }, []);
 
   const therapyTypes = [
     {
@@ -153,41 +161,21 @@ function App() {
   };
 
   const handleSliderChange = (event, newValue) => {
-    if (uploadedVideoRef.current) {
-      uploadedVideoRef.current.currentTime = newValue; // Cambia el tiempo actual del video
-      setCurrentTime(newValue); // Actualiza el estado para reflejar el cambio
+    setCurrentTime(newValue);
+    if (playerRef.current) {
+      playerRef.current.seekTo(newValue, 'seconds');
     }
   };
 
   const togglePlayPause = () => {
-    if (uploadedVideoRef.current) {
-      if (isPlaying) {
-        uploadedVideoRef.current.pause();
-        setIsPlaying(false); // Cambia el estado a 'pausado'
-        if (poseCanvasRef.current) {
-          poseCanvasRef.current.stopPoseDetection(); // Llama a la función para detener la detección
-        }
-      } else {
-        if (poseCanvasRef.current) {
-          poseCanvasRef.current.startPoseDetection(); // Llama a la función para iniciar la detección
-        }
-        if (!isWebcamStreaming) setIsWebcamStreaming(true);
-        uploadedVideoRef.current.play();
-        setIsPlaying(true); // Cambia el estado a 'reproduciendo'
-      }
-    }
+    setIsPlaying(!isPlaying);
   };
 
-  const toggleStop = () => {
-    if (uploadedVideoRef.current) {
-      setIsWebcamStreaming(false);
-      uploadedVideoRef.current.pause();
-      if (poseCanvasRef.current) {
-        poseCanvasRef.current.stopPoseDetection(); // Llama a la función para detener la detección
-      }
-      uploadedVideoRef.current.currentTime = 0; // Reinicia el video
-      setCurrentTime(0); // Actualiza el estado
-      setIsPlaying(false); // Cambia el estado a 'pausado'
+  const handleStop = () => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    if (playerRef.current) {
+      playerRef.current.seekTo(0, 'seconds');
     }
   };
 
@@ -212,30 +200,18 @@ function App() {
     window.location.reload();
   };
 
-  const handleCardClick = (videoUrl) => {
-    setUploadedVideo(videoUrl);
-    if (uploadedVideoRef.current) {
-      uploadedVideoRef.current.src = videoUrl;
-      uploadedVideoRef.current.onloadedmetadata = () => {
-        startWebcam().then(() => {
-          uploadedVideoRef.current.play().then(() => {
-            setIsPlaying(true);
-            setIsWebcamStreaming(true);
-            if (poseCanvasRef.current) {
-              poseCanvasRef.current.startPoseDetection();
-            }
-          }).catch(error => {
-            console.error("Autoplay failed:", error);
-            setIsPlaying(false);
-          });
-        });
+  const handleCardClick = (defaultVideoUrl) => {
+    const useCustomUrl = window.confirm("Do you want to provide a custom video URL?");
+    let videoUrl = defaultVideoUrl;
 
-        setDuration(uploadedVideoRef.current.duration);
-        uploadedVideoRef.current.ontimeupdate = () => {
-          setCurrentTime(uploadedVideoRef.current.currentTime);
-        };
-      };
+    if (useCustomUrl) {
+      const url = prompt("Enter the video URL:");
+      if (url) {
+        videoUrl = url;
+      }
     }
+
+    setUploadedVideo(videoUrl);
   };
 
   return (
@@ -334,130 +310,122 @@ function App() {
         </Box>
 
         {/* Video Section */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 2,
-            justifyContent: 'center',
-            width: '100%'
-          }}
-        >
-          {/* Uploaded Video Section */}
-          <Box sx={{ flex: 1, width: '100%' }}>
-            <Box sx={{
-              width: '100%',
-              boxShadow: 3,
-              borderRadius: 2,
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <video
-                ref={uploadedVideoRef}
-                playsInline
-                style={{
-                  width: '100%',
-                  height: '0',
-                  visibility: 'hidden'
-                }}
-              />
-              {uploadedVideo && uploadedVideoPoseLandmarker && (
-                <PoseCanvas
-                  ref={poseCanvasRef}
-                  videoRef={uploadedVideoRef}
-                  poseLandmarker={uploadedVideoPoseLandmarker}
-                  videoDimensions={videoDimensions}
-                  setFeedback={setUploadedVideoFeedback}
-                  feedback={uploadedVideoFeedback}
-                  isWebcam={false}
-                  otherLandmarks={webcamLandmarks}
-                  updateLandmarks={updateLandmarks}
-                />
-              )}
-              {/* Control deslizante para moverse en el video */}
-              {
-                uploadedVideo && uploadedVideoPoseLandmarker ?
-                  <>
-                    <Slider
-                      value={currentTime}
-                      max={duration}
-                      onChange={handleSliderChange}
-                      aria-labelledby="video-slider"
-                      style={{ marginTop: 20 }}
-                    />
-                    <Box display="flex" justifyContent="center" mt={2}>
-                      <IconButton onClick={togglePlayPause}>
-                        {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
-                      </IconButton>
-                      {isPlaying &&
-                        <>
-                          <IconButton onClick={toggleStop}>
-                            <StopIcon fontSize="large" />
-                          </IconButton>
-                        </>}
-                    </Box>
-                  </>
-                  : uploadedVideo && !uploadedVideoPoseLandmarker ?
-                    <>
-                      <p>Loading video...</p>
-                    </>
-                    :
-                    <>
-                    </>
-              }
-            </Box>
-          </Box>
-
-          <IconButton
-            onClick={handleCloseVideo}
+        {isClient && (
+          <Box
             sx={{
-              position: 'absolute',
-              top: 7,
-              right: 9,
-              backgroundColor: 'white',
-              '&:hover': { backgroundColor: '#e0e0e0' },
-              display: uploadedVideo ? 'block' : 'none'
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 2,
+              justifyContent: 'center',
+              width: '100%'
             }}
           >
-            <CloseIcon />
-          </IconButton>
-
-          {/* Webcam Section */}
-          <Box sx={{ flex: 1, width: '100%' }}>
-            <Box sx={{
-              width: '100%',
-              boxShadow: 3,
-              borderRadius: 2,
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <video
-                ref={webcamRef}
-                autoPlay
-                playsInline
-                style={{
-                  width: '100%',
-                  height: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? '0' : 'auto',
-                  visibility: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? 'hidden' : 'visible'
-                }}
-              />
-              {isWebcamStreaming && webcamPoseLandmarker && (
-                <PoseCanvas
-                  ref={poseCanvasRef}
-                  videoRef={webcamRef}
-                  poseLandmarker={webcamPoseLandmarker}
-                  videoDimensions={videoDimensions}
-                  setFeedback={setWebcamFeedback}
-                  feedback={webcamFeedback}
-                  isWebcam={true}
-                  otherLandmarks={uploadedVideoLandmarks}
-                  updateLandmarks={updateLandmarks}
+            {/* Uploaded Video Section */}
+            <Box sx={{ flex: 1, width: '100%' }}>
+              <Box sx={{
+                width: '100%',
+                boxShadow: 3,
+                borderRadius: 2,
+                overflow: 'hidden',
+                position: 'relative'
+              }}>
+                <ReactPlayer
+                  ref={playerRef}
+                  url={uploadedVideo}
+                  playing={isPlaying}
+                  controls={false} // Disable default controls
+                  width="100%"
+                  height="100%"
+                  style={{ position: 'absolute', top: 0, left: 0 }}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  onEnded={() => setIsPlaying(false)}
+                  onDuration={(duration) => setDuration(duration)}
+                  onProgress={({ playedSeconds }) => setCurrentTime(playedSeconds)}
                 />
-              )
-              }
+                {uploadedVideo && uploadedVideoPoseLandmarker && (
+                  <PoseCanvas
+                    ref={poseCanvasRef}
+                    videoRef={uploadedVideoRef}
+                    poseLandmarker={uploadedVideoPoseLandmarker}
+                    videoDimensions={videoDimensions}
+                    setFeedback={setUploadedVideoFeedback}
+                    feedback={uploadedVideoFeedback}
+                    isWebcam={false}
+                    otherLandmarks={webcamLandmarks}
+                    updateLandmarks={updateLandmarks}
+                  />
+                )}
+                {/* Custom Controls */}
+                <Box display="flex" justifyContent="center" mt={2}>
+                  <IconButton onClick={togglePlayPause}>
+                    {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
+                  </IconButton>
+                  <IconButton onClick={handleStop}>
+                    <StopIcon fontSize="large" />
+                  </IconButton>
+                </Box>
+                <Slider
+                  value={currentTime}
+                  max={duration}
+                  onChange={handleSliderChange}
+                  aria-labelledby="video-slider"
+                  style={{ marginTop: 20 }}
+                />
+              </Box>
+            </Box>
+
+            <IconButton
+              onClick={handleCloseVideo}
+              sx={{
+                position: 'absolute',
+                top: 7,
+                right: 9,
+                backgroundColor: 'white',
+                '&:hover': { backgroundColor: '#e0e0e0' },
+                display: uploadedVideo ? 'block' : 'none'
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+
+            {/* Webcam Section */}
+            <Box sx={{ flex: 1, width: '100%' }}>
+              <Box sx={{
+                width: '100%',
+                boxShadow: 3,
+                borderRadius: 2,
+                overflow: 'hidden',
+                position: 'relative'
+              }}>
+                <video
+                  ref={webcamRef}
+                  autoPlay
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? '0' : 'auto',
+                    visibility: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? 'hidden' : 'visible'
+                  }}
+                />
+                {isWebcamStreaming && webcamPoseLandmarker && (
+                  <PoseCanvas
+                    ref={poseCanvasRef}
+                    videoRef={webcamRef}
+                    poseLandmarker={webcamPoseLandmarker}
+                    videoDimensions={videoDimensions}
+                    setFeedback={setWebcamFeedback}
+                    feedback={webcamFeedback}
+                    isWebcam={true}
+                    otherLandmarks={uploadedVideoLandmarks}
+                    updateLandmarks={updateLandmarks}
+                  />
+                )
+                }
+              </Box>
             </Box>
           </Box>
-        </Box>
+        )}
       </Container>
     </Box>
   );

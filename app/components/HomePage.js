@@ -207,10 +207,15 @@ function HomePage() {
     setSourceSelected(true);
   };
 
-  const handleVideoUpload = (fileURL) => {
-    setVideoSrc(fileURL); // Set the video source to the uploaded file
-    setUseWebcam(false); // Ensure webcam is disabled when a video is uploaded
-    setSourceSelected(true); // Indicate that a video source has been selected
+  const handleVideoUpload = (input) => {
+    if (input instanceof File) {
+      const fileURL = URL.createObjectURL(input);
+      setVideoSrc(fileURL);
+    } else if (typeof input === 'string') {
+      setVideoSrc(input);
+    }
+    setUseWebcam(false);
+    setSourceSelected(true);
   };
 
   const [loaded, setLoaded] = useState(false);
