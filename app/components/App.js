@@ -34,14 +34,14 @@ function App() {
       description: 'In the Grove',
       image: '/images/2.png',
       color: '#4CAF50',
-      video: '/videos/get_down.mp4',
+      video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/get_down.mp4',
     },
     {
       title: 'Isometrics',
       description: 'On my feet',
       image: '/images/1.png',
       color: '#607D8B',
-      video: '/videos/iso.mp4',
+      video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/iso.mp4',
     },
   ];
 
@@ -355,6 +355,7 @@ function App() {
               <video
                 ref={uploadedVideoRef}
                 playsInline
+                crossOrigin="anonymous"
                 style={{
                   width: '100%',
                   height: '0',
