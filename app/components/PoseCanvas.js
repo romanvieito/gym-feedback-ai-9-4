@@ -89,6 +89,32 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     return `rgb(${r}, ${g}, 0)`;
   }
 
+  // Add cosineDistance function
+  function cosineDistance(point1, point2, point3) {
+    // Calculate vectors
+    const vectorA = {
+      x: point2.x - point1.x,
+      y: point2.y - point1.y,
+      z: point2.z - point1.z
+    };
+    const vectorB = {
+      x: point3.x - point2.x,
+      y: point3.y - point2.y,
+      z: point3.z - point2.z
+    };
+
+    // Calculate dot product and magnitudes
+    const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y + vectorA.z * vectorB.z;
+    const magnitudeA = Math.sqrt(vectorA.x ** 2 + vectorA.y ** 2 + vectorA.z ** 2);
+    const magnitudeB = Math.sqrt(vectorB.x ** 2 + vectorB.y ** 2 + vectorB.z ** 2);
+
+    // Calculate cosine similarity
+    const cosineSimilarity = dotProduct / (magnitudeA * magnitudeB);
+
+    // Return cosine distance
+    return 1 - cosineSimilarity;
+  }
+
   const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
     try {
       const response = await fetch('/api/py/process_landmarks', {
