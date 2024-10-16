@@ -45,6 +45,8 @@ function App() {
     },
   ];
 
+  const [poseLandmarker, setPoseLandmarker] = useState(null);
+
   useEffect(() => {
     async function loadPoseLandmarkers() {
       const vision = await FilesetResolver.forVisionTasks(
@@ -238,6 +240,50 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    async function initializePoseLandmarker() {
+      try {
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+        );
+        const poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+            delegate: "GPU"
+          },
+          runningMode: "VIDEO",
+          numPoses: 1
+        });
+        setPoseLandmarker(poseLandmarker);
+      } catch (error) {
+        console.error("Error initializing poseLandmarker:", error);
+      }
+    }
+
+    initializePoseLandmarker();
+  }, []);
+
+  const detectPose = () => {
+    if (!poseLandmarker) {
+      console.error("PoseLandmarker not initialized");
+      return;
+    }
+
+    // Your pose detection logic here
+  };
+
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.addEventListener('loadeddata', () => {
+        console.log("Video loaded");
+        // You might want to start your pose detection here
+      });
+    }
+  }, []);
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <AppBar position="static" sx={{ backgroundColor: '#000' }}>
@@ -360,6 +406,7 @@ function App() {
                   height: '0',
                   visibility: 'hidden'
                 }}
+                onError={(e) => console.error("Video error:", e.target.error)}
               />
               {uploadedVideo && uploadedVideoPoseLandmarker && (
                 <PoseCanvas
