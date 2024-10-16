@@ -34,7 +34,6 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
   const animationIdRef = useRef(null); // Almacenar el ID de la animación
 
   const setTimedFeedback = useCallback((feedback) => {
-    console.log("Setting feedback:", feedback);
     setFeedback(feedback);
   }, [setFeedback]);
 
@@ -72,9 +71,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
 
   // Update getColorFromPercentage function
   function getColorFromPercentage(percentage) {
-    // Ensure percentage is between 0 and 100
     percentage = Math.max(0, Math.min(100, percentage));
-    
     let r, g;
     if (percentage < 50) {
       // Red to Yellow (0-50%)
@@ -85,34 +82,26 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
       r = Math.round(255 - ((percentage - 50) / 50) * 255);
       g = 255;
     }
-    
     return `rgb(${r}, ${g}, 0)`;
   }
 
   // Add cosineDistance function
-  function cosineDistance(point1, point2, point3) {
-    // Calculate vectors
-    const vectorA = {
+  function cosineDistance(vector1, vector2) {
+    const dotProduct = vector1.x * vector2.x + vector1.y * vector2.y + vector1.z * vector2.z;
+    const magnitude1 = Math.sqrt(vector1.x ** 2 + vector1.y ** 2 + vector1.z ** 2);
+    const magnitude2 = Math.sqrt(vector2.x ** 2 + vector2.y ** 2 + vector2.z ** 2);
+    
+    const cosineSimilarity = dotProduct / (magnitude1 * magnitude2);
+    return Math.acos(cosineSimilarity) * (180 / Math.PI); // Convert to degrees
+  }
+
+  // Function to calculate vector between two points
+  function calculateVector(point1, point2) {
+    return {
       x: point2.x - point1.x,
       y: point2.y - point1.y,
       z: point2.z - point1.z
     };
-    const vectorB = {
-      x: point3.x - point2.x,
-      y: point3.y - point2.y,
-      z: point3.z - point2.z
-    };
-
-    // Calculate dot product and magnitudes
-    const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y + vectorA.z * vectorB.z;
-    const magnitudeA = Math.sqrt(vectorA.x ** 2 + vectorA.y ** 2 + vectorA.z ** 2);
-    const magnitudeB = Math.sqrt(vectorB.x ** 2 + vectorB.y ** 2 + vectorB.z ** 2);
-
-    // Calculate cosine similarity
-    const cosineSimilarity = dotProduct / (magnitudeA * magnitudeB);
-
-    // Return cosine distance
-    return 1 - cosineSimilarity;
   }
 
   const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
@@ -134,7 +123,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
       }
 
       const data = await response.json();
-      console.log('Processed Data:', data);
+      // console.log('Processed Data:', data);
       if (data.feedback && data.feedback !== "No feedback yet") {
         setTimedFeedback(data.feedback);
       }
@@ -185,36 +174,65 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
 
       if (result.landmarks && result.landmarks.length > 0) {
         const currentLandmarks = result.landmarks[0];
-        let matchPercentage = 100;
+        let matchPercentage = 0; // Initialize to 0 instead of 100
         
-        // Update landmarks in the parent component
         updateLandmarks(isWebcam, currentLandmarks);
 
-        if (otherLandmarks && otherLandmarks.length > 0) {
-          const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
-            const otherLandmark = otherLandmarks[index];
-            return sum + euclideanDistance(landmark, otherLandmark);
+        if (otherLandmarks && otherLandmarks.length > 0 && isWebcam) {
+          const angles = [
+            [11, 13, 15], // Left Shoulder - Left Elbow - Left Wrist
+            [12, 14, 16], // Right Shoulder - Right Elbow - Right Wrist
+            [23, 25, 27], // Left Hip - Left Knee - Left Ankle
+            [24, 26, 28], // Right Hip - Right Knee - Right Ankle
+            [11, 23, 25], // Left Shoulder - Left Hip - Left Knee
+            [12, 24, 26]  // Right Shoulder - Right Hip - Right Knee
+          ];
+
+          const totalAngleDifference = angles.reduce((sum, [a, b, c]) => {
+            const currentVector1 = calculateVector(currentLandmarks[a], currentLandmarks[b]);
+            const currentVector2 = calculateVector(currentLandmarks[b], currentLandmarks[c]);
+            const otherVector1 = calculateVector(otherLandmarks[a], otherLandmarks[b]);
+            const otherVector2 = calculateVector(otherLandmarks[b], otherLandmarks[c]);
+
+            const currentAngle = cosineDistance(currentVector1, currentVector2);
+            const otherAngle = cosineDistance(otherVector1, otherVector2);
+
+            return sum + Math.abs(currentAngle - otherAngle);
           }, 0);
 
-          matchPercentage = Math.max(0, 100 - (totalDistance / currentLandmarks.length) * 200);
+          const maxAngleDifference = angles.length * 180; // Maximum possible difference
+          matchPercentage = 100 - (totalAngleDifference / maxAngleDifference) * 100;
+          matchPercentage = Math.max(0, Math.min(100, matchPercentage)); // Ensure it's between 0 and 100
         }
 
         setPoseMatchPercentage(matchPercentage);
 
-        // Apply color change for all videos
-        const color = getColorFromPercentage(matchPercentage);
+        // Calculate color based on match percentage only for webcam
+        const color = isWebcam ? getColorFromPercentage(matchPercentage) : 'rgb(0, 255, 0)';
+
+        if (isWebcam) {
+          console.log('Current Landmarks:', currentLandmarks);
+          console.log('Other Landmarks:', otherLandmarks);
+          console.log('Match Percentage:', matchPercentage);
+          console.log('Color:', color);
+        }
 
         const drawingUtils = new DrawingUtils(canvasCtx);
 
-        // Dibuja los landmarks y los conectores en el canvas
-        drawingUtils.drawLandmarks(currentLandmarks, { radius: 6, color: color });
+        // Draw landmarks and connectors with the calculated color
+        drawingUtils.drawLandmarks(currentLandmarks, { 
+          radius: 6, 
+          fillColor: color,
+          lineWidth: 2,
+          strokeColor: 'white'
+        });
         drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
           color: color,
-          lineWidth: 6,
+          lineWidth: 7
         });
 
         // Llamar a la función para enviar los landmarks al backend
-        sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
+        //sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
 
         frameIndex.current += 1;  // Incrementar el índice del frame
       } else {
