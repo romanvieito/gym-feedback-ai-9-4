@@ -183,12 +183,15 @@ const landmarkNames = [
     ang += angParams[2];
     ang *= angParams[3];
 
+    // Normaliza los ángulos para manejar la naturaleza circular de los mismos
     if (['pelvis', 'shoulders'].includes(angName)) {
-      ang = ang > 90 ? ang - 180 : ang;
-      ang = ang < -90 ? ang + 180 : ang;
+      // Para pelvis y hombros, normaliza a un rango de [-90, 90] grados
+      ang = ang > 90 ? ang - 180 : ang;  // Ajusta si el ángulo es mayor a 90 grados
+      ang = ang < -90 ? ang + 180 : ang; // Ajusta si el ángulo es menor a -90 grados
     } else {
-      ang = ang > 180 ? ang - 360 : ang;
-      ang = ang < -180 ? ang + 360 : ang;
+      // Para otros ángulos, normaliza a un rango de [-180, 180] grados
+      ang = ang > 180 ? ang - 360 : ang;  // Ajusta si el ángulo es mayor a 180 grados
+      ang = ang < -180 ? ang + 360 : ang; // Ajusta si el ángulo es menor a -180 grados
     }
 
     return ang;
