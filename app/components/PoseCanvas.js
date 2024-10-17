@@ -165,7 +165,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
   // Function to compute angles
   function computeAngle(angName, landmarks, angleDict) {
     const angParams = angleDict[angName];
-    if (!angParams) return NaN;
+    if (!angParams) return NaN;//tenemos que devolver un número para que no se rompa esto pero no tenemos que devolver NaN
 
     const angleCoords = angParams[0].map(kpt => {
       const index = landmarkNames.indexOf(kpt);
