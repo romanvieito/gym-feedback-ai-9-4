@@ -305,6 +305,7 @@ function App() {
                     boxShadow: 6,
                   },
                 }}
+                aria-label="Upload Video"
                 onClick={() => document.getElementById('fileInput').click()}
               >
                 <CardMedia
@@ -356,6 +357,7 @@ function App() {
                 ref={uploadedVideoRef}
                 playsInline
                 crossOrigin="anonymous"
+                data-testid="video-player"
                 style={{
                   width: '100%',
                   height: '0',
@@ -387,8 +389,8 @@ function App() {
                       style={{ marginTop: 20 }}
                     />
                     <Box display="flex" justifyContent="center" mt={2}>
-                      <IconButton onClick={togglePlayPause}>
-                        {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
+                      <IconButton onClick={togglePlayPause} aria-label="Play/Pause">
+                        {isPlaying ? <PauseIcon fontSize="large" aria-label="Pause" /> : <PlayArrowIcon fontSize="large" aria-label="Play" />}
                       </IconButton>
                       {isPlaying &&
                         <>
