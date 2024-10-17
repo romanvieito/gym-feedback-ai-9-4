@@ -28,6 +28,7 @@
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
 
+
 const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback, isWebcam, otherLandmarks, updateLandmarks }, ref) => {
   const canvasRef = useRef(null);
   const frameIndex = useRef(0);
@@ -89,31 +90,6 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     return `rgb(${r}, ${g}, 0)`;
   }
 
-  // Add cosineDistance function
-  function cosineDistance(point1, point2, point3) {
-    // Calculate vectors
-    const vectorA = {
-      x: point2.x - point1.x,
-      y: point2.y - point1.y,
-      z: point2.z - point1.z
-    };
-    const vectorB = {
-      x: point3.x - point2.x,
-      y: point3.y - point2.y,
-      z: point3.z - point2.z
-    };
-
-    // Calculate dot product and magnitudes
-    const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y + vectorA.z * vectorB.z;
-    const magnitudeA = Math.sqrt(vectorA.x ** 2 + vectorA.y ** 2 + vectorA.z ** 2);
-    const magnitudeB = Math.sqrt(vectorB.x ** 2 + vectorB.y ** 2 + vectorB.z ** 2);
-
-    // Calculate cosine similarity
-    const cosineSimilarity = dotProduct / (magnitudeA * magnitudeB);
-
-    // Return cosine distance
-    return 1 - cosineSimilarity;
-  }
 
   const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
     try {
@@ -143,6 +119,167 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     }
   };
 
+  // Define landmark names at the top of the file
+const landmarkNames = [
+  'Nose', 'Left Eye (Inner)', 'Left Eye', 'Left Eye (Outer)', 'Right Eye (Inner)',
+  'Right Eye', 'Right Eye (Outer)', 'Left Ear', 'Right Ear', 'Mouth (Left)',
+  'Mouth (Right)', 'Left Shoulder', 'Right Shoulder', 'Left Elbow', 'Right Elbow',
+  'Left Wrist', 'Right Wrist', 'Left Pinky', 'Right Pinky', 'Left Index',
+  'Right Index', 'Left Thumb', 'Right Thumb', 'Left Hip', 'Right Hip',
+  'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle', 'Left Heel',
+  'Right Heel', 'Left Foot Index', 'Right Foot Index'
+  ];
+
+  // Define the angle dictionary in JavaScript
+  const angleDict = {
+    'right ankle': [['Right Knee', 'Right Ankle', 'Right Foot Index', 'Right Heel'], 'dorsiflexion', 90, 1],
+    'left ankle': [['Left Knee', 'Left Ankle', 'Left Foot Index', 'Left Heel'], 'dorsiflexion', 90, 1],
+    'right knee': [['Right Ankle', 'Right Knee', 'Right Hip'], 'flexion', -180, 1],
+    'left knee': [['Left Ankle', 'Left Knee', 'Left Hip'], 'flexion', -180, 1],
+    'right hip': [['Right Knee', 'Right Hip', 'Left Hip', 'Neck'], 'flexion', 0, -1],
+    'left hip': [['Left Knee', 'Left Hip', 'Right Hip', 'Neck'], 'flexion', 0, -1],
+    'right shoulder': [['Right Elbow', 'Right Shoulder', 'Left Shoulder', 'Neck'], 'flexion', 0, -1],
+    'left shoulder': [['Left Elbow', 'Left Shoulder', 'Right Shoulder', 'Neck'], 'flexion', 0, -1],
+    'right elbow': [['Right Wrist', 'Right Elbow', 'Right Shoulder'], 'flexion', 180, -1],
+    'left elbow': [['Left Wrist', 'Left Elbow', 'Left Shoulder'], 'flexion', 180, -1],
+    'right wrist': [['Right Elbow', 'Right Wrist', 'Right Index'], 'flexion', -180, 1],
+    'left wrist': [['Left Elbow', 'Left Index', 'Left Wrist'], 'flexion', -180, 1],
+    'right foot': [['Right Foot Index', 'Right Heel'], 'horizontal', 0, -1],
+    'left foot': [['Left Foot Index', 'Left Heel'], 'horizontal', 0, -1],
+    'right shank': [['Right Ankle', 'Right Knee'], 'horizontal', 0, -1],
+    'left shank': [['Left Ankle', 'Left Knee'], 'horizontal', 0, -1],
+    'right thigh': [['Right Knee', 'Right Hip'], 'horizontal', 0, -1],
+    'left thigh': [['Left Knee', 'Left Hip'], 'horizontal', 0, -1],
+    'pelvis': [['Left Hip', 'Right Hip'], 'horizontal', 0, -1],
+    'trunk': [['Neck', 'Hip'], 'horizontal', 0, -1],
+    'shoulders': [['Left Shoulder', 'Right Shoulder'], 'horizontal', 0, -1],
+    'head': [['Head', 'Neck'], 'horizontal', 0, -1],
+    'right arm': [['Right Elbow', 'Right Shoulder'], 'horizontal', 0, -1],
+    'left arm': [['Left Elbow', 'Left Shoulder'], 'horizontal', 0, -1],
+    'right forearm': [['Right Wrist', 'Right Elbow'], 'horizontal', 0, -1],
+    'left forearm': [['Left Wrist', 'Left Elbow'], 'horizontal', 0, -1],
+    'right hand': [['Right Index', 'Right Wrist'], 'horizontal', 0, -1],
+    'left hand': [['Left Index', 'Left Wrist'], 'horizontal', 0, -1]
+  };
+
+  // Function to compute angles
+  function computeAngle(angName, landmarks, angleDict) {
+    const angParams = angleDict[angName];
+    if (!angParams) return NaN;
+
+    const angleCoords = angParams[0].map(kpt => {
+      const index = landmarkNames.indexOf(kpt);
+      if (index === -1) return null;
+      const landmark = landmarks[index];
+      return landmark ? [landmark.x, landmark.y, landmark.z] : null; // Ensure 3D coordinates
+    }).filter(coord => coord !== null);
+
+    if (angleCoords.length < 3) {
+      console.warn(`Insufficient points for angle calculation: ${angName}`);
+      return NaN;
+    }
+
+    let ang = points3DToAngles(angleCoords);
+    ang += angParams[2];
+    ang *= angParams[3];
+
+    if (['pelvis', 'shoulders'].includes(angName)) {
+      ang = ang > 90 ? ang - 180 : ang;
+      ang = ang < -90 ? ang + 180 : ang;
+    } else {
+      ang = ang > 180 ? ang - 360 : ang;
+      ang = ang < -180 ? ang + 360 : ang;
+    }
+
+    return ang;
+  }
+
+  // Helper function to calculate angles from 3D points
+  function points3DToAngles(coords) {
+    if (coords.length < 3) return 0;
+
+    // Extract points
+    const [p1, p2, p3] = coords;
+
+    // Calculate vectors
+    const vectorA = { x: p2[0] - p1[0], y: p2[1] - p1[1], z: p2[2] - p1[2] };
+    const vectorB = { x: p3[0] - p2[0], y: p3[1] - p2[1], z: p3[2] - p2[2] };
+
+    // Calculate dot product and magnitudes
+    const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y + vectorA.z * vectorB.z;
+    const magnitudeA = Math.sqrt(vectorA.x ** 2 + vectorA.y ** 2 + vectorA.z ** 2);
+    const magnitudeB = Math.sqrt(vectorB.x ** 2 + vectorB.y ** 2 + vectorB.z ** 2);
+
+    // Calculate cosine of the angle
+    const cosineAngle = dotProduct / (magnitudeA * magnitudeB);
+
+    // Ensure the cosine value is within the valid range for acos
+    const clampedCosine = Math.max(-1, Math.min(1, cosineAngle));
+
+    // Calculate the angle in degrees
+    const angle = Math.acos(clampedCosine) * (180 / Math.PI);
+
+    return angle;
+  }
+
+  // Function to calculate cosine distance between two angles
+  function cosineDistanceBetweenAngles(angle1, angle2) {
+    // Convert angles to radians
+    const radian1 = angle1 * (Math.PI / 180);
+    const radian2 = angle2 * (Math.PI / 180);
+
+    // Calculate cosine similarity
+    const cosineSimilarity = Math.cos(radian1) * Math.cos(radian2) + Math.sin(radian1) * Math.sin(radian2);
+
+    // Cosine distance is 1 - cosine similarity
+    return 1 - cosineSimilarity;
+  }
+
+  // Function to compare angles using cosine distance and return landmark indices
+  function findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, landmarks, otherLandmarks) {
+    const anomalousIndices = [];
+    const COSINE_DISTANCE_THRESHOLD = 0.1; // Ajusta este umbral según sea necesario
+
+    for (const angName in angleslandmarks) {
+      if (angleslandmarks.hasOwnProperty(angName) && anglesotherlandmarks.hasOwnProperty(angName)) {
+        // Calcula la distancia coseno entre los ángulos
+        const cosineDistance = cosineDistanceBetweenAngles(angleslandmarks[angName], anglesotherlandmarks[angName]);
+
+        // Log para depuración: muestra el nombre del ángulo y la distancia coseno
+        console.log(`Ángulo: ${angName}, Distancia Coseno: ${cosineDistance}`);
+
+        if (cosineDistance > COSINE_DISTANCE_THRESHOLD) {
+          // Obtiene los nombres de los landmarks para este ángulo
+          const landmarkNamesForAngle = angleDict[angName][0];
+          // Convierte los nombres de los landmarks en índices
+          const indices = landmarkNamesForAngle.map(name => {
+            const index = landmarkNames.indexOf(name);
+            if (index === -1) {
+              console.warn(`Nombre de landmark no encontrado: ${name}`);
+              return null; // O puedes optar por manejarlo de otra manera
+            }
+            return index;
+          }).filter(index => index !== null); // Filtra los índices no válidos
+
+          // Log para depuración: muestra los índices de los landmarks anómalos
+          console.log(`Índices de Landmarks Anómalos para ${angName}:`, indices);
+
+          // Añade estos índices a la lista de índices anómalos
+          anomalousIndices.push(...indices);
+        }
+      }
+    }
+
+    // Elimina duplicados
+    const uniqueAnomalousIndices = [...new Set(anomalousIndices)];
+
+    // Log para depuración: muestra los índices únicos de los landmarks anómalos
+    console.log('Índices Únicos de Landmarks Anómalos:', uniqueAnomalousIndices);
+
+    return uniqueAnomalousIndices;
+  }
+
+  // Integrate this function in your pose detection logic
   async function detectPose() {
     if (
       videoRef.current &&
@@ -191,6 +328,27 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
         updateLandmarks(isWebcam, currentLandmarks);
 
         if (otherLandmarks && otherLandmarks.length > 0) {
+          // Compute angles for each joint
+          const angleslandmarks = {};
+          const anglesotherlandmarks = {};
+          for (const angName in angleDict) {
+            angleslandmarks[angName] = computeAngle(angName, currentLandmarks, angleDict);
+            anglesotherlandmarks[angName] = computeAngle(angName, otherLandmarks, angleDict);
+          }
+
+          // Find anomalous landmark indices
+          const anomalousIndices = findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, currentLandmarks, otherLandmarks);
+          console.log('Anomalous Landmark Indices:', anomalousIndices);
+
+          // Visualize anomalous points
+          anomalousIndices.forEach(index => {
+            const landmark = currentLandmarks[index];
+            if (landmark) {
+              // Dibuja una señal visual en el canvas para los landmarks anómalos
+              drawVisualSignal(canvasCtx, landmark, getColorFromPercentage(poseMatchPercentage));
+            }
+          });
+
           const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
             const otherLandmark = otherLandmarks[index];
             return sum + euclideanDistance(landmark, otherLandmark);
@@ -217,6 +375,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
         sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
 
         frameIndex.current += 1;  // Incrementar el índice del frame
+
       } else {
         console.warn("No landmarks detected");
       }
@@ -224,6 +383,14 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
       console.warn("Video not ready or poseLandmarker not available");
     }
     animationIdRef.current = requestAnimationFrame(detectPose);
+  }
+
+  // Función para dibujar una señal visual en el canvas
+  function drawVisualSignal(ctx, landmark, color) {
+    ctx.beginPath();
+    ctx.arc(landmark.x * ctx.canvas.width, landmark.y * ctx.canvas.height, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = color; // Usa el color proporcionado
+    ctx.fill();
   }
 
   useEffect(() => {
