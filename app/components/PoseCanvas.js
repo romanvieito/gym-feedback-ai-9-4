@@ -282,6 +282,20 @@ const landmarkNames = [
     return uniqueAnomalousIndices;
   }
 
+
+  // // TODO TODO: Exclude landmarks based on the index
+  // // Indexes of landmarks to exclude .. 1, 2, 3, 4, 5, 6, 7, 8,
+  // const excludeIndexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // Example indexes for the landmarks to exclude
+  // // // Flag to control exclusion
+  // let excludeAfterDetection = true; // Set to true to exclude, false to include
+  // // Function to process landmarks after detection
+  function processLandmarks(landmarks) {
+  //   if (excludeAfterDetection) {
+  //     return landmarks.filter((_, index) => !excludeIndexes.includes(index));
+  //   }
+     return landmarks;
+  }
+
   // Integrate this function in your pose detection logic
   async function detectPose() {
     if (
@@ -343,14 +357,7 @@ const landmarkNames = [
           const anomalousIndices = findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, currentLandmarks, otherLandmarks);
           console.log('Anomalous Landmark Indices:', anomalousIndices);
 
-          // Visualize anomalous points
-          anomalousIndices.forEach(index => {
-            const landmark = currentLandmarks[index];
-            if (landmark) {
-              // Dibuja una señal visual en el canvas para los landmarks anómalos
-              drawVisualSignal(canvasCtx, landmark, getColorFromPercentage(poseMatchPercentage));
-            }
-          });
+          
 
           // const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
           //   const otherLandmark = otherLandmarks[index];
@@ -362,6 +369,16 @@ const landmarkNames = [
 
           // Calculate match percentage based on the number of anomalous points
           matchPercentage = Math.max(0, 100 - (numberOfAnomalousPoints / currentLandmarks.length) * 200);
+
+          // Visualize anomalous points
+          anomalousIndices.forEach(index => {
+            const landmark = currentLandmarks[index];
+            if (landmark) {
+              // Dibuja una señal visual en el canvas para los landmarks anómalos
+              drawVisualSignal(canvasCtx, landmark, getColorFromPercentage(poseMatchPercentage));
+            }
+          });
+          
         }
 
         setPoseMatchPercentage(matchPercentage);
@@ -372,12 +389,11 @@ const landmarkNames = [
         const drawingUtils = new DrawingUtils(canvasCtx);
 
         // Dibuja los landmarks y los conectores en el canvas
-        drawingUtils.drawLandmarks(currentLandmarks, { radius: 6, color: color });
-        drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
+        drawingUtils.drawLandmarks(processLandmarks(currentLandmarks), { radius: 6, color: color });
+        drawingUtils.drawConnectors(processLandmarks(currentLandmarks), PoseLandmarker.POSE_CONNECTIONS, {
           color: color,
           lineWidth: 6,
         });
-
         // Llamar a la función para enviar los landmarks al backend
         sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
 
