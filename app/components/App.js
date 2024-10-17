@@ -377,37 +377,23 @@ function App() {
                   updateLandmarks={updateLandmarks}
                 />
               )}
-              {/* Control deslizante para moverse en el video */}
-              {
-                uploadedVideo && uploadedVideoPoseLandmarker ?
-                  <>
-                    <Slider
-                      value={currentTime}
-                      max={duration}
-                      onChange={handleSliderChange}
-                      aria-labelledby="video-slider"
-                      style={{ marginTop: 20 }}
-                    />
-                    <Box display="flex" justifyContent="center" mt={2}>
-                      <IconButton onClick={togglePlayPause}>
-                        {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
-                      </IconButton>
-                      {/* {isPlaying &&
-                        <>
-                          <IconButton onClick={toggleStop}>
-                            <StopIcon fontSize="large" />
-                          </IconButton>
-                        </>} */}
-                    </Box>
-                  </>
-                  : uploadedVideo && !uploadedVideoPoseLandmarker ?
-                    <>
-                      <p>Loading video...</p>
-                    </>
-                    :
-                    <>
-                    </>
-              }
+              {uploadedVideo && uploadedVideoPoseLandmarker && (
+                <Box sx={{ position: 'absolute', bottom: '30px', left: 0, right: 0 }}>
+                  <Slider
+                    value={currentTime}
+                    max={duration}
+                    size="small"
+                    color="info"
+                    onChange={handleSliderChange}
+                    aria-labelledby="video-slider"
+                  />
+                </Box>
+              )}
+              <Box display="flex" justifyContent="center">
+                <IconButton onClick={togglePlayPause}>
+                  {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
+                </IconButton>
+              </Box>
             </Box>
           </Box>
 
