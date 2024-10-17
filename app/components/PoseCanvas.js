@@ -352,12 +352,16 @@ const landmarkNames = [
             }
           });
 
-          const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
-            const otherLandmark = otherLandmarks[index];
-            return sum + euclideanDistance(landmark, otherLandmark);
-          }, 0);
+          // const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
+          //   const otherLandmark = otherLandmarks[index];
+          //   return sum + euclideanDistance(landmark, otherLandmark);
+          // }, 0);
+          // Count the number of anomalous points
+          const numberOfAnomalousPoints = anomalousIndices.length;
+          console.log('Number of Anomalous Points:', numberOfAnomalousPoints);
 
-          matchPercentage = Math.max(0, 100 - (totalDistance / currentLandmarks.length) * 200);
+          // Calculate match percentage based on the number of anomalous points
+          matchPercentage = Math.max(0, 100 - (numberOfAnomalousPoints / currentLandmarks.length) * 200);
         }
 
         setPoseMatchPercentage(matchPercentage);
