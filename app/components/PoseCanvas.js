@@ -119,15 +119,15 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     }
   };
 
-  // Define landmark names at the top of the file
-const landmarkNames = [
-  'Nose', 'Left Eye (Inner)', 'Left Eye', 'Left Eye (Outer)', 'Right Eye (Inner)',
-  'Right Eye', 'Right Eye (Outer)', 'Left Ear', 'Right Ear', 'Mouth (Left)',
-  'Mouth (Right)', 'Left Shoulder', 'Right Shoulder', 'Left Elbow', 'Right Elbow',
-  'Left Wrist', 'Right Wrist', 'Left Pinky', 'Right Pinky', 'Left Index',
-  'Right Index', 'Left Thumb', 'Right Thumb', 'Left Hip', 'Right Hip',
-  'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle', 'Left Heel',
-  'Right Heel', 'Left Foot Index', 'Right Foot Index'
+  // Define landmark names (at the top of the file?) esto no se si va mejor aquí o al principio del archivo
+  const landmarkNames = [
+    'Nose', 'Left Eye (Inner)', 'Left Eye', 'Left Eye (Outer)', 'Right Eye (Inner)',
+    'Right Eye', 'Right Eye (Outer)', 'Left Ear', 'Right Ear', 'Mouth (Left)',
+    'Mouth (Right)', 'Left Shoulder', 'Right Shoulder', 'Left Elbow', 'Right Elbow',
+    'Left Wrist', 'Right Wrist', 'Left Pinky', 'Right Pinky', 'Left Index',
+    'Right Index', 'Left Thumb', 'Right Thumb', 'Left Hip', 'Right Hip',
+    'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle', 'Left Heel',
+    'Right Heel', 'Left Foot Index', 'Right Foot Index'
   ];
 
   // Define the angle dictionary in JavaScript
