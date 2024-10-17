@@ -365,35 +365,35 @@ function App() {
                 }}
               />
               {uploadedVideo && uploadedVideoPoseLandmarker && (
-                <PoseCanvas
-                  ref={poseCanvasRef}
-                  videoRef={uploadedVideoRef}
-                  poseLandmarker={uploadedVideoPoseLandmarker}
-                  videoDimensions={videoDimensions}
-                  setFeedback={setUploadedVideoFeedback}
-                  feedback={uploadedVideoFeedback}
-                  isWebcam={false}
-                  otherLandmarks={webcamLandmarks}
-                  updateLandmarks={updateLandmarks}
-                />
-              )}
-              {uploadedVideo && uploadedVideoPoseLandmarker && (
-                <Box sx={{ position: 'absolute', bottom: '30px', left: 0, right: 0 }}>
-                  <Slider
-                    value={currentTime}
-                    max={duration}
-                    size="small"
-                    color="info"
-                    onChange={handleSliderChange}
-                    aria-labelledby="video-slider"
+                <>
+                  <PoseCanvas
+                    ref={poseCanvasRef}
+                    videoRef={uploadedVideoRef}
+                    poseLandmarker={uploadedVideoPoseLandmarker}
+                    videoDimensions={videoDimensions}
+                    setFeedback={setUploadedVideoFeedback}
+                    feedback={uploadedVideoFeedback}
+                    isWebcam={false}
+                    otherLandmarks={webcamLandmarks}
+                    updateLandmarks={updateLandmarks}
                   />
-                </Box>
-              )}
-              <Box display="flex" justifyContent="center">
+                  <Box sx={{ position: 'absolute', bottom: '30px', left: 0, right: 0 }}>
+                    <Slider
+                      value={currentTime}
+                      max={duration}
+                      size="small"
+                      color="info"
+                      onChange={handleSliderChange}
+                      aria-labelledby="video-slider"
+                    />
+                  </Box>
+                  <Box display="flex" justifyContent="center">
                 <IconButton onClick={togglePlayPause}>
                   {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
                 </IconButton>
               </Box>
+                </>
+              )}
             </Box>
           </Box>
 

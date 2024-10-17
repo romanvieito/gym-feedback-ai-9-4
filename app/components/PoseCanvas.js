@@ -394,8 +394,8 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
           color: color,
           lineWidth: 6,
         });
-        // Llamar a la función para enviar los landmarks al backend
-        sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
+        // TLlamar a la función para enviar los landmarks al backend
+        // sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
 
         frameIndex.current += 1;  // Incrementar el índice del frame
 
