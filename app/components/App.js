@@ -243,7 +243,9 @@ function App() {
       <AppBar position="static" sx={{ backgroundColor: '#000' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            24up.
+            <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>
+              24up.
+            </a>
           </Typography>
         </Toolbar>
       </AppBar>
@@ -390,12 +392,12 @@ function App() {
                       <IconButton onClick={togglePlayPause}>
                         {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
                       </IconButton>
-                      {isPlaying &&
+                      {/* {isPlaying &&
                         <>
                           <IconButton onClick={toggleStop}>
                             <StopIcon fontSize="large" />
                           </IconButton>
-                        </>}
+                        </>} */}
                     </Box>
                   </>
                   : uploadedVideo && !uploadedVideoPoseLandmarker ?
@@ -415,8 +417,8 @@ function App() {
               position: 'absolute',
               top: 7,
               right: 9,
-              backgroundColor: 'white',
-              '&:hover': { backgroundColor: '#e0e0e0' },
+              color: 'white',
+              '&:hover': { color: '#e0e0e0' },
               display: uploadedVideo ? 'block' : 'none'
             }}
           >
