@@ -10,11 +10,7 @@ export async function GET(request) {
         return NextResponse.json({ status: 401, message: 'No api key provided' });
     }
 
-    const apikey = authHeader.split(' ')[1]; // Asumimos que el formato es "Bearer <token>"
-
-    // Verificar el api key
-    const isValid = validateApiKey(apikey);
-    if (!isValid) {
+    if (authHeader !== `Bearer ${process.env.TOKEN_API_KEY}`) {
         return NextResponse.json({ status: 403, message: 'Invalid api key' });
     }
 
@@ -25,7 +21,7 @@ export async function GET(request) {
         // Almacenar el token en la base de datos
         await sql`INSERT INTO tokens (token) VALUES (${token});`;
 
-        //console.log(`Token generado y almacenado: ${token}`);
+        console.log(`Token generado y almacenado: ${token}`);
         return NextResponse.json({ status: 200, message: 'OK'/*, token: token*/ });
 
     } catch (err) {
@@ -33,9 +29,3 @@ export async function GET(request) {
         return NextResponse.json({ status: 500, message: 'ERROR'/*, error: err*/ });
     }
 }
-
-// Función para validar el api key
-const validateApiKey = async (apikey) => {
-    const token_api_key = process.env.TOKEN_API_KEY || '';
-    return token_api_key === apikey;
-};

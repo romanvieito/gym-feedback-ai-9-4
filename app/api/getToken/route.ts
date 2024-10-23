@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { sql } from '@vercel/postgres';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
 
     const authHeader = request.headers.get('Authorization');
 
@@ -9,11 +9,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ status: 401, message: 'No api key provided' });
     }
 
-    const apikey = authHeader.split(' ')[1]; // Asumimos que el formato es "Bearer <token>"
-
-    // Verificar el api key
-    const isValid = validateApiKey(apikey);
-    if (!isValid) {
+    if (authHeader !== `Bearer ${process.env.TOKEN_API_KEY}`) {
         return NextResponse.json({ status: 403, message: 'Invalid api key' });
     }
 
@@ -28,9 +24,3 @@ export async function GET(request: Request) {
         return NextResponse.json({ status: 500, message: 'ERROR', error: err });
     }
 }
-
-// Función para validar el api key
-const validateApiKey = async (apikey: string) => {
-    const token_api_key = process.env.TOKEN_API_KEY || '';
-    return token_api_key === apikey;
-};
