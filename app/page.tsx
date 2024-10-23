@@ -59,6 +59,7 @@ export default function Home() {
           />
           <h1 className="text-4xl font-bold mb-2">AI Workout Coach</h1>
           <h3 className="text-x2 text-gray-700">Ready for some fun and fitness?</h3>
+          <h5 className="text-xs text-red-900">Access from https://24up.fit/</h5>
         </div>
       </main>
     );
