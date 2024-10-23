@@ -49,17 +49,20 @@ export default function Home() {
     return (
       <main className="flex items-center justify-center h-screen bg-gray-100">
         <div className="text-center">
-          <Image
-            src="/images/4.png"
-            alt="Vercel Logo"
-            className="dark:invert mb-8"
-            width={300}
-            height={300}
-            priority
-          />
+          <a href="https://24up.fit/">
+            <Image
+              src="/images/4.png"
+              alt="Vercel Logo"
+              className="dark:invert mb-8"
+              width={300}
+              height={300}
+              priority
+            />
+          </a>
           <h1 className="text-4xl font-bold mb-2">AI Workout Coach</h1>
           <h3 className="text-x2 text-gray-700">Ready for some fun and fitness?</h3>
-          <h5 className="text-xs text-red-900">Access from https://24up.fit/</h5>
+          <h5 className="text-xs text-red-900">Access from <a href="https://24up.fit/">https://24up.fit/</a>
+          </h5>
         </div>
       </main>
     );
