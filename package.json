@@ -18,6 +18,8 @@
     "@mui/material": "^6.1.1",
     "@react-hook/window-size": "^3.1.1",
     "@vercel/blob": "^0.24.0",
+    "@vercel/postgres": "^0.10.0",
+    "dotenv": "^16.4.5",
     "next": "^14.2.13",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "22.5.5",
+    "@types/pg": "^8.11.10",
     "@types/react": "18.3.8",
     "@types/react-dom": "18.3.0",
     "autoprefixer": "10.4.20",

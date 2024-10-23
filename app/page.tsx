@@ -1,10 +1,69 @@
-//import Image from "next/image";
+'use client';
+import Image from "next/image";
 //import Link from "next/link";
 
 import HomePage from '@/app/components/HomePage'
 import App from '@/app/components/App'
+import { useEffect, useState } from 'react';
+
+const validateToken = async (token: string) => {
+  try {
+    const response = await fetch('/api/getToken', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.TOKEN_API_KEY}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const result = await response.json();
+
+    return token === result.token;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+};
 
 export default function Home() {
+  const [token, setToken] = useState("");
+  const [isValid, setIsValid] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenFromUrl = urlParams.get('token') || "";
+      setToken(tokenFromUrl);
+
+      const fetchValid = async () => {
+        const valid = await validateToken(tokenFromUrl);
+        if (valid) setIsValid(valid); // Establecer el estado después de obtener el valor
+      };
+
+      fetchValid(); // Llama a la función asíncrona
+    }
+  }, []);
+
+  // Si el token no es válido, no renderiza el componente principal
+  if (!isValid) {
+    return (
+      <main className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="text-center">
+          <Image
+            src="/images/4.png"
+            alt="Vercel Logo"
+            className="dark:invert mb-8"
+            width={300}
+            height={300}
+            priority
+          />
+          <h1 className="text-4xl font-bold mb-2">AI Workout Coach</h1>
+          <h3 className="text-x2 text-gray-700">Ready for some fun and fitness?</h3>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <>
       <App />
