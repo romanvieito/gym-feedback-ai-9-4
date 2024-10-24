@@ -9,6 +9,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import StopIcon from '@mui/icons-material/Stop';
 import CloseIcon from '@mui/icons-material/Close';
+import { CircularProgress } from '@mui/material';
 
 function App() {
   const webcamRef = useRef(null);
@@ -239,216 +240,238 @@ function App() {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{ backgroundColor: '#000' }}>
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>
-              24up.
-            </a>
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <Container maxWidth="xl" sx={{ mt: 4, textAlign: 'center' }}>
-        {/* Pick your exercise section */}
-        <Box sx={{ display: uploadedVideo ? 'none' : 'block' }}>
-          <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 2, fontWeight: 'bold' }}>
-            Ready for some fun and fitness?
-          </Typography>
-          <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 6, color: 'gray' }}>
-            Pick your exercise or upload your own video.
-          </Typography>
-          <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ margin: -1.5 }}>
-            {therapyTypes.map((type, index) => (
-              <Box key={index} flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
-                <Card
-                  sx={{
-                    maxWidth: 345,
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    backgroundColor: type.color,
-                    color: 'white',
-                    '&:hover': {
-                      cursor: 'pointer',
-                      boxShadow: 6,
-                    },
-                  }}
-                  onClick={() => handleCardClick(type.video)}
-                >
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={type.image}
-                    alt={type.title}
-                  />
-                  <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <Typography gutterBottom variant="h5" component="div">
-                      {type.title}
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 'auto' }}>
-                      {type.description} →
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Box>
-            ))}
-            <Box flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
-              <Card
-                sx={{
-                  maxWidth: 345,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  backgroundColor: '#FF9800',
-                  color: 'white',
-                  '&:hover': {
-                    cursor: 'pointer',
-                    boxShadow: 6,
-                  },
-                }}
-                onClick={() => document.getElementById('fileInput').click()}
-              >
-                <CardMedia
-                  component="img"
-                  height="140"
-                  image="/images/3.png"
-                  alt="Upload Video"
-                />
-                <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <Typography gutterBottom variant="h5" component="div">
-                    Upload Video
-                  </Typography>
-                  <Typography variant="body2" sx={{ mt: 'auto' }}>
-                    Upload your own video →
-                  </Typography>
-                </CardContent>
-              </Card>
-              <input
-                id="fileInput"
-                type="file"
-                hidden
-                accept="video/*"
-                onChange={handleVideoUpload}
-              />
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Video Section */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 2,
-            justifyContent: 'center',
-            width: '100%'
-          }}
-        >
-          {/* Uploaded Video Section */}
-          <Box sx={{ flex: 1, width: '100%' }}>
-            <Box sx={{
-              width: '100%',
-              boxShadow: 3,
-              borderRadius: 2,
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <video
-                ref={uploadedVideoRef}
-                playsInline
-                crossOrigin="anonymous"
-                style={{
-                  width: '100%',
-                  height: '0',
-                  visibility: 'hidden'
-                }}
-              />
-              {uploadedVideo && uploadedVideoPoseLandmarker && (
-                <>
-                  <PoseCanvas
-                    ref={poseCanvasRef}
-                    videoRef={uploadedVideoRef}
-                    poseLandmarker={uploadedVideoPoseLandmarker}
-                    videoDimensions={videoDimensions}
-                    setFeedback={setUploadedVideoFeedback}
-                    feedback={uploadedVideoFeedback}
-                    isWebcam={false}
-                    otherLandmarks={webcamLandmarks}
-                    updateLandmarks={updateLandmarks}
-                  />
-                  <Box sx={{ position: 'absolute', bottom: '30px', left: 0, right: 0 }}>
-                    <Slider
-                      value={currentTime}
-                      max={duration}
-                      size="small"
-                      color="info"
-                      onChange={handleSliderChange}
-                      aria-labelledby="video-slider"
-                    />
+    webcamPoseLandmarker && uploadedVideoPoseLandmarker ?
+      <>
+        <Box sx={{ flexGrow: 1 }}>
+          <AppBar position="static" sx={{ backgroundColor: '#000' }}>
+            <Toolbar>
+              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>
+                  24up.
+                </a>
+              </Typography>
+            </Toolbar>
+          </AppBar>
+          <Container maxWidth="xl" sx={{ mt: 4, textAlign: 'center' }}>
+            {/* Pick your exercise section */}
+            <Box sx={{ display: uploadedVideo ? 'none' : 'block' }}>
+              <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 2, fontWeight: 'bold' }}>
+                Ready for some fun and fitness?
+              </Typography>
+              <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 6, color: 'gray' }}>
+                Pick your exercise or upload your own video.
+              </Typography>
+              <Box display="flex" flexWrap="wrap" justifyContent="center" sx={{ margin: -1.5 }}>
+                {therapyTypes.map((type, index) => (
+                  <Box key={index} flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
+                    <Card
+                      sx={{
+                        maxWidth: 345,
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        backgroundColor: type.color,
+                        color: 'white',
+                        '&:hover': {
+                          cursor: 'pointer',
+                          boxShadow: 6,
+                        },
+                      }}
+                      onClick={() => handleCardClick(type.video)}
+                    >
+                      <CardMedia
+                        component="img"
+                        height="140"
+                        image={type.image}
+                        alt={type.title}
+                      />
+                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <Typography gutterBottom variant="h5" component="div">
+                          {type.title}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 'auto' }}>
+                          {type.description} →
+                        </Typography>
+                      </CardContent>
+                    </Card>
                   </Box>
-                  <Box display="flex" justifyContent="center">
-                <IconButton onClick={togglePlayPause}>
-                  {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
-                </IconButton>
+                ))}
+                <Box flexBasis={{ xs: '100%', sm: '50%', md: '33.33%' }} p={1.5}>
+                  <Card
+                    sx={{
+                      maxWidth: 345,
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      backgroundColor: '#FF9800',
+                      color: 'white',
+                      '&:hover': {
+                        cursor: 'pointer',
+                        boxShadow: 6,
+                      },
+                    }}
+                    onClick={() => document.getElementById('fileInput').click()}
+                  >
+                    <CardMedia
+                      component="img"
+                      height="140"
+                      image="/images/3.png"
+                      alt="Upload Video"
+                    />
+                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <Typography gutterBottom variant="h5" component="div">
+                        Upload Video
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 'auto' }}>
+                        Upload your own video →
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                  <input
+                    id="fileInput"
+                    type="file"
+                    hidden
+                    accept="video/*"
+                    onChange={handleVideoUpload}
+                  />
+                </Box>
               </Box>
-                </>
-              )}
             </Box>
-          </Box>
 
-          <IconButton
-            onClick={handleCloseVideo}
-            sx={{
-              position: 'absolute',
-              top: 7,
-              right: 9,
-              color: 'white',
-              '&:hover': { color: '#e0e0e0' },
-              display: uploadedVideo ? 'block' : 'none'
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-
-          {/* Webcam Section */}
-          <Box sx={{ flex: 1, width: '100%' }}>
-            <Box sx={{
-              width: '100%',
-              boxShadow: 3,
-              borderRadius: 2,
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <video
-                ref={webcamRef}
-                autoPlay
-                playsInline
-                style={{
+            {/* Video Section */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 2,
+                justifyContent: 'center',
+                width: '100%'
+              }}
+            >
+              {/* Uploaded Video Section */}
+              <Box sx={{ flex: 1, width: '100%' }}>
+                <Box sx={{
                   width: '100%',
-                  height: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? '0' : 'auto',
-                  visibility: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? 'hidden' : 'visible'
+                  boxShadow: 3,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  position: 'relative'
+                }}>
+                  <video
+                    ref={uploadedVideoRef}
+                    playsInline
+                    crossOrigin="anonymous"
+                    style={{
+                      width: '100%',
+                      height: '0',
+                      visibility: 'hidden'
+                    }}
+                  />
+                  {uploadedVideo && uploadedVideoPoseLandmarker && (
+                    <>
+                      <PoseCanvas
+                        ref={poseCanvasRef}
+                        videoRef={uploadedVideoRef}
+                        poseLandmarker={uploadedVideoPoseLandmarker}
+                        videoDimensions={videoDimensions}
+                        setFeedback={setUploadedVideoFeedback}
+                        feedback={uploadedVideoFeedback}
+                        isWebcam={false}
+                        otherLandmarks={webcamLandmarks}
+                        updateLandmarks={updateLandmarks}
+                      />
+                      <Box sx={{ position: 'absolute', bottom: '30px', left: 0, right: 0 }}>
+                        <Slider
+                          value={currentTime}
+                          max={duration}
+                          size="small"
+                          color="info"
+                          onChange={handleSliderChange}
+                          aria-labelledby="video-slider"
+                        />
+                      </Box>
+                      <Box display="flex" justifyContent="center">
+                        <IconButton onClick={togglePlayPause}>
+                          {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
+                        </IconButton>
+                      </Box>
+                    </>
+                  )}
+                </Box>
+              </Box>
+
+              <IconButton
+                onClick={handleCloseVideo}
+                sx={{
+                  position: 'absolute',
+                  top: 7,
+                  right: 9,
+                  color: 'white',
+                  '&:hover': { color: '#e0e0e0' },
+                  display: uploadedVideo ? 'block' : 'none'
                 }}
-              />
-              {isWebcamStreaming && webcamPoseLandmarker && (
-                <PoseCanvas
-                  ref={poseCanvasRef}
-                  videoRef={webcamRef}
-                  poseLandmarker={webcamPoseLandmarker}
-                  videoDimensions={videoDimensions}
-                  setFeedback={setWebcamFeedback}
-                  feedback={webcamFeedback}
-                  isWebcam={true}
-                  otherLandmarks={uploadedVideoLandmarks}
-                  updateLandmarks={updateLandmarks}
-                />
-              )
-              }
+              >
+                <CloseIcon />
+              </IconButton>
+
+              {/* Webcam Section */}
+              <Box sx={{ flex: 1, width: '100%' }}>
+                <Box sx={{
+                  width: '100%',
+                  boxShadow: 3,
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                  position: 'relative'
+                }}>
+                  <video
+                    ref={webcamRef}
+                    autoPlay
+                    playsInline
+                    style={{
+                      width: '100%',
+                      height: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? '0' : 'auto',
+                      visibility: !uploadedVideo || !uploadedVideoPoseLandmarker ? '0' : isWebcamStreaming ? 'hidden' : 'visible'
+                    }}
+                  />
+                  {isWebcamStreaming && webcamPoseLandmarker && (
+                    <PoseCanvas
+                      ref={poseCanvasRef}
+                      videoRef={webcamRef}
+                      poseLandmarker={webcamPoseLandmarker}
+                      videoDimensions={videoDimensions}
+                      setFeedback={setWebcamFeedback}
+                      feedback={webcamFeedback}
+                      isWebcam={true}
+                      otherLandmarks={uploadedVideoLandmarks}
+                      updateLandmarks={updateLandmarks}
+                    />
+                  )
+                  }
+                </Box>
+              </Box>
             </Box>
+          </Container>
+        </Box>
+      </> :
+      <>
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          height="100vh" // O cualquier altura que necesites
+          textAlign="left"
+        >
+          <CircularProgress style={{ marginRight: '16px' }} />
+          <Box>
+            <Typography variant="h6" component="div">
+              PLEASE WAIT
+            </Typography>
+            <Typography variant="caption" component="div">
+              while the data is loaded for pose processing
+            </Typography>
           </Box>
         </Box>
-      </Container>
-    </Box>
+      </>
   );
 }
 
