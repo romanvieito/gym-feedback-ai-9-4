@@ -243,7 +243,7 @@ function App() {
     webcamPoseLandmarker && uploadedVideoPoseLandmarker ?
       <>
         <Box sx={{ flexGrow: 1 }}>
-          <AppBar position="static" sx={{ backgroundColor: '#000' }}>
+          {/* <AppBar position="static" sx={{ backgroundColor: '#000' }}>
             <Toolbar>
               <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
                 <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>
@@ -251,7 +251,7 @@ function App() {
                 </a>
               </Typography>
             </Toolbar>
-          </AppBar>
+          </AppBar> */}
           <Container maxWidth="xl" sx={{ mt: 4, textAlign: 'center' }}>
             {/* Pick your exercise section */}
             <Box sx={{ display: uploadedVideo ? 'none' : 'block' }}>
@@ -404,10 +404,10 @@ function App() {
                 onClick={handleCloseVideo}
                 sx={{
                   position: 'absolute',
-                  top: 7,
-                  right: 9,
-                  color: 'white',
-                  '&:hover': { color: '#e0e0e0' },
+                  top: -6,
+                  right: -2,
+                  color: 'black',
+                  '&:hover': { color: '#333333' },
                   display: uploadedVideo ? 'block' : 'none'
                 }}
               >
@@ -464,10 +464,10 @@ function App() {
           <CircularProgress style={{ marginRight: '16px' }} />
           <Box>
             <Typography variant="h6" component="div">
-              PLEASE WAIT
+              Please wait,
             </Typography>
             <Typography variant="caption" component="div">
-              while the data is loaded for pose processing
+              you are getting fun in a second...
             </Typography>
           </Box>
         </Box>
