@@ -75,7 +75,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
   function getColorFromPercentage(percentage) {
     // Ensure percentage is between 0 and 100
     percentage = Math.max(0, Math.min(100, percentage));
-    
+
     let r, g;
     if (percentage < 50) {
       // Red to Yellow (0-50%)
@@ -86,7 +86,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
       r = Math.round(255 - ((percentage - 50) / 50) * 255);
       g = 255;
     }
-    
+
     return `rgb(${r}, ${g}, 0)`;
   }
 
@@ -282,6 +282,34 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     return uniqueAnomalousIndices;
   }
 
+  function minimumConfidenceScoreValidation(xposeLandmarks) {
+
+    const poseDetectionConfidence = xposeLandmarks.map(landmark => landmark.visibility);
+    const posePresenceConfidence = xposeLandmarks.map(landmark => landmark.presence);
+
+    // Verificar si la detección de pose no es exitosa
+    const isNotPoseDetected = poseDetectionConfidence.some(confidence => confidence < 0.5);
+    const isNotPosePresent = posePresenceConfidence.some(confidence => confidence < 0.5);
+
+    // Validar seguimiento de la pose
+    const trackingConfidence = xposeLandmarks.reduce((acc, landmark) => acc + landmark.visibility, 0) / xposeLandmarks.length;
+    const isNotTrackingSuccessful = trackingConfidence < 0.5;
+
+    if (isNotPoseDetected) {
+      console.log('La detección de la pose no fue exitosa.');
+      return false;
+    }
+    if (isNotPosePresent) {
+      console.log('La presencia de la pose no fue suficiente.');
+      return false;
+    }
+    if (isNotTrackingSuccessful) {
+      console.log('El seguimiento de la pose no fue exitoso.');
+      return false;
+    }
+
+    return true;
+  }
 
   // // TODO TODO: Exclude landmarks based on the index
   // // Indexes of landmarks to exclude .. 1, 2, 3, 4, 5, 6, 7, 8,
@@ -290,10 +318,10 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
   // let excludeAfterDetection = true; // Set to true to exclude, false to include
   // // Function to process landmarks after detection
   function processLandmarks(landmarks) {
-  //   if (excludeAfterDetection) {
-  //     return landmarks.filter((_, index) => !excludeIndexes.includes(index));
-  //   }
-     return landmarks;
+    //   if (excludeAfterDetection) {
+    //     return landmarks.filter((_, index) => !excludeIndexes.includes(index));
+    //   }
+    return landmarks;
   }
 
   // Integrate this function in your pose detection logic
@@ -337,14 +365,18 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
         performance.now()
       );
 
-      if (result.landmarks && result.landmarks.length > 0) {
+      if (result.landmarks && result.landmarks.length > 0 &&
+        minimumConfidenceScoreValidation(result.landmarks)) {
+
         const currentLandmarks = result.landmarks[0];
         let matchPercentage = 100;
-        
+
         // Update landmarks in the parent component
         updateLandmarks(isWebcam, currentLandmarks);
 
-        if (otherLandmarks && otherLandmarks.length > 0) {
+        if (otherLandmarks && otherLandmarks.length > 0 &&
+          minimumConfidenceScoreValidation(otherLandmarks)) {
+
           // Compute angles for each joint
           const angleslandmarks = {};
           const anglesotherlandmarks = {};
@@ -357,7 +389,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
           const anomalousIndices = findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, currentLandmarks, otherLandmarks);
           console.log('Anomalous Landmark Indices:', anomalousIndices);
 
-          
+
 
           // const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
           //   const otherLandmark = otherLandmarks[index];
@@ -378,7 +410,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
               drawVisualSignal(canvasCtx, landmark, getColorFromPercentage(poseMatchPercentage));
             }
           });
-          
+
         }
 
         setPoseMatchPercentage(matchPercentage);
