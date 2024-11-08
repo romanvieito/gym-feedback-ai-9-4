@@ -241,7 +241,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
   // Function to compare angles using cosine distance and return landmark indices
   function findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, landmarks, otherLandmarks) {
     const anomalousIndices = [];
-    const COSINE_DISTANCE_THRESHOLD = 0.1; // Ajusta este umbral según sea necesario
+    const COSINE_DISTANCE_THRESHOLD = 0.5; // Ajusta este umbral según sea necesario
 
     for (const angName in angleslandmarks) {
       if (angleslandmarks.hasOwnProperty(angName) && anglesotherlandmarks.hasOwnProperty(angName)) {
