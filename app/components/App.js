@@ -368,34 +368,18 @@ function App() {
                     }}
                   />
                   {uploadedVideo && uploadedVideoPoseLandmarker && (
-                    <>
-                      <PoseCanvas
-                        ref={poseCanvasRef}
-                        videoRef={uploadedVideoRef}
-                        poseLandmarker={uploadedVideoPoseLandmarker}
-                        videoDimensions={videoDimensions}
-                        setFeedback={setUploadedVideoFeedback}
-                        feedback={uploadedVideoFeedback}
-                        isWebcam={false}
-                        otherLandmarks={webcamLandmarks}
-                        updateLandmarks={updateLandmarks}
-                      />
-                      <Box sx={{ position: 'absolute', bottom: '30px', left: 0, right: 0 }}>
-                        <Slider
-                          value={currentTime}
-                          max={duration}
-                          size="small"
-                          color="info"
-                          onChange={handleSliderChange}
-                          aria-labelledby="video-slider"
-                        />
-                      </Box>
-                      <Box display="flex" justifyContent="center">
-                        <IconButton onClick={togglePlayPause}>
-                          {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
-                        </IconButton>
-                      </Box>
-                    </>
+                    <PoseCanvas
+                      ref={poseCanvasRef}
+                      videoRef={uploadedVideoRef}
+                      webcamPoseLandmarker={webcamPoseLandmarker}
+                      uploadedVideoPoseLandmarker={uploadedVideoPoseLandmarker}
+                      videoDimensions={videoDimensions}
+                      setFeedback={setUploadedVideoFeedback}
+                      feedback={uploadedVideoFeedback}
+                      isWebcam={false}
+                      otherLandmarks={webcamLandmarks}
+                      updateLandmarks={updateLandmarks}
+                    />
                   )}
                 </Box>
               </Box>
@@ -437,7 +421,8 @@ function App() {
                     <PoseCanvas
                       ref={poseCanvasRef}
                       videoRef={webcamRef}
-                      poseLandmarker={webcamPoseLandmarker}
+                      webcamPoseLandmarker={webcamPoseLandmarker}
+                      uploadedVideoPoseLandmarker={uploadedVideoPoseLandmarker}
                       videoDimensions={videoDimensions}
                       setFeedback={setWebcamFeedback}
                       feedback={webcamFeedback}
@@ -445,8 +430,7 @@ function App() {
                       otherLandmarks={uploadedVideoLandmarks}
                       updateLandmarks={updateLandmarks}
                     />
-                  )
-                  }
+                  )}
                 </Box>
               </Box>
             </Box>

@@ -26,6 +26,11 @@ from dotenv import load_dotenv
 import json
 from unittest.mock import Mock
 
+# Needed for Text to Speech
+from gtts import gTTS
+import io
+import base64
+
 # Secret key to encode and decode JWT tokens
 # SECRET_KEY is a strong, random string used for encoding and decoding JWT tokens. 
 # It is generated using `secrets.token_hex(32)`, which produces a 64-character hexadecimal string, 
@@ -167,7 +172,7 @@ FEEDBACK_INTERVAL = 100
 @app.post("/api/py/process_landmarks")
 async def process_landmarks(data: LandmarksData):
     
-    # print("test_frame: ", data.frameIndex,"\n")
+    print("test_frame: ", data.frameIndex,"\n")
     # print("test_landmarks: ", data.landmarks,"\n")
     # print("test_realworldlandmarks: ", data.realworldlandmarks,"\n")
     try:
@@ -195,7 +200,7 @@ async def process_landmarks(data: LandmarksData):
         
         for landmark_index, landmark_data in enumerate(landmarks):
             landmark_name = landmarkNames[int(landmark_index)]
-            # print(landmark_name,"idx: ",landmark_index,"data :",landmark_data,"\n")
+            print(landmark_name,"idx: ",landmark_index,"data :",landmark_data,"\n")
             processed_landmarks[landmark_name] = {
                 "x": round(landmark_data.x, 3),  # rounding to 3 decimal places to reduce character count
                 "y": round(landmark_data.y, 3),  # rounding to 3 decimal places to reduce character count
@@ -231,19 +236,42 @@ async def process_landmarks(data: LandmarksData):
                 }],
             )
             current_feedback = openai_response.choices[0].message.content
+            # Generate audio from the feedback
+            try:
+                feedback_audio = message_to_audio_gtts(current_feedback)
+            except Exception as e:
+                print(f"Error generating audio: {e}")
+                feedback_audio = None
             print("current_feedback: ", current_feedback, "\n")
         else:
             current_feedback = "No feedback yet"
+            feedback_audio = None
             print("current_feedback: ", current_feedback, "\n")
 
         return {
             "status": "success", 
             "processed_frame": frame_index, 
             "feedback": current_feedback,
+            "feedback_audio": feedback_audio
         }
         
     except Exception as e:
+        print(f"Error processing landmarks: {e}")
         raise HTTPException(status_code=422, detail=str(e))
+
+
+def message_to_audio_gtts(message, lang='en', slow=False):
+    tts = gTTS(tld='hk', text=message, lang=lang, slow=slow)
+
+    # Save to a buffer
+    with io.BytesIO() as buffer:
+        tts.write_to_fp(buffer)
+        buffer.seek(0)
+        audio_data = buffer.read()
+
+    # Convert to base64
+    audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+    return audio_base64
 
 def create_access_token(data: dict):
     to_encode = data.copy()

@@ -27,9 +27,11 @@
 
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
+// import { d } from '@vercel/blob/dist/create-folder-Oa5wYhFM.cjs';
 
 
-const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setFeedback, feedback, isWebcam, otherLandmarks, updateLandmarks }, ref) => {
+
+const PoseCanvas = forwardRef(({ videoRef, webcamPoseLandmarker, uploadedVideoPoseLandmarker, videoDimensions, setFeedback, feedback, isWebcam, otherLandmarks, updateLandmarks }, ref) => {
   const canvasRef = useRef(null);
   const frameIndex = useRef(0);
   const animationIdRef = useRef(null); // Almacenar el ID de la animación
@@ -38,6 +40,62 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     console.log("Setting feedback:", feedback);
     setFeedback(feedback);
   }, [setFeedback]);
+
+  // Add this state to track audio playback
+  const [isPlayingFeedback, setIsPlayingFeedback] = useState(false);
+
+  const playAudioFeedback = (audioBase64) => {
+    if (!audioBase64) return;
+    
+    try {
+      // Store the current video volume
+      const currentVideoVolume = videoRef.current.volume;
+      
+      // Mute the video
+      videoRef.current.volume = 0;
+      setIsPlayingFeedback(true);
+      
+      const audio = new Audio(`data:audio/mpeg;base64,${audioBase64}`);
+      
+      audio.onerror = (e) => {
+        console.error('Error playing audio:', e);
+        // Restore video volume on error
+        videoRef.current.volume = currentVideoVolume;
+        setIsPlayingFeedback(false);
+      };
+      
+      // Add ended event listener to restore video volume
+      audio.onended = () => {
+        videoRef.current.volume = currentVideoVolume;
+        setIsPlayingFeedback(false);
+      };
+      
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(e => {
+          console.error('Error playing audio:', e);
+          // Restore video volume on error
+          videoRef.current.volume = currentVideoVolume;
+          setIsPlayingFeedback(false);
+        });
+      }
+    } catch (error) {
+      console.error('Error creating audio element:', error);
+      // Restore video volume on error
+      if (videoRef.current) {
+        videoRef.current.volume = 1;
+      }
+      setIsPlayingFeedback(false);
+    }
+  };
+
+  // Add this effect to handle video volume based on feedback state
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = isPlayingFeedback ? 0 : 1;
+    }
+  }, [isPlayingFeedback]);
 
   // Función para detener la detección de poses
   const stopPoseDetection = useCallback(() => {
@@ -93,6 +151,9 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
 
   const sendLandmarksToBackend = async (landmarks, realworldlandmarks) => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
       const response = await fetch('/api/py/process_landmarks', {
         method: 'POST',
         headers: {
@@ -103,7 +164,10 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
           landmarks: landmarks,
           realworldlandmarks: realworldlandmarks
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -111,8 +175,13 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
 
       const data = await response.json();
       console.log('Processed Data:', data);
+      
       if (data.feedback && data.feedback !== "No feedback yet") {
         setTimedFeedback(data.feedback);
+      }
+      // Play audio feedback if available
+      if (data.feedback_audio && data.feedback !== "No feedback yet") {
+        playAudioFeedback(data.feedback_audio);
       }
     } catch (error) {
       console.error('Error sending landmarks:', error);
@@ -241,7 +310,7 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
   // Function to compare angles using cosine distance and return landmark indices
   function findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, landmarks, otherLandmarks) {
     const anomalousIndices = [];
-    const COSINE_DISTANCE_THRESHOLD = 0.5; // Ajusta este umbral según sea necesario
+    const COSINE_DISTANCE_THRESHOLD = 0.15; // Ajusta este umbral según sea necesario
 
     for (const angName in angleslandmarks) {
       if (angleslandmarks.hasOwnProperty(angName) && anglesotherlandmarks.hasOwnProperty(angName)) {
@@ -324,8 +393,75 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
     return landmarks;
   }
 
-  // Integrate this function in your pose detection logic
-  async function detectPose() {
+
+
+// Todo esto es para generar un movimiento suavizado de la pose para tener un mock solamente...
+// Add these functions at the top of your file after the imports
+
+// Base pose to start from (roughly matching a standing position)
+const basePose = Array(33).fill().map((_, i) => ({
+    x: 0.5, // Center
+    y: i < 11 ? 0.3 : i < 23 ? 0.5 : 0.7, // Head landmarks higher, torso middle, legs lower
+    z: -0.3,
+    visibility: 0.9
+  }));
+
+// State for the current pose (initialize with basePose)
+let currentPose = [...basePose];
+
+function generateSmoothedLandmarks(frameIndex) {
+  const frequency = 0.05; // Controls speed of movement
+  const amplitude = 0.05; // Controls range of movement
+  
+  return currentPose.map((baseLandmark, i) => {
+    // Add subtle oscillating movements
+    const xOffset = Math.sin(frameIndex * frequency + i) * amplitude;
+    const yOffset = Math.cos(frameIndex * frequency + i * 0.5) * amplitude;
+    const zOffset = Math.sin(frameIndex * frequency + i * 0.7) * amplitude * 0.5;
+    
+    // Smoothly update current pose
+    currentPose[i] = {
+      x: clamp(baseLandmark.x + xOffset, 0.3, 0.7),
+      y: clamp(baseLandmark.y + yOffset, 0.2, 0.8),
+      z: clamp(baseLandmark.z + zOffset, -0.4, -0.2),
+      visibility: clamp(0.9 + Math.random() * 0.1, 0.8, 1.0)
+    };
+    
+    return currentPose[i];
+  });
+}
+
+// Helper function to clamp values
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+// Add this constant at the top of the file with other constants
+const VARIATION_INDEXES = [11, 12, 13, 14]; // Shoulder, elbow, and wrist landmarks
+
+// Add this helper function
+function createVariedLandmarks(baseLandmarks, shouldVary = false) {
+  if (!shouldVary) return baseLandmarks;
+  
+  return baseLandmarks.map((landmark, index) => {
+    if (VARIATION_INDEXES.includes(index)) {
+      // Add random variation to specified landmarks
+      return {
+        x: landmark.x + (Math.random() - 0.5) * 0.2, // ±0.1 variation
+        y: landmark.y + (Math.random() - 0.5) * 0.2,
+        z: landmark.z + (Math.random() - 0.5) * 0.2,
+        visibility: landmark.visibility
+      };
+    }
+    return landmark;
+  });
+}
+
+///Hasta aquí todo esto es para generar un movimiento suavizado de la pose para tener un mock solamente...
+
+// Integrate this function in your pose detection logic
+async function detectPose() {
+    const poseLandmarker = isWebcam ? webcamPoseLandmarker : uploadedVideoPoseLandmarker;
     if (
       videoRef.current &&
       poseLandmarker &&
@@ -360,10 +496,31 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
       // Draw video on canvas
       canvasCtx.drawImage(videoRef.current, 0, 0, videoWidth, videoHeight);
 
-      const result = await poseLandmarker.detectForVideo(
-        videoRef.current,
-        performance.now()
-      );
+
+      // // TODO, necesito que el Pocho me ayude aquí porque 
+      // // siempre usa la webcam como referencia debería ser al contrario
+      // const result = 
+      //   await poseLandmarker.detectForVideo(
+      //     videoRef.current,
+      //     performance.now()
+      //   )
+
+      // Generate mock landmarks
+      const mockLandmarks = generateSmoothedLandmarks(frameIndex.current);
+    
+      // Create mock result object to match MediaPipe's format
+      const result = {
+      landmarks: [mockLandmarks],
+      worldLandmarks: [mockLandmarks]
+      };
+
+      // Create varied landmarks
+
+      const baseMockLandmarks = generateSmoothedLandmarks(frameIndex.current);
+      const shouldVaryLandmarks = true; // You can control this with a prop or state
+      
+      const otherLandmarks = createVariedLandmarks(baseMockLandmarks, shouldVaryLandmarks);
+
 
       if (result.landmarks && result.landmarks.length > 0 &&
         minimumConfidenceScoreValidation(result.landmarks)) {
@@ -372,10 +529,13 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
         let matchPercentage = 100;
 
         // Update landmarks in the parent component
-        updateLandmarks(isWebcam, currentLandmarks);
+        // updateLandmarks(isWebcam, currentLandmarks);
 
         if (otherLandmarks && otherLandmarks.length > 0 &&
           minimumConfidenceScoreValidation(otherLandmarks)) {
+
+          console.log('Curerent landmarks: ', currentLandmarks);
+          console.log('Other landmarks: ', otherLandmarks);
 
           // Compute angles for each joint
           const angleslandmarks = {};
@@ -384,10 +544,10 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
             angleslandmarks[angName] = computeAngle(angName, currentLandmarks, angleDict);
             anglesotherlandmarks[angName] = computeAngle(angName, otherLandmarks, angleDict);
           }
-
           // Find anomalous landmark indices
           const anomalousIndices = findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, currentLandmarks, otherLandmarks);
           console.log('Anomalous Landmark Indices:', anomalousIndices);
+          debugger;
 
 
 
@@ -420,14 +580,20 @@ const PoseCanvas = forwardRef(({ videoRef, poseLandmarker, videoDimensions, setF
 
         const drawingUtils = new DrawingUtils(canvasCtx);
 
-        // Dibuja los landmarks y los conectores en el canvas
+        // // Dibuja los landmarks y los conectores en el canvas
         drawingUtils.drawLandmarks(processLandmarks(currentLandmarks), { radius: 6, color: color });
         drawingUtils.drawConnectors(processLandmarks(currentLandmarks), PoseLandmarker.POSE_CONNECTIONS, {
           color: color,
           lineWidth: 6,
         });
-        // TLlamar a la función para enviar los landmarks al backend
-        // sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
+        // // Llamar a la función para enviar los landmarks al backend
+        // Para ABEL TODO: tienes que cambiar esto, antes se le pedía a openAI basdo en todos los landmarks 
+        // pero ahora se le pide basado en los que están anómalos
+        
+        // Send landmarks to backend only every 100 frames
+        if (frameIndex.current % 500 === 0) {
+          sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
+        }
 
         frameIndex.current += 1;  // Incrementar el índice del frame
 
