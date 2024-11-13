@@ -28,6 +28,16 @@ const nextConfig = {
   // New experimental configuration
   experimental: {
     outputFileTracingIgnores: ['public/videos/*']
+  },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,  // preserve any existing fallback configs
+      fs: false,
+      path: false,
+      crypto: false
+    };
+    
+    return config;
   }
 };
 

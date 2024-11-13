@@ -28,13 +28,18 @@
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
 // import { d } from '@vercel/blob/dist/create-folder-Oa5wYhFM.cjs';
-
+import cv from '@techstark/opencv-js';
 
 
 const PoseCanvas = forwardRef(({ videoRef, webcamPoseLandmarker, uploadedVideoPoseLandmarker, videoDimensions, setFeedback, feedback, isWebcam, otherLandmarks, updateLandmarks }, ref) => {
   const canvasRef = useRef(null);
   const frameIndex = useRef(0);
+  const frameIndexWebcam = useRef(0);
+  const frameIndexVideo = useRef(0);
   const animationIdRef = useRef(null); // Almacenar el ID de la animación
+
+  const [videoFPS, setVideoFPS] = useState(30); // Default fallback
+  
 
   const setTimedFeedback = useCallback((feedback) => {
     console.log("Setting feedback:", feedback);
@@ -96,6 +101,21 @@ const PoseCanvas = forwardRef(({ videoRef, webcamPoseLandmarker, uploadedVideoPo
       videoRef.current.volume = isPlayingFeedback ? 0 : 1;
     }
   }, [isPlayingFeedback]);
+
+  // Add useEffect to get FPS when video loads
+  useEffect(() => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      video.addEventListener('loadedmetadata', () => {
+        // Calculate FPS from video duration and frame count if possible
+        const fps = video.mozPresentedFrames ? 
+          video.mozPresentedFrames / video.currentTime : 
+          (video.webkitDecodedFrameCount ? 
+            video.webkitDecodedFrameCount / video.currentTime : 30);
+        setVideoFPS(Math.round(fps > 0 ? fps : 30));
+      });
+    }
+  }, [videoRef]);
 
   // Función para detener la detección de poses
   const stopPoseDetection = useCallback(() => {
@@ -524,11 +544,12 @@ const FEEDBACK_INTERVAL = 300;
 
 async function detectPose() {
     const poseLandmarker = isWebcam ? webcamPoseLandmarker : uploadedVideoPoseLandmarker;
-    if (
-      videoRef.current &&
-      poseLandmarker &&
-      videoRef.current.readyState >= 2
-    ) {
+    const frameIndex = isWebcam ? frameIndexWebcam : frameIndexVideo;
+    if (videoRef.current && poseLandmarker && videoRef.current.readyState >= 2
+    ) 
+    {
+      frameIndex.current = Math.floor(videoRef.current.currentTime * videoFPS);
+
       const canvasElement = canvasRef.current;
       if (!canvasElement) {
         console.warn("Canvas element is null");
@@ -584,9 +605,8 @@ async function detectPose() {
       const otherLandmarks = createVariedLandmarks(baseMockLandmarks, shouldVaryLandmarks);
 
 
-      if (result.landmarks && result.landmarks.length > 0 &&
-        minimumConfidenceScoreValidation(result.landmarks)) {
-
+      if (result.landmarks && result.landmarks.length > 0 && minimumConfidenceScoreValidation(result.landmarks)) 
+        {
         const currentLandmarks = result.landmarks[0];
         let matchPercentage = 100;
 
@@ -608,8 +628,8 @@ async function detectPose() {
           }
           // Find anomalous landmark indices
           const anomalousIndices = findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, currentLandmarks, otherLandmarks);
-          console.log('Frame Index:', frameIndex.current);
-          console.log('Anomalous Landmark Indices:', anomalousIndices);
+          // console.log('Frame Index:', frameIndex.current);
+          // console.log('Anomalous Landmark Indices:', anomalousIndices);
 
           // Update statistics
           updateAnomalousLandmarkStats(anomalousIndices);
@@ -653,8 +673,10 @@ async function detectPose() {
         // Para ABEL TODO: tienes que cambiar esto, antes se le pedía a openAI basdo en todos los landmarks 
         // pero ahora se le pide basado en los que están anómalos
         // Send landmarks to backend every 500 framesFRAME_INTERVAL
-        if (frameIndex.current > 0 &&frameIndex.current % FEEDBACK_INTERVAL === 0) {
-          // sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
+        // Only process frame index and send feedback for video (not webcam)
+        if (!isWebcam) {
+          if (frameIndex.current > 0 &&frameIndex.current % FEEDBACK_INTERVAL === 0) {
+            // sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
           // Get ranked anomalous landmarks
           const rankedAnomalousLandmarks = Array.from(anomalousLandmarkStats.current.entries())
           .sort((a, b) => b[1] - a[1]) // Sort by frequency, highest first
@@ -670,19 +692,23 @@ async function detectPose() {
             sendAnomalousLandmarksToBackend(rankedAnomalousLandmarks.map(item => item.index));
             // Clear stats after sending
             anomalousLandmarkStats.current.clear();
+            }
           }
+          frameIndex.current += 1;  // Incrementar el índice del frame
+          console.log('Frame Index:', frameIndex.current);
         }
-
-        frameIndex.current += 1;  // Incrementar el índice del frame
-
-      } else {
-        console.warn("No landmarks detected");
+        }
+      else 
+      {
+          console.warn("No landmarks detected");
       }
-    } else {
-      console.warn("Video not ready or poseLandmarker not available");
+    } 
+    else 
+    {
+       console.warn("Video not ready or poseLandmarker not available");
     }
-    animationIdRef.current = requestAnimationFrame(detectPose);
-  }
+      animationIdRef.current = requestAnimationFrame(detectPose);
+    }
 
   // Función para dibujar una señal visual en el canvas
   function drawVisualSignal(ctx, landmark, color) {

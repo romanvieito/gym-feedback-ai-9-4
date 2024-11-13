@@ -17,6 +17,7 @@
     "@mui/icons-material": "^6.1.2",
     "@mui/material": "^6.1.1",
     "@react-hook/window-size": "^3.1.1",
+    "@techstark/opencv-js": "^4.10.0-release.1",
     "@vercel/blob": "^0.24.0",
     "@vercel/postgres": "^0.10.0",
     "dotenv": "^16.4.5",
