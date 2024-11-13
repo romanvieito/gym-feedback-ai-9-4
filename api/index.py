@@ -1,3 +1,15 @@
+#-----------------------------------------------------------------------------------------
+
+##Prompt for the LLM:
+
+# As an expert coach, analyze the following anomalous landmarks detected from the user's exercise performance compared to a reference video. These anomalies represent areas where the user's pose differs from the ideal execution. Provide quick, concise, empathetic, and positive feedback to help the user improve their exercise execution. Focus on encouragement and offer simple, actionable advice without mentioning the technical details or the anomalies directly.
+
+# Anomalous Landmarks: [Insert the list of anomalous landmarks here]
+
+# Your Feedback:
+
+#-----------------------------------------------------------------------------------------
+
 #from fastapi import FastAPI
 
 ### Create FastAPI instance with custom docs and openapi url
@@ -64,6 +76,33 @@ OPENAI_PROMPT = """As a fitness expert, analyze a client’s isometric workout u
 body landmarks. In one short sentence (no more than 20 words), provide feedback that highlights key strengths and
 offers specific adjustments to body alignment or muscle engagement to maximize stability and reduce strain during static holds."""
 
+# List of feedback templates with a placeholder for the anomalous landmark
+feedback_templates = [
+    "Great effort! To enhance your form, try focusing on keeping your {landmark} aligned.",
+    "You're doing fantastic! Engaging your {landmark} a bit more will make this exercise even more effective.",
+    "Excellent work! Remember to keep your {landmark} relaxed and in a natural position.",
+    "Well done! Maintaining a steady position with your {landmark} can help improve your balance.",
+    "You're making wonderful progress! Keeping your {landmark} straight will enhance your posture.",
+    "Impressive! Try to ensure your {landmark} moves smoothly with the rest of your body.",
+    "Keep it up! Paying a little more attention to your {landmark} can make the movement feel more comfortable.",
+    "Fantastic effort! Aligning your {landmark} will support better overall form.",
+    "You're on the right track! Engaging your {landmark} can provide extra stability during this exercise.",
+    "Great dedication! Keeping your {landmark} in mind will help you get the most out of this session."
+]
+
+# Function to generate feedback based on anomalous landmarks
+def generate_feedback(anomalous_landmarks):
+    import random
+    feedback_messages = []
+    for landmark in anomalous_landmarks:
+        template = random.choice(feedback_templates)
+        message = template.format(landmark=landmark)
+        feedback_messages.append(message)
+    return feedback_messages
+
+
+
+
 app = FastAPI()
 
 # CORS configuration
@@ -82,7 +121,7 @@ app.add_middleware(
 @app.middleware("http")
 async def authenticate(request: Request, call_next):
     # Skip authentication for certain paths (e.g., /token, /api/model, and /process-landmarks)
-    if request.url.path in ["/api/py", "/api/py/token", "/api/py/model", "/api/py/process_landmarks"]:
+    if request.url.path in ["/api/py", "/api/py/token", "/api/py/model", "/api/py/process_landmarks", "/api/py/process_anomalous_landmarks"]:
         return await call_next(request)
 
     token = request.headers.get('Authorization')
@@ -200,7 +239,7 @@ async def process_landmarks(data: LandmarksData):
         
         for landmark_index, landmark_data in enumerate(landmarks):
             landmark_name = landmarkNames[int(landmark_index)]
-            print(landmark_name,"idx: ",landmark_index,"data :",landmark_data,"\n")
+            # print(landmark_name,"idx: ",landmark_index,"data :",landmark_data,"\n")
             processed_landmarks[landmark_name] = {
                 "x": round(landmark_data.x, 3),  # rounding to 3 decimal places to reduce character count
                 "y": round(landmark_data.y, 3),  # rounding to 3 decimal places to reduce character count
@@ -259,6 +298,43 @@ async def process_landmarks(data: LandmarksData):
         print(f"Error processing landmarks: {e}")
         raise HTTPException(status_code=422, detail=str(e))
 
+class AnomalousLandmarksData(BaseModel):
+    frameIndex: int
+    landmarks_indexes: List[int]
+    
+@app.post("/api/py/process_anomalous_landmarks")
+async def process_anomalous_landmarks(data: AnomalousLandmarksData):
+    try:
+        # Make sure landmarkNames is defined correctly
+        landmarkNames = [
+            'Nose', 'Left Eye (Inner)', 'Left Eye', 'Left Eye (Outer)', 'Right Eye (Inner)',
+            'Right Eye', 'Right Eye (Outer)', 'Left Ear', 'Right Ear', 'Mouth (Left)',
+            'Mouth (Right)', 'Left Shoulder', 'Right Shoulder', 'Left Elbow', 'Right Elbow',
+            'Left Wrist', 'Right Wrist', 'Left Pinky', 'Right Pinky', 'Left Index',
+            'Right Index', 'Left Thumb', 'Right Thumb', 'Left Hip', 'Right Hip',
+            'Left Knee', 'Right Knee', 'Left Ankle', 'Right Ankle', 'Left Heel',
+            'Right Heel', 'Left Foot Index', 'Right Foot Index'
+        ]
+        print("data: ", data,"\n")
+        anomalous_landmarks = [landmarkNames[i] for i in data.landmarks_indexes]
+        feedback = generate_feedback(anomalous_landmarks)
+        current_feedback = feedback[0]
+        print("current_feedback: ", current_feedback, "\n")
+        try:
+            feedback_audio = message_to_audio_gtts(current_feedback)##esto es para que tengamos 
+                                                                        #el primer feedback pero hay que 
+                                                                        #cambiarlo
+        except Exception as e:
+            print(f"Error generating audio: {e}")
+            feedback_audio = None
+        
+        return {
+            "status": "success", 
+            "feedback": current_feedback,
+            "feedback_audio": feedback_audio
+        }
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 def message_to_audio_gtts(message, lang='en', slow=False):
     tts = gTTS(tld='hk', text=message, lang=lang, slow=slow)

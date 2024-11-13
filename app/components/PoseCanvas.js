@@ -188,6 +188,46 @@ const PoseCanvas = forwardRef(({ videoRef, webcamPoseLandmarker, uploadedVideoPo
     }
   };
 
+  const sendAnomalousLandmarksToBackend = async (landmarks_indexes) => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      const response = await fetch('/api/py/process_anomalous_landmarks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          frameIndex: frameIndex.current,
+          landmarks_indexes: landmarks_indexes,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Processed Data:', data);
+      
+      if (data.feedback && data.feedback !== "No feedback yet") {
+        setTimedFeedback(data.feedback);
+        console.log('Feedback:', data.feedback);
+      }
+
+      // Play audio feedback if available
+      if (data.feedback_audio && data.feedback !== "No feedback yet") {
+        playAudioFeedback(data.feedback_audio);
+      }
+    } catch (error) {
+      console.error('Error sending landmarks:', error);
+    }
+  };
+
   // Define landmark names (at the top of the file?) esto no se si va mejor aquí o al principio del archivo
   const landmarkNames = [
     'Nose', 'Left Eye (Inner)', 'Left Eye', 'Left Eye (Outer)', 'Right Eye (Inner)',
@@ -318,7 +358,7 @@ const PoseCanvas = forwardRef(({ videoRef, webcamPoseLandmarker, uploadedVideoPo
         const cosineDistance = cosineDistanceBetweenAngles(angleslandmarks[angName], anglesotherlandmarks[angName]);
 
         // Log para depuración: muestra el nombre del ángulo y la distancia coseno
-        console.log(`Ángulo: ${angName}, Distancia Coseno: ${cosineDistance}`);
+        //console.log(`Ángulo: ${angName}, Distancia Coseno: ${cosineDistance}`);
 
         if (cosineDistance > COSINE_DISTANCE_THRESHOLD) {
           // Obtiene los nombres de los landmarks para este ángulo
@@ -334,7 +374,7 @@ const PoseCanvas = forwardRef(({ videoRef, webcamPoseLandmarker, uploadedVideoPo
           }).filter(index => index !== null); // Filtra los índices no válidos
 
           // Log para depuración: muestra los índices de los landmarks anómalos
-          console.log(`Índices de Landmarks Anómalos para ${angName}:`, indices);
+          //console.log(`Índices de Landmarks Anómalos para ${angName}:`, indices);
 
           // Añade estos índices a la lista de índices anómalos
           anomalousIndices.push(...indices);
@@ -346,7 +386,7 @@ const PoseCanvas = forwardRef(({ videoRef, webcamPoseLandmarker, uploadedVideoPo
     const uniqueAnomalousIndices = [...new Set(anomalousIndices)];
 
     // Log para depuración: muestra los índices únicos de los landmarks anómalos
-    console.log('Índices Únicos de Landmarks Anómalos:', uniqueAnomalousIndices);
+    //console.log('Índices Únicos de Landmarks Anómalos:', uniqueAnomalousIndices);
 
     return uniqueAnomalousIndices;
   }
@@ -459,7 +499,29 @@ function createVariedLandmarks(baseLandmarks, shouldVary = false) {
 
 ///Hasta aquí todo esto es para generar un movimiento suavizado de la pose para tener un mock solamente...
 
-// Integrate this function in your pose detection logic
+// Add this state at the top of the component
+const anomalousLandmarkStats = useRef(new Map()); // Tracks frequency of anomalous landmarks
+
+// Add this function to update landmark statistics
+function updateAnomalousLandmarkStats(anomalousIndices) {
+  // Update frequency count for each anomalous landmark
+  anomalousIndices.forEach(index => {
+    const currentCount = anomalousLandmarkStats.current.get(index) || 0;
+    anomalousLandmarkStats.current.set(index, currentCount + 1);
+  });
+
+  // Esto no hace falta Abel: mejor es to keep the history of anomalous landmarks throughout the 500 frames to get a more accurate picture.
+  // // Reset stats for landmarks that are no longer anomalous
+  // anomalousLandmarkStats.current.forEach((count, index) => {
+  //   if (!anomalousIndices.includes(index)) {
+  //     anomalousLandmarkStats.current.delete(index);
+  //   }
+  // });
+}
+
+// Modify the detectPose function where we handle anomalous indices
+const FEEDBACK_INTERVAL = 300;
+
 async function detectPose() {
     const poseLandmarker = isWebcam ? webcamPoseLandmarker : uploadedVideoPoseLandmarker;
     if (
@@ -534,8 +596,8 @@ async function detectPose() {
         if (otherLandmarks && otherLandmarks.length > 0 &&
           minimumConfidenceScoreValidation(otherLandmarks)) {
 
-          console.log('Curerent landmarks: ', currentLandmarks);
-          console.log('Other landmarks: ', otherLandmarks);
+          // console.log('Curerent landmarks: ', currentLandmarks);
+          // console.log('Other landmarks: ', otherLandmarks);
 
           // Compute angles for each joint
           const angleslandmarks = {};
@@ -546,10 +608,11 @@ async function detectPose() {
           }
           // Find anomalous landmark indices
           const anomalousIndices = findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, currentLandmarks, otherLandmarks);
+          console.log('Frame Index:', frameIndex.current);
           console.log('Anomalous Landmark Indices:', anomalousIndices);
-          debugger;
 
-
+          // Update statistics
+          updateAnomalousLandmarkStats(anomalousIndices);
 
           // const totalDistance = currentLandmarks.reduce((sum, landmark, index) => {
           //   const otherLandmark = otherLandmarks[index];
@@ -557,7 +620,7 @@ async function detectPose() {
           // }, 0);
           // Count the number of anomalous points
           const numberOfAnomalousPoints = anomalousIndices.length;
-          console.log('Number of Anomalous Points:', numberOfAnomalousPoints);
+          //console.log('Number of Anomalous Points:', numberOfAnomalousPoints);
 
           // Calculate match percentage based on the number of anomalous points
           matchPercentage = Math.max(0, 100 - (numberOfAnomalousPoints / currentLandmarks.length) * 200);
@@ -589,10 +652,25 @@ async function detectPose() {
         // // Llamar a la función para enviar los landmarks al backend
         // Para ABEL TODO: tienes que cambiar esto, antes se le pedía a openAI basdo en todos los landmarks 
         // pero ahora se le pide basado en los que están anómalos
-        
-        // Send landmarks to backend only every 100 frames
-        if (frameIndex.current % 500 === 0) {
-          sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
+        // Send landmarks to backend every 500 framesFRAME_INTERVAL
+        if (frameIndex.current > 0 &&frameIndex.current % FEEDBACK_INTERVAL === 0) {
+          // sendLandmarksToBackend(currentLandmarks, result.worldLandmarks[0]);
+          // Get ranked anomalous landmarks
+          const rankedAnomalousLandmarks = Array.from(anomalousLandmarkStats.current.entries())
+          .sort((a, b) => b[1] - a[1]) // Sort by frequency, highest first
+          .map(([index, count]) => ({
+            index,
+            frequency: count,
+            frequencyPercentage: (count / FEEDBACK_INTERVAL) * 100 // Calculate percentage over last 500 frames
+          }))
+          .filter(item => item.frequencyPercentage > 20); // Only include landmarks that were anomalous >30% of the time
+
+          // Send the most problematic landmarks to backend
+          if (rankedAnomalousLandmarks.length > 0) {
+            sendAnomalousLandmarksToBackend(rankedAnomalousLandmarks.map(item => item.index));
+            // Clear stats after sending
+            anomalousLandmarkStats.current.clear();
+          }
         }
 
         frameIndex.current += 1;  // Incrementar el índice del frame
