@@ -2,13 +2,13 @@ import Image from "next/image";
 //import Link from "next/link";
 
 import HomePage from '@/app/components/HomePage'
-import App from '@/app/components/App'
+import App from '@/app/components/App2'
 
 export default function Home() {
 
   return (
     <>
-      <main className="flex items-center justify-center h-screen bg-gray-100">
+      {/* <main className="flex items-center justify-center h-screen bg-gray-100">
         <div className="text-center">
           <a href="https://24up.fit/">
             <Image
@@ -25,8 +25,8 @@ export default function Home() {
           <h5 className="text-xs text-red-900">Go to <a href="https://24up.fit/">https://24up.fit/</a>
           </h5>
         </div>
-      </main>
-      {/* <App /> */}
+      </main> */}
+      <App />
       {/* <HomePage /> */}
       {
         /*
