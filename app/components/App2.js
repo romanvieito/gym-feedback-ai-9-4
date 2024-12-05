@@ -54,6 +54,13 @@ function App2() {
           webcamRef.current.play();
           setIsWebcamActive(true);
           startPoseDetection();
+          
+          // Play the first video
+          if (videoRefs.current[0]) {
+            videoRefs.current[0].play().catch(error => {
+              console.error("Error playing video:", error);
+            });
+          }
         };
       }
     } catch (error) {
@@ -70,6 +77,11 @@ function App2() {
       setIsWebcamActive(false);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+      }
+      
+      // Pause the first video
+      if (videoRefs.current[0]) {
+        videoRefs.current[0].pause();
       }
     }
   };
