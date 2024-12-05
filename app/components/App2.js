@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { workoutTypes } from '../services/workoutData';
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
+import { landmarkNames, angleDict } from '../services/poseUtils';
 
 function App2() {
   const [poseLandmarker, setPoseLandmarker] = useState(null);
@@ -36,6 +37,52 @@ function App2() {
     loadPoseLandmarker();
   }, []);
 
+  // Add these helper functions
+  const computeAngle = useCallback((angName, landmarks, angleDict) => {
+    const angParams = angleDict[angName];
+    if (!angParams) return NaN;
+
+    const angleCoords = angParams[0].map(kpt => {
+      const index = landmarkNames.indexOf(kpt);
+      if (index === -1) return null;
+      const landmark = landmarks[index];
+      return landmark ? [landmark.x, landmark.y, landmark.z] : null;
+    }).filter(coord => coord !== null);
+
+    if (angleCoords.length < 3) return NaN;
+
+    let ang = points3DToAngles(angleCoords);
+    ang += angParams[2];
+    ang *= angParams[3];
+
+    // Normalize angles
+    if (['pelvis', 'shoulders'].includes(angName)) {
+      ang = ang > 90 ? ang - 180 : ang;
+      ang = ang < -90 ? ang + 180 : ang;
+    } else {
+      ang = ang > 180 ? ang - 360 : ang;
+      ang = ang < -180 ? ang + 360 : ang;
+    }
+
+    return ang;
+  }, []);
+
+  function points3DToAngles(coords) {
+    if (coords.length < 3) return 0;
+
+    const [p1, p2, p3] = coords;
+    const vectorA = { x: p2[0] - p1[0], y: p2[1] - p1[1], z: p2[2] - p1[2] };
+    const vectorB = { x: p3[0] - p2[0], y: p3[1] - p2[1], z: p3[2] - p2[2] };
+
+    const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y + vectorA.z * vectorB.z;
+    const magnitudeA = Math.sqrt(vectorA.x ** 2 + vectorA.y ** 2 + vectorA.z ** 2);
+    const magnitudeB = Math.sqrt(vectorB.x ** 2 + vectorB.y ** 2 + vectorB.z ** 2);
+
+    const cosineAngle = dotProduct / (magnitudeA * magnitudeB);
+    const clampedCosine = Math.max(-1, Math.min(1, cosineAngle));
+    return Math.acos(clampedCosine) * (180 / Math.PI);
+  }
+
   // Wrap detectPose in useCallback
   const detectPose = useCallback(async () => {
     if (!webcamRef.current || !poseLandmarker || !canvasRef.current) {
@@ -67,43 +114,51 @@ function App2() {
       const drawingUtils = new DrawingUtils(canvasCtx);
 
       if (result.landmarks && result.landmarks[0]) {
-        setWebcamLandmarks(result.landmarks[0]);
+        const currentLandmarks = result.landmarks[0];
+        setWebcamLandmarks(currentLandmarks);
         
-        // Only draw colored landmarks if we have video landmarks to compare against
         if (videoLandmarks && videoLandmarks.length > 0) {
-          const differences = result.landmarks[0].map((landmark, index) => {
-            const videoLandmark = videoLandmarks[index];
-            if (!videoLandmark) return 1;
-            const dx = landmark.x - videoLandmark.x;
-            const dy = landmark.y - videoLandmark.y;
-            const dz = landmark.z - videoLandmark.z;
-            return Math.sqrt(dx * dx + dy * dy + dz * dz);
+          // Calculate angles for both sets of landmarks
+          const currentAngles = {};
+          const videoAngles = {};
+          
+          for (const angName in angleDict) {
+            currentAngles[angName] = computeAngle(angName, currentLandmarks, angleDict);
+            videoAngles[angName] = computeAngle(angName, videoLandmarks, angleDict);
+          }
+
+          // Compare angles and calculate match percentage
+          const validAngles = Object.keys(currentAngles).filter(
+            ang => !isNaN(currentAngles[ang]) && !isNaN(videoAngles[ang])
+          );
+
+          const differences = validAngles.map(ang => {
+            const diff = Math.abs(currentAngles[ang] - videoAngles[ang]);
+            return Math.min(diff, 360 - diff) / 180; // Normalize to [0,1]
           });
 
           const averageDifference = differences.reduce((sum, diff) => sum + diff, 0) / differences.length;
-          const percentage = Math.max(0, Math.min(100, (1 - averageDifference) * 100));
+          const percentage = Math.max(0, (1 - averageDifference) * 100);
 
-          // Interpolate color from red to green
+          // Use the same color interpolation logic
           const red = Math.min(255, Math.floor((1 - percentage / 100) * 255));
           const green = Math.min(255, Math.floor((percentage / 100) * 255));
           const color = `rgb(${red},${green},0)`;
 
-          // console.log("Differences:", differences);
           console.log(`Pose accuracy: ${percentage.toFixed(1)}%`);
-          console.log(color);
-
-          drawingUtils.drawLandmarks(result.landmarks[0], { radius: 6, color });
-          drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
+          
+          drawingUtils.drawLandmarks(currentLandmarks, { radius: 6, color });
+          drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
             lineWidth: 6,
             color
           });
         } else {
           // Draw default blue landmarks while waiting for video landmarks
-          drawingUtils.drawLandmarks(result.landmarks[0], { 
+          drawingUtils.drawLandmarks(currentLandmarks, { 
             radius: 6,
             color: '#0000ff' // Blue color
           });
-          drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
+          drawingUtils.drawConnectors(currentLandmarks, PoseLandmarker.POSE_CONNECTIONS, {
             lineWidth: 6,
             color: '#0000ff' // Blue color
           });
@@ -114,7 +169,7 @@ function App2() {
     }
 
     animationRef.current = requestAnimationFrame(detectPose);
-  }, [poseLandmarker, videoLandmarks, webcamRef, canvasRef]);
+  }, [poseLandmarker, videoLandmarks, webcamRef, canvasRef, computeAngle]);
 
   // Now we can reference detectPose in useCallback
   const startPoseDetection = useCallback(() => {
