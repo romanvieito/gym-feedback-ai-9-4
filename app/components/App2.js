@@ -81,10 +81,15 @@ function App2() {
           });
 
           const averageDifference = differences.reduce((sum, diff) => sum + diff, 0) / differences.length;
-          const color = averageDifference > 1.0 ? 'red' : 'green';
-          
+          const percentage = Math.max(0, Math.min(100, (1 - averageDifference) * 100));
+
+          // Interpolate color from red to green
+          const red = Math.min(255, Math.floor((1 - percentage / 100) * 255));
+          const green = Math.min(255, Math.floor((percentage / 100) * 255));
+          const color = `rgb(${red},${green},0)`;
+
           console.log("Differences:", differences);
-          console.log(`Pose accuracy: ${Math.max(0, Math.min(100, (1 - averageDifference) * 100)).toFixed(1)}%`);
+          console.log(`Pose accuracy: ${percentage.toFixed(1)}%`);
           console.log(color);
 
           drawingUtils.drawLandmarks(result.landmarks[0], { radius: 6, color });
