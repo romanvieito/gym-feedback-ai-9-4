@@ -22,7 +22,7 @@ export default function Home() {
           </a>
           <h1 className="text-4xl font-bold mb-2">AI Workout Coach</h1>
           <h3 className="text-x2 text-gray-700">Ready for some fun and fitness?</h3>
-          <h5 className="text-xs text-red-900">Access from <a href="https://24up.fit/">https://24up.fit/</a>
+          <h5 className="text-xs text-red-900">Go to <a href="https://24up.fit/">https://24up.fit/</a>
           </h5>
         </div>
       </main>
