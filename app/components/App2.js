@@ -88,7 +88,7 @@ function App2() {
           const green = Math.min(255, Math.floor((percentage / 100) * 255));
           const color = `rgb(${red},${green},0)`;
 
-          console.log("Differences:", differences);
+          // console.log("Differences:", differences);
           console.log(`Pose accuracy: ${percentage.toFixed(1)}%`);
           console.log(color);
 
@@ -148,14 +148,15 @@ function App2() {
         }
       };
 
-      videoRefs.current[0].currentTime = 0;
-      videoRefs.current[0].play()
+      const currentVideoRef = videoRefs.current[0];
+      currentVideoRef.currentTime = 0;
+      currentVideoRef.play()
         .then(detectVideoLandmarks)
         .catch(error => console.error("Error playing video:", error));
 
       return () => {
-        if (videoRefs.current[0]) {
-          videoRefs.current[0].pause();
+        if (currentVideoRef) {
+          currentVideoRef.pause();
         }
       };
     }
@@ -262,8 +263,8 @@ function App2() {
           <div key={index} className="video-container">
             <video
               ref={el => videoRefs.current[index] = el}
-              width="360"
-              height="215"
+              width="640"
+              height="480"
               controls
               crossOrigin="anonymous"
               src={type.video}
