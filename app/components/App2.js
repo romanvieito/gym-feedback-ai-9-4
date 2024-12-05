@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { workoutTypes } from '../services/workoutData';
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 
@@ -36,58 +36,8 @@ function App2() {
     loadPoseLandmarker();
   }, []);
 
-  // Add startPoseDetection function
-  const startPoseDetection = () => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
-    detectPose();
-  };
-
-  // Start webcam
-  const startWebcam = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (webcamRef.current) {
-        webcamRef.current.srcObject = stream;
-        webcamRef.current.onloadedmetadata = () => {
-          webcamRef.current.play();
-          setIsWebcamActive(true);
-          startPoseDetection();
-          
-          // Play the first video
-          if (videoRefs.current[0]) {
-            videoRefs.current[0].play().catch(error => {
-              console.error("Error playing video:", error);
-            });
-          }
-        };
-      }
-    } catch (error) {
-      console.error("Error accessing webcam:", error);
-    }
-  };
-
-  // Stop webcam
-  const stopWebcam = () => {
-    if (webcamRef.current && webcamRef.current.srcObject) {
-      const tracks = webcamRef.current.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
-      webcamRef.current.srcObject = null;
-      setIsWebcamActive(false);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-      
-      // Pause the first video
-      if (videoRefs.current[0]) {
-        videoRefs.current[0].pause();
-      }
-    }
-  };
-
-  // Detect poses
-  const detectPose = async () => {
+  // Wrap detectPose in useCallback
+  const detectPose = useCallback(async () => {
     if (!webcamRef.current || !poseLandmarker || !canvasRef.current) {
       return;
     }
@@ -114,39 +64,136 @@ function App2() {
 
     try {
       const result = await poseLandmarker.detectForVideo(video, performance.now());
+      const drawingUtils = new DrawingUtils(canvasCtx);
 
-      if (result.landmarks) {
-        setWebcamLandmarks(result.landmarks[0]); // Store webcam landmarks
-        const drawingUtils = new DrawingUtils(canvasCtx);
-        drawingUtils.drawLandmarks(result.landmarks[0], { radius: 6 });
-        drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
-          lineWidth: 6
-        });
+      if (result.landmarks && result.landmarks[0]) {
+        setWebcamLandmarks(result.landmarks[0]);
+        
+        // Only draw colored landmarks if we have video landmarks to compare against
+        if (videoLandmarks && videoLandmarks.length > 0) {
+          const differences = result.landmarks[0].map((landmark, index) => {
+            const videoLandmark = videoLandmarks[index];
+            if (!videoLandmark) return 1;
+            const dx = landmark.x - videoLandmark.x;
+            const dy = landmark.y - videoLandmark.y;
+            const dz = landmark.z - videoLandmark.z;
+            return Math.sqrt(dx * dx + dy * dy + dz * dz);
+          });
+
+          const averageDifference = differences.reduce((sum, diff) => sum + diff, 0) / differences.length;
+          const color = averageDifference > 1.0 ? 'red' : 'green';
+          
+          console.log("Differences:", differences);
+          console.log(`Pose accuracy: ${Math.max(0, Math.min(100, (1 - averageDifference) * 100)).toFixed(1)}%`);
+          console.log(color);
+
+          drawingUtils.drawLandmarks(result.landmarks[0], { radius: 6, color });
+          drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
+            lineWidth: 6,
+            color
+          });
+        } else {
+          // Draw default blue landmarks while waiting for video landmarks
+          drawingUtils.drawLandmarks(result.landmarks[0], { 
+            radius: 6,
+            color: '#0000ff' // Blue color
+          });
+          drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
+            lineWidth: 6,
+            color: '#0000ff' // Blue color
+          });
+        }
       }
     } catch (error) {
       console.error("Error detecting pose:", error);
     }
 
     animationRef.current = requestAnimationFrame(detectPose);
+  }, [poseLandmarker, videoLandmarks, webcamRef, canvasRef]);
+
+  // Now we can reference detectPose in useCallback
+  const startPoseDetection = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    detectPose();
+  }, [detectPose]);
+
+  // Add new useEffect for video landmarks
+  useEffect(() => {
+    if (poseLandmarker && videoRefs.current[0] && isWebcamActive) {
+      const detectVideoLandmarks = async () => {
+        try {
+          if (videoRefs.current[0].readyState >= 2) {
+            const result = await poseLandmarker.detectForVideo(
+              videoRefs.current[0], 
+              performance.now()
+            );
+            if (result.landmarks && result.landmarks[0]) {
+              console.log("Setting video landmarks:", result.landmarks[0]);
+              setVideoLandmarks(result.landmarks[0]);
+            } else {
+              console.log("No landmarks detected in video");
+            }
+          } else {
+            console.log("Video not ready:", videoRefs.current[0].readyState);
+          }
+        } catch (error) {
+          console.error("Error detecting video pose:", error);
+        }
+      };
+
+      videoRefs.current[0].currentTime = 0;
+      videoRefs.current[0].play()
+        .then(detectVideoLandmarks)
+        .catch(error => console.error("Error playing video:", error));
+
+      return () => {
+        if (videoRefs.current[0]) {
+          videoRefs.current[0].pause();
+        }
+      };
+    }
+  }, [poseLandmarker, isWebcamActive]);
+
+  useEffect(() => {
+    if (videoLandmarks.length > 0) {
+      console.log("Video landmarks set, starting pose detection");
+      startPoseDetection();
+    }
+  }, [videoLandmarks, startPoseDetection]);
+
+  const startWebcam = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (webcamRef.current) {
+        webcamRef.current.srcObject = stream;
+        webcamRef.current.onloadedmetadata = () => {
+          webcamRef.current.play();
+          setIsWebcamActive(true);
+        };
+      }
+    } catch (error) {
+      console.error("Error accessing webcam:", error);
+    }
   };
 
-  // Compare landmarks
-  const compareLandmarks = () => {
-    if (webcamLandmarks.length === 0 || videoLandmarks.length === 0) {
-      console.warn("No landmarks to compare");
-      return;
+  // Stop webcam
+  const stopWebcam = () => {
+    if (webcamRef.current && webcamRef.current.srcObject) {
+      const tracks = webcamRef.current.srcObject.getTracks();
+      tracks.forEach(track => track.stop());
+      webcamRef.current.srcObject = null;
+      setIsWebcamActive(false);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      
+      // Pause the first video
+      if (videoRefs.current[0]) {
+        videoRefs.current[0].pause();
+      }
     }
-
-    // Example comparison logic (Euclidean distance)
-    const differences = webcamLandmarks.map((landmark, index) => {
-      const videoLandmark = videoLandmarks[index];
-      const dx = landmark.x - videoLandmark.x;
-      const dy = landmark.y - videoLandmark.y;
-      const dz = landmark.z - videoLandmark.z;
-      return Math.sqrt(dx * dx + dy * dy + dz * dz);
-    });
-
-    console.log("Pose differences:", differences);
   };
 
   return (
@@ -216,7 +263,6 @@ function App2() {
               crossOrigin="anonymous"
               src={type.video}
               onPlay={async () => {
-                // Start pose detection for video
                 if (poseLandmarker && videoRefs.current[index]) {
                   try {
                     const result = await poseLandmarker.detectForVideo(
@@ -225,7 +271,6 @@ function App2() {
                     );
                     if (result.landmarks) {
                       setVideoLandmarks(result.landmarks[0]);
-                      compareLandmarks();
                     }
                   } catch (error) {
                     console.error("Error detecting video pose:", error);
