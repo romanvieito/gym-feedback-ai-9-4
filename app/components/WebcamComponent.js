@@ -54,12 +54,13 @@ export function WebcamComponent({
   // Initialize webcam
   useEffect(() => {
     if (poseLandmarker) {
+      const videoRef = webcamRef.current;
       navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
-          if (webcamRef.current) {
-            webcamRef.current.srcObject = stream;
-            webcamRef.current.onloadedmetadata = () => {
-              webcamRef.current.play();
+          if (videoRef) {
+            videoRef.srcObject = stream;
+            videoRef.onloadedmetadata = () => {
+              videoRef.play();
               detectPose();
             };
           }
@@ -67,8 +68,8 @@ export function WebcamComponent({
         .catch(error => console.error("Error accessing webcam:", error));
 
       return () => {
-        if (webcamRef.current?.srcObject) {
-          webcamRef.current.srcObject.getTracks().forEach(track => track.stop());
+        if (videoRef?.srcObject) {
+          videoRef.srcObject.getTracks().forEach(track => track.stop());
         }
         if (animationRef.current) {
           cancelAnimationFrame(animationRef.current);
