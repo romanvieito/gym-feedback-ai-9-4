@@ -11,6 +11,13 @@ export function WebcamComponent({
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
+  const onLandmarksUpdateRef = useRef(onLandmarksUpdate);
+  const poseMatchDataRef = useRef(poseMatchData);
+
+  useEffect(() => {
+    onLandmarksUpdateRef.current = onLandmarksUpdate;
+    poseMatchDataRef.current = poseMatchData;
+  }, [onLandmarksUpdate, poseMatchData]);
 
   const detectPose = useCallback(async () => {
     if (!webcamRef.current || !poseLandmarker || !canvasRef.current) return;
@@ -32,10 +39,10 @@ export function WebcamComponent({
       canvasCtx.drawImage(video, 0, 0, canvasRef.current.width, canvasRef.current.height);
 
       if (result?.landmarks?.[0]) {
-        onLandmarksUpdate(result.landmarks[0]);
+        onLandmarksUpdateRef.current(result.landmarks[0]);
         
         const drawingUtils = new DrawingUtils(canvasCtx);
-        const color = poseMatchData?.color || '#0000ff';
+        const color = poseMatchDataRef.current?.color || '#0000ff';
         
         drawingUtils.drawLandmarks(result.landmarks[0], { radius: 6, color });
         drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
