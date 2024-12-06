@@ -5,17 +5,29 @@ import { PoseDetectionService } from '../services/PoseDetectionService';
 export function WorkoutVideoComponent({ 
   workout,
   poseLandmarker, 
-  onLandmarksUpdate
+  onLandmarksUpdate,
+  isActive
 }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isActive) {
+      video.play().catch(err => console.error("Error playing video:", err));
+    } else {
+      video.pause();
+    }
+  }, [isActive]);
 
   useEffect(() => {
     if (!poseLandmarker || !videoRef.current || !canvasRef.current) return;
 
     const detectAndDrawPose = async () => {
       try {
-        if (videoRef.current.readyState >= 2) {
+        if (videoRef.current.readyState >= 2 && !videoRef.current.paused) {
           const result = await PoseDetectionService.detectPoseInVideo(
             poseLandmarker,
             videoRef.current
@@ -54,16 +66,22 @@ export function WorkoutVideoComponent({
 
     let animationFrameId;
     const detectFrame = async () => {
-      await detectAndDrawPose();
-      animationFrameId = requestAnimationFrame(detectFrame);
+      if (isActive) {
+        await detectAndDrawPose();
+        animationFrameId = requestAnimationFrame(detectFrame);
+      }
     };
 
-    detectFrame();
+    if (isActive) {
+      detectFrame();
+    }
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
     };
-  }, [poseLandmarker, videoRef, canvasRef, onLandmarksUpdate]);
+  }, [poseLandmarker, videoRef, canvasRef, onLandmarksUpdate, isActive]);
 
   return (
     <div style={{ 
@@ -81,7 +99,7 @@ export function WorkoutVideoComponent({
           objectFit: 'cover',
           zIndex: 1
         }}
-        controls
+        controls={!isActive}
         controlsList="nodownload nofullscreen" 
         src={workout.video}
         playsInline

@@ -13,7 +13,7 @@ function App2() {
     webcamLandmarker: null,
     videoLandmarker: null
   });
-  const [isWebcamActive, setIsWebcamActive] = useState(false);
+  const [isActive, setIsActive] = useState(false);
   const [webcamLandmarks, setWebcamLandmarks] = useState([]);
   const [videoLandmarks, setVideoLandmarks] = useState([]);
   const [poseMatchData, setPoseMatchData] = useState(null);
@@ -119,14 +119,15 @@ function App2() {
           workout={workoutTypes[0]}
           poseLandmarker={landmarkers.videoLandmarker}
           onLandmarksUpdate={setVideoLandmarks}
+          isActive={isActive}
         />
 
         {/* Webcam Component */}
-        {isWebcamActive && (
+        {isActive && (
           <WebcamComponent
             poseLandmarker={landmarkers.webcamLandmarker}
             onLandmarksUpdate={(landmarks) => {
-              if (isWebcamActive) {
+              if (isActive) {
                 setWebcamLandmarks(landmarks);
               }
             }}
@@ -145,15 +146,16 @@ function App2() {
       }}>
         <button 
           onClick={() => {
-            setIsWebcamActive(!isWebcamActive);
-            if (!isWebcamActive) {
+            setIsActive(!isActive);
+            if (!isActive) {
               setWebcamLandmarks([]);
+              setVideoLandmarks([]);
             }
           }}
           style={{
             padding: '30px 20px',
             margin: '10px',
-            backgroundColor: isWebcamActive ? '#ff4444' : '#44aa44',
+            backgroundColor: isActive ? '#ff4444' : '#44aa44',
             color: 'white',
             border: 'none',
             borderRadius: '5px',
@@ -164,7 +166,7 @@ function App2() {
             gap: '8px'
           }}
         >
-          {isWebcamActive ? (
+          {isActive ? (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <rect x="6" y="4" width="4" height="16"/>
               <rect x="14" y="4" width="4" height="16"/>
@@ -174,7 +176,7 @@ function App2() {
               <path d="M8 5v14l11-7z"/>
             </svg>
           )}
-          {isWebcamActive ? 'Pause' : 'Start Workout with Webcam'}
+          {isActive ? 'Pause Workout' : 'Start Workout'}
         </button>
       </div>
     </div>
