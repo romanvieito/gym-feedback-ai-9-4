@@ -103,7 +103,6 @@ function App() {
     <div className="app" style={{ 
       backgroundColor: 'white',
       color: 'black',
-      minHeight: '100vh'
     }}>
 
       {/* Video Components Container */}
@@ -141,8 +140,7 @@ function App() {
       <div style={{ 
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center',
-        margin: '20px'
+        alignItems: 'center'
       }}>
         <button 
           onClick={() => {
@@ -153,13 +151,12 @@ function App() {
             }
           }}
           style={{
-            padding: '30px 20px',
-            margin: '10px',
+            padding: '20px 20px',
             backgroundColor: isActive ? '#ff4444' : '#44aa44',
             color: 'white',
             border: 'none',
             borderRadius: '5px',
-            fontSize: '1.5rem',
+            fontSize: '1.1rem',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
