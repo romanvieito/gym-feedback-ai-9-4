@@ -11,7 +11,7 @@ export default function Home() {
     <main className="min-h-screen p-8 flex flex-col items-center">
       {!showApp ? (
         <>
-          <h1 className="text-2xl font-bold mb-6">Workout Index</h1>
+          <h1 className="text-2xl font-bold mb-6">Workouts</h1>
           <div className="grid gap-4 w-full max-w-md text-center">
             <button 
               onClick={() => setShowApp(true)}
