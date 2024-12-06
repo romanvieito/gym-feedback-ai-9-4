@@ -9,6 +9,7 @@ function App2() {
   const [poseLandmarker, setPoseLandmarker] = useState(null);
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
+  const videoCanvasRef = useRef(null);
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const animationRef = useRef(null);
   const [webcamLandmarks, setWebcamLandmarks] = useState([]);
@@ -179,9 +180,9 @@ function App2() {
     detectPose();
   }, [detectPose]);
 
-  // Add new useEffect for video landmarks
+  // Update the useEffect for video landmarks
   useEffect(() => {
-    if (poseLandmarker && videoRefs.current[0] && isWebcamActive) {
+    if (poseLandmarker && videoRefs.current[0] && isWebcamActive && videoCanvasRef.current) {
       const detectVideoLandmarks = async () => {
         try {
           if (videoRefs.current[0].readyState >= 2) {
@@ -192,6 +193,25 @@ function App2() {
             if (result.landmarks && result.landmarks[0]) {
               console.log("Setting video landmarks:", result.landmarks[0]);
               setVideoLandmarks(result.landmarks[0]);
+              
+              // Draw landmarks on video canvas
+              const video = videoRefs.current[0];
+              const canvasCtx = videoCanvasRef.current.getContext('2d');
+              const drawingUtils = new DrawingUtils(canvasCtx);
+              
+              // Set canvas dimensions to match video
+              videoCanvasRef.current.width = video.videoWidth;
+              videoCanvasRef.current.height = video.videoHeight;
+              
+              canvasCtx.clearRect(0, 0, videoCanvasRef.current.width, videoCanvasRef.current.height);
+              drawingUtils.drawLandmarks(result.landmarks[0], {
+                radius: 6,
+                color: '#00ff00'  // Green landmarks for the workout video
+              });
+              drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
+                lineWidth: 6,
+                color: '#00ff00'
+              });
             } else {
               console.log("No landmarks detected in video");
             }
@@ -209,9 +229,20 @@ function App2() {
         .then(detectVideoLandmarks)
         .catch(error => console.error("Error playing video:", error));
 
+      // Set up animation loop for continuous landmark detection
+      let animationFrameId;
+      const detectFrame = async () => {
+        await detectVideoLandmarks();
+        animationFrameId = requestAnimationFrame(detectFrame);
+      };
+      detectFrame();
+
       return () => {
         if (currentVideoRef) {
           currentVideoRef.pause();
+        }
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
         }
       };
     }
@@ -306,7 +337,7 @@ function App2() {
         />
       </div>
 
-      {/* Workout videos grid */}
+      {/* Workout videos grid (just one for now) */}
       <div style={{ 
         display: 'flex', 
         gap: '20px', 
@@ -315,11 +346,19 @@ function App2() {
         padding: '20px'
       }}>
         {workoutTypes.map((type, index) => (
-          <div key={index} className="video-container">
+          <div key={index} className="video-container" style={{ 
+            position: 'relative',
+            width: '640px',
+            height: '480px'
+          }}>
             <video
               ref={el => videoRefs.current[index] = el}
-              width="640"
-              height="480"
+              style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
               controls
               crossOrigin="anonymous"
               src={type.video}
@@ -332,6 +371,20 @@ function App2() {
                     );
                     if (result.landmarks) {
                       setVideoLandmarks(result.landmarks[0]);
+                      
+                      // Draw landmarks on video canvas
+                      const canvasCtx = videoCanvasRef.current.getContext('2d');
+                      const drawingUtils = new DrawingUtils(canvasCtx);
+                      
+                      canvasCtx.clearRect(0, 0, videoCanvasRef.current.width, videoCanvasRef.current.height);
+                      drawingUtils.drawLandmarks(result.landmarks[0], {
+                        radius: 6,
+                        color: '#00ff00'
+                      });
+                      drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
+                        lineWidth: 6,
+                        color: '#00ff00'
+                      });
                     }
                   } catch (error) {
                     console.error("Error detecting video pose:", error);
@@ -339,7 +392,25 @@ function App2() {
                 }
               }}
             />
-            <div style={{ marginTop: '10px', textAlign: 'center' }}>
+            <canvas
+              ref={videoCanvasRef}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                pointerEvents: 'none'
+              }}
+            />
+            <div style={{ 
+              position: 'absolute',
+              bottom: '-60px',
+              left: 0,
+              right: 0,
+              textAlign: 'center' 
+            }}>
               <h4>{type.title}</h4>
               <p>{type.description}</p>
             </div>
