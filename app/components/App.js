@@ -8,7 +8,7 @@ import { PoseDetectionService } from '../services/PoseDetectionService';
 import { computeAngle } from '../services/angleUtils';
 import { angleDict, landmarkNames } from '../services/poseUtils';
 
-function App2() {
+function App() {
   const [landmarkers, setLandmarkers] = useState({
     webcamLandmarker: null,
     videoLandmarker: null
@@ -183,4 +183,4 @@ function App2() {
   );
 }
 
-export default App2;
+export default App;

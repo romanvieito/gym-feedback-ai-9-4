@@ -1,4 +1,4 @@
-import App from '@/app/components/App2'
+import App from '@/app/components/App'
 
 export default function Pose() {
     return (
