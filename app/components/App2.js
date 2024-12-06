@@ -25,6 +25,8 @@ function App2() {
   }, []);
 
   const calculatePoseMatch = useCallback((currentLandmarks, videoLandmarks) => {
+    console.log('Calculating pose match:', { currentLandmarks, videoLandmarks });
+    
     const angleDifferences = {};
     let totalDifference = 0;
     let validAngles = 0;
@@ -45,6 +47,8 @@ function App2() {
     const matchPercentage = validAngles > 0 ? totalDifference / validAngles : 0;
     const color = getColorFromPercentage(matchPercentage);
 
+    console.log('Match result:', { matchPercentage, color, angleDifferences });
+
     return {
       percentage: matchPercentage,
       color,
@@ -60,8 +64,10 @@ function App2() {
   }, [webcamLandmarks, videoLandmarks, calculatePoseMatch]);
 
   function getColorFromPercentage(percentage) {
-    const red = Math.min(255, Math.floor((100 - percentage) * 2.55));
-    const green = Math.min(255, Math.floor(percentage * 2.55));
+    if (isNaN(percentage) || percentage === null) return 'rgb(255,0,0)';
+    
+    const green = Math.min(255, Math.floor((100 - percentage) * 2.55));
+    const red = Math.min(255, Math.floor(percentage * 2.55));
     return `rgb(${red},${green},0)`;
   }
 
@@ -70,7 +76,12 @@ function App2() {
       {/* Controls */}
       <div style={{ textAlign: 'center', margin: '20px' }}>
         <button 
-          onClick={() => setIsWebcamActive(!isWebcamActive)}
+          onClick={() => {
+            setIsWebcamActive(!isWebcamActive);
+            if (!isWebcamActive) {
+              setWebcamLandmarks([]);
+            }
+          }}
           style={{
             padding: '10px 20px',
             margin: '10px',
@@ -89,7 +100,11 @@ function App2() {
       {isWebcamActive && (
         <WebcamComponent
           poseLandmarker={landmarkers.webcamLandmarker}
-          onLandmarksUpdate={setWebcamLandmarks}
+          onLandmarksUpdate={(landmarks) => {
+            if (isWebcamActive) {
+              setWebcamLandmarks(landmarks);
+            }
+          }}
           poseMatchData={poseMatchData}
         />
       )}
