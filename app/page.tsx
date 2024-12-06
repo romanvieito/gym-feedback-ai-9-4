@@ -1,7 +1,7 @@
 import Image from "next/image";
 //import Link from "next/link";
 
-import HomePage from '@/app/components/HomePage'
+// import HomePage from '@/app/components/HomePage'
 import App from '@/app/components/App2'
 
 export default function Home() {
