@@ -17,7 +17,7 @@ export default function Home() {
               onClick={() => setShowApp(true)}
               className="text-center p-4 border rounded-lg hover:bg-gray-100"
             >
-              Exercise 1: Lose Weight in 14 days
+              Exercise 1: Lose Weight in 14 days for free
               <p className="text-sm text-gray-600">Click to go to workout</p>
             </button>
 
@@ -66,6 +66,29 @@ export default function Home() {
               </div>
               <p className="text-sm text-gray-600">This exercise is available to premium users</p>
             </div>
+
+            <Link 
+              href="/pricing"
+              className="p-4 border rounded-lg hover:bg-gray-100 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50"
+            >
+              <span className="font-medium text-amber-800">Go Premium</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor" 
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-amber-600"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <p className="text-sm text-amber-700">Unlock all premium workouts</p>
+            </Link>
+
           </div>
         </>
       ) : (
