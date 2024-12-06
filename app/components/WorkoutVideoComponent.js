@@ -1,0 +1,102 @@
+import React, { useRef, useEffect } from 'react';
+import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
+import { PoseDetectionService } from '../services/PoseDetectionService';
+
+export function WorkoutVideoComponent({ 
+  workout,
+  poseLandmarker, 
+  onLandmarksUpdate
+}) {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!poseLandmarker || !videoRef.current || !canvasRef.current) return;
+
+    const detectAndDrawPose = async () => {
+      try {
+        if (videoRef.current.readyState >= 2) {
+          const result = await PoseDetectionService.detectPoseInVideo(
+            poseLandmarker,
+            videoRef.current
+          );
+
+          if (result?.landmarks?.[0]) {
+            onLandmarksUpdate(result.landmarks[0]);
+            
+            // Draw reference landmarks in green
+            const video = videoRef.current;
+            const canvasCtx = canvasRef.current.getContext('2d');
+            const drawingUtils = new DrawingUtils(canvasCtx);
+            
+            canvasRef.current.width = video.videoWidth;
+            canvasRef.current.height = video.videoHeight;
+            
+            canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            drawingUtils.drawLandmarks(result.landmarks[0], {
+              radius: 6,
+              color: '#00ff00'  // Reference pose always in green
+            });
+            drawingUtils.drawConnectors(
+              result.landmarks[0], 
+              PoseLandmarker.POSE_CONNECTIONS, 
+              {
+                lineWidth: 6,
+                color: '#00ff00'
+              }
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error detecting video pose:", error);
+      }
+    };
+
+    let animationFrameId;
+    const detectFrame = async () => {
+      await detectAndDrawPose();
+      animationFrameId = requestAnimationFrame(detectFrame);
+    };
+
+    detectFrame();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [poseLandmarker, videoRef, canvasRef, onLandmarksUpdate]);
+
+  return (
+    <div style={{ 
+      position: 'relative', 
+      width: '640px', 
+      height: '480px',
+      margin: '0 auto'
+    }}>
+      <video 
+        ref={videoRef} 
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: 1
+        }}
+        controls
+        src={workout.video}
+        playsInline
+        crossOrigin="anonymous"
+      />
+      <canvas 
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          pointerEvents: 'none',
+          zIndex: 2
+        }}
+      />
+    </div>
+  );
+} 
