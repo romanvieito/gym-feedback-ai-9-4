@@ -17,7 +17,7 @@ export default function Home() {
               onClick={() => setShowApp(true)}
               className="text-center p-4 border rounded-lg hover:bg-gray-100"
             >
-              Exercise 1: Lose Weight in 14 days for free
+              DAY 1: Lose Weight in 14 days for free
               <p className="text-sm text-gray-600">Click to go to workout</p>
             </button>
 
@@ -25,7 +25,7 @@ export default function Home() {
               className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative"
             >
               <div className="flex items-center justify-center gap-2">
-                Exercise 2: Premium Workout
+                DAY 2: Premium Workout
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -48,7 +48,7 @@ export default function Home() {
               className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative"
             >
               <div className="flex items-center justify-center gap-2">
-                Exercise 3: Premium Workout
+                DAY 3: Premium Workout
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -68,7 +68,7 @@ export default function Home() {
             </div>
 
             <Link 
-              href="/pricing"
+              href="https://24up.fit/pricing"
               className="p-4 border rounded-lg hover:bg-gray-100 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50"
             >
               <span className="font-medium text-amber-800">Go Premium</span>
@@ -92,12 +92,12 @@ export default function Home() {
           </div>
         </>
       ) : (
-        <div className="mt-8">
+        <div className="mt-1">
           <button 
             onClick={() => setShowApp(false)}
             className="mb-4 text-sm text-gray-600 hover:text-gray-800"
           >
-            ← Back to index
+            ← Back to workouts
           </button>
           <App />
         </div>
