@@ -100,7 +100,11 @@ function App2() {
   }
 
   return (
-    <div className="app">
+    <div className="app" style={{ 
+      backgroundColor: 'white',
+      color: 'black',
+      minHeight: '100vh'
+    }}>
       {/* Controls */}
       <div style={{ textAlign: 'center', margin: '20px' }}>
         <button 

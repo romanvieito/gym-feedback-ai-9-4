@@ -82,6 +82,7 @@ export function WorkoutVideoComponent({
           zIndex: 1
         }}
         controls
+        controlsList="nodownload nofullscreen" 
         src={workout.video}
         playsInline
         crossOrigin="anonymous"
