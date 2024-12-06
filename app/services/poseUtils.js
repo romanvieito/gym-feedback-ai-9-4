@@ -9,32 +9,14 @@ export const landmarkNames = [
 ];
 
 export const angleDict = {
-  'right ankle': [['Right Knee', 'Right Ankle', 'Right Foot Index', 'Right Heel'], 'dorsiflexion', 90, 1],
-  'left ankle': [['Left Knee', 'Left Ankle', 'Left Foot Index', 'Left Heel'], 'dorsiflexion', 90, 1],
   'right knee': [['Right Ankle', 'Right Knee', 'Right Hip'], 'flexion', -180, 1],
   'left knee': [['Left Ankle', 'Left Knee', 'Left Hip'], 'flexion', -180, 1],
-  'right hip': [['Right Knee', 'Right Hip', 'Left Hip', 'Neck'], 'flexion', 0, -1],
-  'left hip': [['Left Knee', 'Left Hip', 'Right Hip', 'Neck'], 'flexion', 0, -1],
-  'right shoulder': [['Right Elbow', 'Right Shoulder', 'Left Shoulder', 'Neck'], 'flexion', 0, -1],
-  'left shoulder': [['Left Elbow', 'Left Shoulder', 'Right Shoulder', 'Neck'], 'flexion', 0, -1],
+  'right hip': [['Right Knee', 'Right Hip', 'Right Shoulder'], 'flexion', 0, -1],
+  'left hip': [['Left Knee', 'Left Hip', 'Left Shoulder'], 'flexion', 0, -1],
+  'right shoulder': [['Right Elbow', 'Right Shoulder', 'Right Hip'], 'flexion', 0, -1],
+  'left shoulder': [['Left Elbow', 'Left Shoulder', 'Left Hip'], 'flexion', 0, -1],
   'right elbow': [['Right Wrist', 'Right Elbow', 'Right Shoulder'], 'flexion', 180, -1],
   'left elbow': [['Left Wrist', 'Left Elbow', 'Left Shoulder'], 'flexion', 180, -1],
-  'right wrist': [['Right Elbow', 'Right Wrist', 'Right Index'], 'flexion', -180, 1],
-  'left wrist': [['Left Elbow', 'Left Index', 'Left Wrist'], 'flexion', -180, 1],
-  'right foot': [['Right Foot Index', 'Right Heel'], 'horizontal', 0, -1],
-  'left foot': [['Left Foot Index', 'Left Heel'], 'horizontal', 0, -1],
-  'right shank': [['Right Ankle', 'Right Knee'], 'horizontal', 0, -1],
-  'left shank': [['Left Ankle', 'Left Knee'], 'horizontal', 0, -1],
-  'right thigh': [['Right Knee', 'Right Hip'], 'horizontal', 0, -1],
-  'left thigh': [['Left Knee', 'Left Hip'], 'horizontal', 0, -1],
-  'pelvis': [['Left Hip', 'Right Hip'], 'horizontal', 0, -1],
-  'trunk': [['Neck', 'Hip'], 'horizontal', 0, -1],
-  'shoulders': [['Left Shoulder', 'Right Shoulder'], 'horizontal', 0, -1],
-  'head': [['Head', 'Neck'], 'horizontal', 0, -1],
-  'right arm': [['Right Elbow', 'Right Shoulder'], 'horizontal', 0, -1],
-  'left arm': [['Left Elbow', 'Left Shoulder'], 'horizontal', 0, -1],
-  'right forearm': [['Right Wrist', 'Right Elbow'], 'horizontal', 0, -1],
-  'left forearm': [['Left Wrist', 'Left Elbow'], 'horizontal', 0, -1],
-  'right hand': [['Right Index', 'Right Wrist'], 'horizontal', 0, -1],
-  'left hand': [['Left Index', 'Left Wrist'], 'horizontal', 0, -1]
+  'right ankle': [['Right Knee', 'Right Ankle', 'Right Foot Index'], 'dorsiflexion', 90, 1],
+  'left ankle': [['Left Knee', 'Left Ankle', 'Left Foot Index'], 'dorsiflexion', 90, 1]
 };

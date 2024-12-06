@@ -25,8 +25,6 @@ function App2() {
   }, []);
 
   const calculatePoseMatch = useCallback((currentLandmarks, videoLandmarks) => {
-    console.log('Calculating pose match:', { currentLandmarks, videoLandmarks });
-    
     const angleDifferences = {};
     let totalDifference = 0;
     let validAngles = 0;
@@ -34,6 +32,12 @@ function App2() {
     for (const angName in angleDict) {
       const currentAngle = computeAngle(angName, currentLandmarks, angleDict, landmarkNames);
       const videoAngle = computeAngle(angName, videoLandmarks, angleDict, landmarkNames);
+
+      console.log(`${angName}:`, {
+        currentAngle,
+        videoAngle,
+        isValid: !isNaN(currentAngle) && !isNaN(videoAngle)
+      });
 
       if (!isNaN(currentAngle) && !isNaN(videoAngle)) {
         const diff = Math.abs(currentAngle - videoAngle);
@@ -45,9 +49,33 @@ function App2() {
     }
 
     const matchPercentage = validAngles > 0 ? totalDifference / validAngles : 0;
-    const color = getColorFromPercentage(matchPercentage);
 
-    console.log('Match result:', { matchPercentage, color, angleDifferences });
+    const goodMatchThreshold = 90;
+    const poorMatchThreshold = 60;
+
+    let red, green;
+    if (matchPercentage >= goodMatchThreshold) {
+      red = 0;
+      green = 255;
+    } else if (matchPercentage <= poorMatchThreshold) {
+      red = 255;
+      green = 0;
+    } else {
+      const ratio = (matchPercentage - poorMatchThreshold) / (goodMatchThreshold - poorMatchThreshold);
+      red = Math.floor(255 * (1 - ratio));
+      green = Math.floor(255 * ratio);
+    }
+
+    const color = `rgb(${red},${green},0)`;
+
+    console.log('Final calculation:', {
+      validAngles,
+      totalDifference,
+      matchPercentage,
+      color,
+      red,
+      green
+    });
 
     return {
       percentage: matchPercentage,

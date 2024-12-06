@@ -25,20 +25,17 @@ export function computeAngle(angName, landmarks, angleDict, landmarkNames) {
     return landmark ? [landmark.x, landmark.y, landmark.z] : null;
   }).filter(coord => coord !== null);
 
-  if (angleCoords.length < 3) return NaN;
+  if (angleCoords.length !== 3) {
+    console.warn(`Invalid number of points for angle ${angName}: ${angleCoords.length}`);
+    return NaN;
+  }
 
   let ang = points3DToAngles(angleCoords);
-  ang += angParams[2];
-  ang *= angParams[3];
+  
+  ang = (ang + angParams[2]) * angParams[3];
 
-  // Normalize angles
-  if (['pelvis', 'shoulders'].includes(angName)) {
-    ang = ang > 90 ? ang - 180 : ang;
-    ang = ang < -90 ? ang + 180 : ang;
-  } else {
-    ang = ang > 180 ? ang - 360 : ang;
-    ang = ang < -180 ? ang + 360 : ang;
-  }
+  while (ang > 180) ang -= 360;
+  while (ang < -180) ang += 360;
 
   return ang;
 }
