@@ -8,24 +8,63 @@ export default function Home() {
   const [showApp, setShowApp] = useState(false);
 
   return (
-    <main className="min-h-screen p-8">
+    <main className="min-h-screen p-8 flex flex-col items-center">
       {!showApp ? (
         <>
-          <h1 className="text-2xl font-bold mb-6">Exercise Index</h1>
-          <div className="grid gap-4">
+          <h1 className="text-2xl font-bold mb-6">Workout Index</h1>
+          <div className="grid gap-4 w-full max-w-md text-center">
             <button 
               onClick={() => setShowApp(true)}
-              className="p-4 border rounded-lg hover:bg-gray-100 text-left"
+              className="text-center p-4 border rounded-lg hover:bg-gray-100"
             >
-              Exercise 1: Interactive App
-              <p className="text-sm text-gray-600">Click to toggle the app</p>
+              Exercise 1: Lose Weight in 14 days
+              <p className="text-sm text-gray-600">Click to go to workout</p>
             </button>
 
             <div 
-              className="p-4 border rounded-lg cursor-not-allowed opacity-50"
+              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative"
             >
-              Exercise 2: Coming Soon
-              <p className="text-sm text-gray-600">This exercise is not yet available</p>
+              <div className="flex items-center justify-center gap-2">
+                Exercise 2: Premium Workout
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <p className="text-sm text-gray-600">This exercise is available to premium users</p>
+            </div>
+
+            <div 
+              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative"
+            >
+              <div className="flex items-center justify-center gap-2">
+                Exercise 3: Premium Workout
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <p className="text-sm text-gray-600">This exercise is available to premium users</p>
             </div>
           </div>
         </>
