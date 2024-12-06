@@ -23,21 +23,20 @@ export function WebcamComponent({
       return;
     }
 
-    // Set canvas dimensions and draw video
-    canvasRef.current.width = video.videoWidth;
-    canvasRef.current.height = video.videoHeight;
-    canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    canvasCtx.drawImage(video, 0, 0, canvasRef.current.width, canvasRef.current.height);
-
     try {
       const result = await PoseDetectionService.detectPoseInVideo(poseLandmarker, video);
+      
+      canvasRef.current.width = video.videoWidth;
+      canvasRef.current.height = video.videoHeight;
+      canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      canvasCtx.drawImage(video, 0, 0, canvasRef.current.width, canvasRef.current.height);
+
       if (result?.landmarks?.[0]) {
         onLandmarksUpdate(result.landmarks[0]);
         
         const drawingUtils = new DrawingUtils(canvasCtx);
         const color = poseMatchData?.color || '#0000ff';
         
-        // Draw landmarks with provided color
         drawingUtils.drawLandmarks(result.landmarks[0], { radius: 6, color });
         drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
           lineWidth: 6,
@@ -49,33 +48,39 @@ export function WebcamComponent({
     }
 
     animationRef.current = requestAnimationFrame(detectPose);
-  }, [poseLandmarker, onLandmarksUpdate, poseMatchData]);
+  }, [poseLandmarker]);
 
-  // Initialize webcam
   useEffect(() => {
-    if (poseLandmarker) {
-      const videoRef = webcamRef.current;
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          if (videoRef) {
-            videoRef.srcObject = stream;
-            videoRef.onloadedmetadata = () => {
-              videoRef.play();
-              detectPose();
-            };
-          }
-        })
-        .catch(error => console.error("Error accessing webcam:", error));
-
-      return () => {
-        if (videoRef?.srcObject) {
-          videoRef.srcObject.getTracks().forEach(track => track.stop());
-        }
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
-      };
+    if (!canvasRef.current) return;
+    const canvasCtx = canvasRef.current.getContext('2d');
+    if (poseMatchData?.color) {
     }
+  }, [poseMatchData]);
+
+  useEffect(() => {
+    if (!poseLandmarker) return;
+
+    const videoRef = webcamRef.current;
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        if (videoRef) {
+          videoRef.srcObject = stream;
+          videoRef.onloadedmetadata = () => {
+            videoRef.play();
+            detectPose();
+          };
+        }
+      })
+      .catch(error => console.error("Error accessing webcam:", error));
+
+    return () => {
+      if (videoRef?.srcObject) {
+        videoRef.srcObject.getTracks().forEach(track => track.stop());
+      }
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, [poseLandmarker, detectPose]);
 
   return (

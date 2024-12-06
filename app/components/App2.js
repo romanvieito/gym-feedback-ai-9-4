@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { workoutTypes } from '../services/workoutData';
 import { WebcamComponent } from './WebcamComponent';
 import { WorkoutVideoComponent } from './WorkoutVideoComponent';
@@ -24,14 +24,7 @@ function App2() {
       .catch(error => console.error("Error initializing pose landmarkers:", error));
   }, []);
 
-  useEffect(() => {
-    if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
-      const matchData = calculatePoseMatch(webcamLandmarks, videoLandmarks);
-      setPoseMatchData(matchData);
-    }
-  }, [webcamLandmarks, videoLandmarks]);
-
-  function calculatePoseMatch(currentLandmarks, videoLandmarks) {
+  const calculatePoseMatch = useCallback((currentLandmarks, videoLandmarks) => {
     const angleDifferences = {};
     let totalDifference = 0;
     let validAngles = 0;
@@ -57,7 +50,14 @@ function App2() {
       color,
       angleDifferences
     };
-  }
+  }, []);
+
+  useEffect(() => {
+    if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
+      const matchData = calculatePoseMatch(webcamLandmarks, videoLandmarks);
+      setPoseMatchData(matchData);
+    }
+  }, [webcamLandmarks, videoLandmarks, calculatePoseMatch]);
 
   function getColorFromPercentage(percentage) {
     const red = Math.min(255, Math.floor((100 - percentage) * 2.55));
