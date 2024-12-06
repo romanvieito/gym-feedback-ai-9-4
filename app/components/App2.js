@@ -117,37 +117,54 @@ function App2() {
             color: 'white',
             border: 'none',
             borderRadius: '5px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          {isWebcamActive ? 'Stop Webcam' : 'Start Webcam'}
+          {isWebcamActive ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          )}
+          {isWebcamActive ? 'Stop' : 'Start Workout with Webcam'}
         </button>
       </div>
 
-      {/* Webcam Component */}
-      {isWebcamActive && (
-        <WebcamComponent
-          poseLandmarker={landmarkers.webcamLandmarker}
-          onLandmarksUpdate={(landmarks) => {
-            if (isWebcamActive) {
-              setWebcamLandmarks(landmarks);
-            }
-          }}
-          poseMatchData={poseMatchData}
-        />
-      )}
-
-      {/* Workout Videos */}
+      {/* Video Components Container */}
       <div style={{ 
         display: 'flex', 
         justifyContent: 'center',
+        alignItems: 'center',
+        gap: '20px',
         padding: '20px'
       }}>
+        {/* Workout Videos */}
         <WorkoutVideoComponent
           workout={workoutTypes[0]}
           poseLandmarker={landmarkers.videoLandmarker}
           onLandmarksUpdate={setVideoLandmarks}
         />
+
+        {/* Webcam Component */}
+        {isWebcamActive && (
+          <WebcamComponent
+            poseLandmarker={landmarkers.webcamLandmarker}
+            onLandmarksUpdate={(landmarks) => {
+              if (isWebcamActive) {
+                setWebcamLandmarks(landmarks);
+              }
+            }}
+            poseMatchData={poseMatchData}
+          />
+        )}
+
       </div>
     </div>
   );
