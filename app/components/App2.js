@@ -105,41 +105,6 @@ function App2() {
       color: 'black',
       minHeight: '100vh'
     }}>
-      {/* Controls */}
-      <div style={{ textAlign: 'center', margin: '20px' }}>
-        <button 
-          onClick={() => {
-            setIsWebcamActive(!isWebcamActive);
-            if (!isWebcamActive) {
-              setWebcamLandmarks([]);
-            }
-          }}
-          style={{
-            padding: '10px 20px',
-            margin: '10px',
-            backgroundColor: isWebcamActive ? '#ff4444' : '#44aa44',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          {isWebcamActive ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="6" y="4" width="4" height="16"/>
-              <rect x="14" y="4" width="4" height="16"/>
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          )}
-          {isWebcamActive ? 'Stop' : 'Start Workout with Webcam'}
-        </button>
-      </div>
 
       {/* Video Components Container */}
       <div style={{ 
@@ -169,6 +134,48 @@ function App2() {
           />
         )}
 
+      </div>
+      
+      {/* Controls */}
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: '20px'
+      }}>
+        <button 
+          onClick={() => {
+            setIsWebcamActive(!isWebcamActive);
+            if (!isWebcamActive) {
+              setWebcamLandmarks([]);
+            }
+          }}
+          style={{
+            padding: '30px 20px',
+            margin: '10px',
+            backgroundColor: isWebcamActive ? '#ff4444' : '#44aa44',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          {isWebcamActive ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          )}
+          {isWebcamActive ? 'Stop' : 'Start Workout with Webcam'}
+        </button>
       </div>
     </div>
   );
