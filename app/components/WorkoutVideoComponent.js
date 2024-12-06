@@ -68,8 +68,8 @@ export function WorkoutVideoComponent({
   return (
     <div style={{ 
       position: 'relative', 
-      width: '640px', 
-      height: '480px',
+      width: '1024px',
+      height: '576px',
       margin: '0 auto'
     }}>
       <video 
