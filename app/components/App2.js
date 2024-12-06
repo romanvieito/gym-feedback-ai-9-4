@@ -9,7 +9,10 @@ import { computeAngle } from '../services/angleUtils';
 import { angleDict, landmarkNames } from '../services/poseUtils';
 
 function App2() {
-  const [poseLandmarker, setPoseLandmarker] = useState(null);
+  const [landmarkers, setLandmarkers] = useState({
+    webcamLandmarker: null,
+    videoLandmarker: null
+  });
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const [webcamLandmarks, setWebcamLandmarks] = useState([]);
   const [videoLandmarks, setVideoLandmarks] = useState([]);
@@ -17,8 +20,8 @@ function App2() {
 
   useEffect(() => {
     PoseDetectionService.initialize()
-      .then(setPoseLandmarker)
-      .catch(error => console.error("Error initializing pose landmarker:", error));
+      .then(setLandmarkers)
+      .catch(error => console.error("Error initializing pose landmarkers:", error));
   }, []);
 
   useEffect(() => {
@@ -85,7 +88,7 @@ function App2() {
       {/* Webcam Component */}
       {isWebcamActive && (
         <WebcamComponent
-          poseLandmarker={poseLandmarker}
+          poseLandmarker={landmarkers.webcamLandmarker}
           onLandmarksUpdate={setWebcamLandmarks}
           poseMatchData={poseMatchData}
         />
@@ -99,7 +102,7 @@ function App2() {
       }}>
         <WorkoutVideoComponent
           workout={workoutTypes[0]}
-          poseLandmarker={poseLandmarker}
+          poseLandmarker={landmarkers.videoLandmarker}
           onLandmarksUpdate={setVideoLandmarks}
         />
       </div>
