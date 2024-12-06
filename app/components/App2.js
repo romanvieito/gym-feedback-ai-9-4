@@ -174,7 +174,7 @@ function App2() {
               <path d="M8 5v14l11-7z"/>
             </svg>
           )}
-          {isWebcamActive ? 'Stop' : 'Start Workout with Webcam'}
+          {isWebcamActive ? 'Pause' : 'Start Workout with Webcam'}
         </button>
       </div>
     </div>
