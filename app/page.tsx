@@ -10,9 +10,9 @@ export default function Home() {
   return (
     <main className="min-h-screen p-8 flex flex-col items-center">
       {!showApp ? (
-        <>
-          <h1 className="text-2xl font-bold mb-6">Workouts</h1>
-          <div className="grid gap-4 w-full max-w-md text-center">
+        <div className="my-auto">
+          <h1 className="text-2xl font-bold mb-6 text-center">Workouts</h1>
+          <div className="flex flex-col gap-4 w-full max-w-md">
             <button 
               onClick={() => setShowApp(true)}
               className="text-center p-4 border rounded-lg hover:bg-gray-100"
@@ -90,7 +90,7 @@ export default function Home() {
             </Link>
 
           </div>
-        </>
+        </div>
       ) : (
         <div className="mt-1">
           <button 
