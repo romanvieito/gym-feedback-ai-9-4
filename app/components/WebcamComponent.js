@@ -93,8 +93,8 @@ export function WebcamComponent({
   return (
     <div style={{ 
       position: 'relative', 
-      width: '640px', 
-      height: '480px',
+      width: '320px', 
+      height: '240px',
       margin: '0 auto'
     }}>
       <video
