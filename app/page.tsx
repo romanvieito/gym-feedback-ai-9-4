@@ -37,15 +37,15 @@ export default function Home() {
               onClick={() => setShowApp(true)}
               className="text-center p-4 border rounded-lg hover:bg-gray-100"
             >
-              DAY 1: Lose Weight in 14 days for free
-              <p className="text-sm text-gray-600">Click to go to workout</p>
+              DAY 1 
+              <p className="text-sm text-gray-600">Lose Weight in 14 days for free</p>
             </button>
 
             <div 
               className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative"
             >
               <div className="flex items-center justify-center gap-2">
-                DAY 2: Premium Workout
+                DAY 2
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -61,14 +61,14 @@ export default function Home() {
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
               </div>
-              <p className="text-sm text-gray-600">This exercise is available to premium users</p>
+              <p className="text-sm text-gray-600 text-center">Premium Workout</p>
             </div>
 
             <div 
               className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative"
             >
               <div className="flex items-center justify-center gap-2">
-                DAY 3: Premium Workout
+                DAY 3
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
@@ -84,7 +84,7 @@ export default function Home() {
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
               </div>
-              <p className="text-sm text-gray-600">This exercise is available to premium users</p>
+              <p className="text-sm text-gray-600 text-center">Premium Workout</p>
             </div>
 
             <Link 
