@@ -35,56 +35,123 @@ export default function Home() {
           <div className="flex flex-col gap-4 w-full max-w-md">
             <button 
               onClick={() => setShowApp(true)}
-              className="text-center p-4 border rounded-lg hover:bg-gray-100"
+              className="text-center p-4 border rounded-lg hover:bg-gray-100 flex items-center"
             >
-              DAY 1 
-              <p className="text-sm text-gray-600">Lose Weight in 14 days for free</p>
+              <Image
+                src="/images/1.png"
+                alt="Chest and Back workout"
+                width={60}
+                height={60}
+                className="rounded-full mr-4 object-cover"
+              />
+              <div className="flex-1 text-left">
+                <div>DAY 1</div>
+                <p className="text-sm text-gray-600">Lose Weight in 14 Days</p>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-gray-400"
+              >
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
             </button>
 
             <div 
-              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative"
+              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative flex items-center"
             >
-              <div className="flex items-center justify-center gap-2">
-                DAY 2
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
+              <Image
+                src="/images/3.png"
+                alt="Shoulders and Leg workout"
+                width={60}
+                height={60}
+                className="rounded-full mr-4 object-cover"
+              />
+              <div className="flex-1 text-left">
+                <div>DAY 2</div>
+                <p className="text-sm text-gray-600">Shoulders & Leg</p>
               </div>
-              <p className="text-sm text-gray-600 text-center">Premium Workout</p>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
             </div>
 
             <div 
-              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative"
+              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative flex items-center"
             >
-              <div className="flex items-center justify-center gap-2">
-                DAY 3
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
+              <Image
+                src="/images/2.png"
+                alt="Quadriceps and Back workout"
+                width={60}
+                height={60}
+                className="rounded-full mr-4 object-cover"
+              />
+              <div className="flex-1 text-left">
+                <div>DAY 3</div>
+                <p className="text-sm text-gray-600">Yoga for Beginners</p>
               </div>
-              <p className="text-sm text-gray-600 text-center">Premium Workout</p>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+
+            <div 
+              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative flex items-center"
+            >
+              <Image
+                src="/images/4.png"
+                alt="Biceps and Back workout"
+                width={60}
+                height={60}
+                className="rounded-full mr-4 object-cover"
+              />
+              <div className="flex-1 text-left">
+                <div>DAY 4</div>
+                <p className="text-sm text-gray-600">Biceps and Back</p>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
             </div>
 
             <Link 
