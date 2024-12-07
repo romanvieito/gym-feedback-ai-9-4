@@ -151,7 +151,7 @@ function App() {
             }
           }}
           style={{
-            padding: '20px 20px',
+            padding: '10px 10px',
             backgroundColor: isActive ? '#ff4444' : '#44aa44',
             color: 'white',
             border: 'none',

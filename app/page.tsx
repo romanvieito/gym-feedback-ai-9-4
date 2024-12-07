@@ -115,7 +115,7 @@ export default function Home() {
         <div className="mt-1">
           <button 
             onClick={() => setShowApp(false)}
-            className="mb-4 text-sm text-gray-600 hover:text-gray-800"
+            className="mb-2 text-sm text-gray-600 hover:text-gray-800"
           >
             ← Back to workouts
           </button>
