@@ -8,7 +8,7 @@ export default function Home() {
   const [showApp, setShowApp] = useState(false);
 
   return (
-    <main className="min-h-screen p-8 flex flex-col items-center">
+    <main className="min-h-screen p-2 flex flex-col items-center">
       {!showApp ? (
         <div className="my-auto">
           <h1 className="text-2xl font-bold mb-6 text-center">Workouts</h1>
