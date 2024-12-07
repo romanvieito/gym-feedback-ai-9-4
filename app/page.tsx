@@ -158,7 +158,7 @@ export default function Home() {
               href="https://24up.fit/pricing"
               className="p-4 border rounded-lg hover:bg-gray-100 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50"
             >
-              <span className="font-medium text-amber-800">Go Premium</span>
+              <span className="font-medium text-amber-800">Go Premium:</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -171,9 +171,9 @@ export default function Home() {
                 strokeLinejoin="round"
                 className="text-amber-600"
               >
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
               </svg>
-              <p className="text-sm text-amber-700">Unlock all premium workouts</p>
+              <p className="text-sm text-amber-700">Unlock Every Workout Today!</p>
             </Link>
 
           </div>
