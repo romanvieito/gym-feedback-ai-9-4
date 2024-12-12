@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
+// import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
+import { PoseLandmarker, DrawingUtils } from '@mediapipe/tasks-vision';
 import { PoseDetectionService } from '../services/PoseDetectionService';
 
 export function WorkoutVideoComponent({ 
