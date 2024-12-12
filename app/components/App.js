@@ -7,6 +7,7 @@ import { WorkoutVideoComponent } from './WorkoutVideoComponent';
 import { PoseDetectionService } from '../services/PoseDetectionService';
 import { computeAngle } from '../services/angleUtils';
 import { angleDict, landmarkNames } from '../services/poseUtils';
+import mixpanel from 'mixpanel-browser';
 
 function App() {
   const [landmarkers, setLandmarkers] = useState({
@@ -144,10 +145,18 @@ function App() {
       }}>
         <button 
           onClick={() => {
-            setIsActive(!isActive);
-            if (!isActive) {
+            const newIsActive = !isActive;
+            setIsActive(newIsActive);
+            if (!newIsActive) {
               setWebcamLandmarks([]);
               setVideoLandmarks([]);
+              mixpanel.track('Workout Paused', {
+                platform: 'web_app'
+              });
+            } else {
+              mixpanel.track('Workout Resumed', {
+                platform: 'web_app'
+              });
             }
           }}
           style={{
