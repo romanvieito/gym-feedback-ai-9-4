@@ -1,11 +1,43 @@
 'use client'
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import App from '@/app/components/App'
+import mixpanel from 'mixpanel-browser';
+
+// Initialize Mixpanel with your project token
+mixpanel.init('b98359528baa013898b40c8583f849ce', {   
+  debug: true,
+  track_pageview: false,
+  persistence: "localStorage", });
 
 export default function Home() {
   const [showApp, setShowApp] = useState(false);
+
+  useEffect(() => {
+    // Track page view when component mounts
+    mixpanel.track('Page View', {
+      page: 'Workouts Home',
+      platform: 'web_app'
+    });
+  }, []);
+
+  const handleWorkoutClick = () => {
+    mixpanel.track('Workout Started', {
+      workout: 'Day 1',
+      name: 'Lose Weight in 14 Days'
+    });
+    setShowApp(true);
+  };
+
+  const handleBackClick = () => {
+    mixpanel.track('Return to Workouts');
+    setShowApp(false);
+  };
+
+  const handlePremiumClick = () => {
+    mixpanel.track('Premium Link Clicked');
+  };
 
   return (
     <main className="min-h-screen p-2 flex flex-col items-center">
@@ -34,7 +66,7 @@ export default function Home() {
           </Link>
           <div className="flex flex-col gap-4 w-full max-w-md">
             <button 
-              onClick={() => setShowApp(true)}
+              onClick={handleWorkoutClick}
               className="text-center p-4 border rounded-lg hover:bg-gray-100 flex items-center"
             >
               <Image
@@ -156,6 +188,7 @@ export default function Home() {
 
             <Link 
               href="https://24up.fit/pricing"
+              onClick={handlePremiumClick}
               className="p-4 border rounded-lg hover:bg-gray-100 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50"
             >
               <span className="font-medium text-amber-800">Go Premium:</span>
@@ -181,7 +214,7 @@ export default function Home() {
       ) : (
         <div className="mt-1">
           <button 
-            onClick={() => setShowApp(false)}
+            onClick={handleBackClick}
             className="mb-2 text-sm text-gray-600 hover:text-gray-800"
           >
             ← Back to Workouts
