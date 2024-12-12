@@ -184,7 +184,7 @@ export default function Home() {
             onClick={() => setShowApp(false)}
             className="mb-2 text-sm text-gray-600 hover:text-gray-800"
           >
-            ← Back to workouts
+            ← Back to Workouts
           </button>
           <App />
         </div>
