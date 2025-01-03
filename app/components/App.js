@@ -37,16 +37,38 @@ function App() {
     // the distance close to 0 is perfect so performance level is excellent
     // hay que jugar aqui pero esto esta de palo
     const averageDifference = validAngles > 0 ? totalDifference / validAngles : 0;
-    const matchPercentage = validAngles > 0 ? (1 - (totalDifference / validAngles)) * 100 : 0;
+    // Normalize the difference to a 0-100 scale, with a maximum difference of 180 degrees
+    const matchPercentage = validAngles > 0 ? Math.max(0, Math.min(100, (1 - (averageDifference / 180)) * 100)) : 0;
 
-    // Define adaptive thresholds for ordinal scale
-    const excellentAverageThreshold = 5; // Average difference close to 0
-    const goodAverageThreshold = 15;
-    const fairAverageThreshold = 30;
+    // Define adaptive thresholds for ordinal scale - subir # to make it easier to achieve
+    const excellentAverageThreshold = 45;  // was 30 - allow more deviation
+    const goodAverageThreshold = 65;       // was 45
+    const fairAverageThreshold = 85;       // was 60
 
-    const excellentMatchThreshold = 90; // High match percentage
-    const goodMatchThreshold = 75;
-    const fairMatchThreshold = 60;
+    // Define adaptive thresholds for ordinal scale - less is 
+    const excellentMatchThreshold = 60;     // was 70 - lower required match %
+    const goodMatchThreshold = 40;         // was 50
+    const fairMatchThreshold = 20;         // was 30
+
+    // Add debug logging
+    console.log('Debug values:', {
+        averageDifference,
+        matchPercentage,
+        thresholds: {
+            excellent: {
+                avg: excellentAverageThreshold,
+                match: excellentMatchThreshold
+            },
+            good: {
+                avg: goodAverageThreshold,
+                match: goodMatchThreshold
+            },
+            fair: {
+                avg: fairAverageThreshold,
+                match: fairMatchThreshold
+            }
+        }
+    });
 
     // Determine the performance level and color
     let performanceLevel, color;
