@@ -5,8 +5,8 @@ import { workoutTypes } from '../services/workoutData';
 import { WebcamComponent } from './WebcamComponent';
 import { WorkoutVideoComponent } from './WorkoutVideoComponent';
 import { PoseDetectionService } from '../services/PoseDetectionService';
-import { computeAngle } from '../services/angleUtils';
 import { angleDict, landmarkNames } from '../services/poseUtils';
+import { calculateAngleDifferencesAndAnomalies } from '../services/angleUtils';
 import mixpanel from 'mixpanel-browser';
 
 function App() {
@@ -25,63 +25,67 @@ function App() {
       .catch(error => console.error("Error initializing pose landmarkers:", error));
   }, []);
 
-  const calculatePoseMatch = useCallback((currentLandmarks, videoLandmarks) => {
-    const angleDifferences = {};
-    let totalDifference = 0;
-    let validAngles = 0;
+  
+  const calculatePoseMatch = useCallback((webcamLandmarks, videoLandmarks) => {
+    const { angleDifferences, anomalousIndices, totalDifference, validAngles } = calculateAngleDifferencesAndAnomalies(
+      webcamLandmarks,
+      videoLandmarks,
+      angleDict,
+      landmarkNames
+    );
 
-    for (const angName in angleDict) {
-      const currentAngle = computeAngle(angName, currentLandmarks, angleDict, landmarkNames);
-      const videoAngle = computeAngle(angName, videoLandmarks, angleDict, landmarkNames);
+    // the distance close to 0 is perfect so performance level is excellent
+    // hay que jugar aqui pero esto esta de palo
+    const averageDifference = validAngles > 0 ? totalDifference / validAngles : 0;
+    const matchPercentage = validAngles > 0 ? (1 - (totalDifference / validAngles)) * 100 : 0;
 
-      console.log(`${angName}:`, {
-        currentAngle,
-        videoAngle,
-        isValid: !isNaN(currentAngle) && !isNaN(videoAngle)
-      });
+    // Define adaptive thresholds for ordinal scale
+    const excellentAverageThreshold = 5; // Average difference close to 0
+    const goodAverageThreshold = 15;
+    const fairAverageThreshold = 30;
 
-      if (!isNaN(currentAngle) && !isNaN(videoAngle)) {
-        const diff = Math.abs(currentAngle - videoAngle);
-        const normalizedDiff = Math.min(diff, 360 - diff) / 180;
-        angleDifferences[angName] = (1 - normalizedDiff) * 100;
-        totalDifference += angleDifferences[angName];
-        validAngles++;
-      }
-    }
+    const excellentMatchThreshold = 90; // High match percentage
+    const goodMatchThreshold = 75;
+    const fairMatchThreshold = 60;
 
-    const matchPercentage = validAngles > 0 ? totalDifference / validAngles : 0;
-
-    const goodMatchThreshold = 90;
-    const poorMatchThreshold = 60;
-
-    let red, green;
-    if (matchPercentage >= goodMatchThreshold) {
-      red = 0;
-      green = 255;
-    } else if (matchPercentage <= poorMatchThreshold) {
-      red = 255;
-      green = 0;
+    // Determine the performance level and color
+    let performanceLevel, color;
+    if (averageDifference <= excellentAverageThreshold && matchPercentage >= excellentMatchThreshold) {
+      performanceLevel = "Excellent";
+      color = 'rgb(0, 255, 0)'; // Green
+    } else if (averageDifference <= goodAverageThreshold && matchPercentage >= goodMatchThreshold) {
+      performanceLevel = "Good";
+      color = 'rgb(173, 255, 47)'; // Yellow-green
+    } else if (averageDifference <= fairAverageThreshold && matchPercentage >= fairMatchThreshold) {
+      performanceLevel = "Fair";
+      color = 'rgb(255, 165, 0)'; // Orange
     } else {
-      const ratio = (matchPercentage - poorMatchThreshold) / (goodMatchThreshold - poorMatchThreshold);
-      red = Math.floor(255 * (1 - ratio));
-      green = Math.floor(255 * ratio);
+      performanceLevel = "Poor";
+      color = 'rgb(255, 0, 0)'; // Red
     }
 
-    const color = `rgb(${red},${green},0)`;
+    console.log(`Performance Level: ${performanceLevel}`);
 
-    console.log('Final calculation:', {
-      validAngles,
-      totalDifference,
-      matchPercentage,
-      color,
-      red,
-      green
-    });
+    // Identify the top 3 most misaligned landmarks
+    const sortedLandmarks = Object.entries(angleDifferences)
+      .sort(([, diffA], [, diffB]) => diffB - diffA)
+      .slice(0, 3)
+      .map(([landmark]) => landmark);
+
+    // // Provide audio feedback
+    // const feedbackText = `Please pay attention to ${sortedLandmarks.join(', ')}.`;
+    // if ('speechSynthesis' in window) {
+    //   const utterance = new SpeechSynthesisUtterance(feedbackText);
+    //   window.speechSynthesis.speak(utterance);
+    // }
 
     return {
       percentage: matchPercentage,
       color,
-      angleDifferences
+      angleDifferences,
+      anomalousIndices,
+      performanceFeedback: performanceLevel,
+      mostMisalignedLandmarks: sortedLandmarks
     };
   }, []);
 

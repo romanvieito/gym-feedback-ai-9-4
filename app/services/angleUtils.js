@@ -1,129 +1,113 @@
-// Define the global constant at the top of the file
-const COSINE_DISTANCE_THRESHOLD = 0.15; // Adjust this threshold as needed
-
+//import { angleDict, landmarkNames } from '../services/poseUtils'; // Import statement for angleDict and landmarkNames, currently commented out
+const COSINE_DISTANCE_THRESHOLD = 0.15; // Adjustable threshold for cosine distance
 
 // Helper function to calculate angles from 3D points
 export function points3DToAngles(coords) {
-  if (coords.length < 3) return 0;
+  if (coords.length < 3) return 0; // Return 0 if there are fewer than 3 coordinates
 
-  // Extract points
-  const [p1, p2, p3] = coords;
+  const [p1, p2, p3] = coords; // Destructure the first three points from the coordinates
+  const vectorA = { x: p2[0] - p1[0], y: p2[1] - p1[1], z: p2[2] - p1[2] }; // Calculate vector A from p1 to p2
+  const vectorB = { x: p3[0] - p2[0], y: p3[1] - p2[1], z: p3[2] - p2[2] }; // Calculate vector B from p2 to p3
 
-  // Calculate vectors
-  const vectorA = { x: p2[0] - p1[0], y: p2[1] - p1[1], z: p2[2] - p1[2] };
-  const vectorB = { x: p3[0] - p2[0], y: p3[1] - p2[1], z: p3[2] - p2[2] };
+  const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y + vectorA.z * vectorB.z; // Calculate the dot product of vectors A and B
+  const magnitudeA = Math.sqrt(vectorA.x ** 2 + vectorA.y ** 2 + vectorA.z ** 2); // Calculate the magnitude of vector A
+  const magnitudeB = Math.sqrt(vectorB.x ** 2 + vectorB.y ** 2 + vectorB.z ** 2); // Calculate the magnitude of vector B
 
-  // Calculate dot product and magnitudes
-  const dotProduct = vectorA.x * vectorB.x + vectorA.y * vectorB.y + vectorA.z * vectorB.z;
-  const magnitudeA = Math.sqrt(vectorA.x ** 2 + vectorA.y ** 2 + vectorA.z ** 2);
-  const magnitudeB = Math.sqrt(vectorB.x ** 2 + vectorB.y ** 2 + vectorB.z ** 2);
+  if (magnitudeA === 0 || magnitudeB === 0) { // Check for degenerate vectors
+    console.warn('Degenerate vectors detected. Returning 0.'); // Log a warning if degenerate vectors are detected
+    return 0; // Return 0 for degenerate vectors
+  }
 
-
-  // Calculate cosine of the angle
-  const cosineAngle = dotProduct / (magnitudeA * magnitudeB);
-
-  // Ensure the cosine value is within the valid range for acos
-  const clampedCosine = Math.max(-1, Math.min(1, cosineAngle));
-  
-  // Calculate the angle in degrees
-  const angle = Math.acos(clampedCosine) * (180 / Math.PI);
-
-  return angle;
+  const cosineAngle = dotProduct / (magnitudeA * magnitudeB); // Calculate the cosine of the angle between vectors A and B
+  const clampedCosine = Math.max(-1, Math.min(1, cosineAngle)); // Clamp the cosine value to the range [-1, 1]
+  return Math.acos(clampedCosine) * (180 / Math.PI); // Return the angle in degrees
 }
 
-// Function to compute angles
+// Compute angles from landmarks
 export function computeAngle(angName, landmarks, angleDict, landmarkNames) {
-  // Retrieve the parameters for the specified angle from the angle dictionary
-  const angParams = angleDict[angName];
-  if (!angParams) return NaN; // Return NaN if no parameters are found for the angle
+  const angParams = angleDict[angName]; // Retrieve angle parameters from the angle dictionary
+  if (!angParams) return NaN; // Return NaN if angle parameters are not found
 
-  // Map the keypoints to their corresponding 3D coordinates
-  const angleCoords = angParams[0].map(kpt => {
-    const index = landmarkNames.indexOf(kpt); // Find the index of the keypoint in the landmark names
+  const angleCoords = angParams[0].map(kpt => { // Map over keypoints to get their coordinates
+    const index = landmarkNames.indexOf(kpt); // Find the index of the keypoint in landmarkNames
     if (index === -1) return null; // Return null if the keypoint is not found
     const landmark = landmarks[index]; // Get the landmark at the found index
-    return landmark ? [landmark.x, landmark.y, landmark.z] : null; // Return the 3D coordinates if the landmark exists
-  }).filter(coord => coord !== null); // Filter out any null values
+    return landmark ? [landmark.x, landmark.y, landmark.z] : null; // Return the coordinates of the landmark or null
+  }).filter(coord => coord !== null); // Filter out null coordinates
 
-  // Check if there are enough points to calculate the angle
-  if (angleCoords.length < 3) {
-    console.warn(`Insufficient points for angle calculation: ${angName}`);
-    return NaN; // Return NaN if there are not enough points
+  if (angleCoords.length < 3) { // Check if there are fewer than 3 coordinates
+    console.warn(`Insufficient points for angle calculation: ${angName}`); // Log a warning if there are insufficient points
+    return NaN; // Return NaN for insufficient points
   }
 
-  // Calculate the angle using the 3D coordinates
-  let ang = points3DToAngles(angleCoords);
-  ang += angParams[2]; // Adjust the angle by adding a specified offset
-  ang *= angParams[3]; // Scale the angle by a specified factor
+  let ang = points3DToAngles(angleCoords); // Calculate the angle from the coordinates
+  ang += angParams[2]; // Adjust the angle by adding a parameter offset
+  ang *= angParams[3]; // Scale the angle by a parameter factor
 
-  // Normalize the angle to handle its circular nature
-  if (['pelvis', 'shoulders'].includes(angName)) {
-    // For pelvis and shoulders, normalize to a range of [-90, 90] degrees
-    ang = ang > 90 ? ang - 180 : ang;  // Adjust if the angle is greater than 90 degrees
-    ang = ang < -90 ? ang + 180 : ang; // Adjust if the angle is less than -90 degrees
+  if (['pelvis', 'shoulders'].includes(angName)) { // Check if the angle name is 'pelvis' or 'shoulders'
+    ang = ang > 90 ? ang - 180 : ang; // Adjust the angle if it is greater than 90 degrees
+    ang = ang < -90 ? ang + 180 : ang; // Adjust the angle if it is less than -90 degrees
   } else {
-    // For other angles, normalize to a range of [-180, 180] degrees
-    ang = ang > 180 ? ang - 360 : ang;  // Adjust if the angle is greater than 180 degrees
-    ang = ang < -180 ? ang + 360 : ang; // Adjust if the angle is less than -180 degrees
+    ang = ang > 180 ? ang - 360 : ang; // Adjust the angle if it is greater than 180 degrees
+    ang = ang < -180 ? ang + 360 : ang; // Adjust the angle if it is less than -180 degrees
   }
-
   return ang; // Return the computed angle
 }
 
-// Function to calculate cosine distance between two angles
-function cosineDistanceBetweenAngles(angle1, angle2) {
-  // Convert angles to radians
-  const radian1 = angle1 * (Math.PI / 180);
-  const radian2 = angle2 * (Math.PI / 180);
-
-  // Calculate cosine similarity
-  const cosineSimilarity = Math.cos(radian1) * Math.cos(radian2) + Math.sin(radian1) * Math.sin(radian2);
-
-  // Cosine distance is 1 - cosine similarity
-  return 1 - cosineSimilarity;
+// Calculate cosine distance between two angles
+export function cosineDistanceBetweenAngles(angle1, angle2) {
+  const normalizedDiff = Math.abs((angle1 - angle2 + 180) % 360 - 180); // Normalize the difference between angles
+  return (1 - Math.cos(normalizedDiff * (Math.PI / 180))) / 2; // Return the cosine distance
 }
 
-// Function to compare angles using cosine distance and return landmark indices
-function findAnomalousLandmarkIndices(angleslandmarks, anglesotherlandmarks, landmarks, otherLandmarks) {
-  const anomalousIndices = [];
-  
-  for (const angName in angleslandmarks) {
-    if (angleslandmarks.hasOwnProperty(angName) && anglesotherlandmarks.hasOwnProperty(angName)) {
-      // Calculate the cosine distance between the angles
-      const cosineDistance = cosineDistanceBetweenAngles(angleslandmarks[angName], anglesotherlandmarks[angName]);
+// Calculate angle differences and anomalies
+export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLandmarks, angleDict, landmarkNames) {
+  const angleDifferences = {}; // Initialize an object to store angle differences
+  const anomalousIndices = new Set(); // Initialize a set to store indices of anomalous landmarks
+  let totalDifference = 0; // Initialize a variable to accumulate total differences
+  let validAngles = 0; // Initialize a counter for valid angles
 
-      // Debug log: show the angle name and cosine distance
-      // console.log(`Angle: ${angName}, Cosine Distance: ${cosineDistance}`);
+  for (const angName in angleDict) { // Iterate over each angle name in the angle dictionary
+    const currentAngle = computeAngle(angName, currentLandmarks, angleDict, landmarkNames); // Compute the current angle
+    const videoAngle = computeAngle(angName, videoLandmarks, angleDict, landmarkNames); // Compute the video angle
 
-      if (cosineDistance > COSINE_DISTANCE_THRESHOLD) {
-        // Get the landmark names for this angle
-        const landmarkNamesForAngle = angleDict[angName][0];
-        // Convert the landmark names to indices
-        const indices = landmarkNamesForAngle.map(name => {
-          const index = landmarkNames.indexOf(name);
-          if (index === -1) {
-            console.warn(`Landmark name not found: ${name}`);
-            return null; // Or handle it another way
+    // // Debugging: Log the computed angles
+    // console.log(`Angle Name: ${angName}`);
+    // console.log(`Current Angle: ${currentAngle}`);
+    // console.log(`Video Angle: ${videoAngle}`);
+
+    if (!isNaN(currentAngle) && !isNaN(videoAngle)) { // Check if both angles are valid numbers
+      const diff = cosineDistanceBetweenAngles(currentAngle, videoAngle); // Calculate the cosine distance between angles
+      angleDifferences[angName] = (1 - diff) * 100; // Store the angle difference as a percentage
+      totalDifference += angleDifferences[angName]; // Accumulate the total difference
+      //console.log(`angleDifferencesPercentage: ${angleDifferences[angName]}`);
+      validAngles++; // Increment the count of valid angles
+
+      const adaptiveThreshold = COSINE_DISTANCE_THRESHOLD + (totalDifference / (validAngles || 1)) * 0.05; // Calculate an adaptive threshold
+
+      //console.log(`value: ${(totalDifference / (validAngles || 1)) * 0.05}`);
+      //console.log(`adaptiveThreshold: ${adaptiveThreshold}`);
+
+      if (angleDifferences[angName] > adaptiveThreshold) { // Check if the difference exceeds the adaptive threshold
+        const landmarkNamesForAngle = angleDict[angName][0]; // Get the landmark names for the angle
+        landmarkNamesForAngle.forEach(name => { // Iterate over each landmark name
+          const index = landmarkNames.indexOf(name); // Find the index of the landmark name
+          if (index !== -1) { // Check if the index is valid
+            anomalousIndices.add(index); // Add the index to the set of anomalous indices
+          } else {
+            console.warn(`Landmark name not found: ${name}`); // Log a warning if the landmark name is not found
           }
-          return index;
-        }).filter(index => index !== null); // Filter out invalid indices
-
-        // Debug log: show the anomalous landmark indices
-        // console.log(`Anomalous Landmark Indices for ${angName}:`, indices);
-
-        // Add these indices to the list of anomalous indices
-        anomalousIndices.push(...indices);
+        });
       }
+    } else {
+      console.warn(`NaN detected for angle: ${angName}`); // Log a warning if NaN is detected for an angle
     }
   }
 
-  // Remove duplicates
-  const uniqueAnomalousIndices = [...new Set(anomalousIndices)];
-
-  // Debug log: show the unique anomalous landmark indices
-  // console.log('Unique Anomalous Landmark Indices:', uniqueAnomalousIndices);
-
-  return uniqueAnomalousIndices;
+  return {
+    angleDifferences, // Return the angle differences
+    anomalousIndices: Array.from(anomalousIndices), // Convert the set of anomalous indices to an array and return it
+    totalDifference, // Return the total difference
+    validAngles // Return the count of valid angles
+  };
 }
-
-
