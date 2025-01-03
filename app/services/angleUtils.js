@@ -25,17 +25,25 @@ export function computeAngle(angName, landmarks, angleDict, landmarkNames) {
     return landmark ? [landmark.x, landmark.y, landmark.z] : null;
   }).filter(coord => coord !== null);
 
-  if (angleCoords.length !== 3) {
-    console.warn(`Invalid number of points for angle ${angName}: ${angleCoords.length}`);
+  if (angleCoords.length < 3) {
+    console.warn(`Insufficient points for angle calculation: ${angName}`);
     return NaN;
   }
 
   let ang = points3DToAngles(angleCoords);
-  
-  ang = (ang + angParams[2]) * angParams[3];
+  ang += angParams[2];
+  ang *= angParams[3];
 
-  while (ang > 180) ang -= 360;
-  while (ang < -180) ang += 360;
+  // Normaliza los ángulos para manejar la naturaleza circular de los mismos
+  if (['pelvis', 'shoulders'].includes(angName)) {
+    // Para pelvis y hombros, normaliza a un rango de [-90, 90] grados
+    ang = ang > 90 ? ang - 180 : ang;  // Ajusta si el ángulo es mayor a 90 grados
+    ang = ang < -90 ? ang + 180 : ang; // Ajusta si el ángulo es menor a -90 grados
+  } else {
+    // Para otros ángulos, normaliza a un rango de [-180, 180] grados
+    ang = ang > 180 ? ang - 360 : ang;  // Ajusta si el ángulo es mayor a 180 grados
+    ang = ang < -180 ? ang + 360 : ang; // Ajusta si el ángulo es menor a -180 grados
+  }
 
   return ang;
 }
