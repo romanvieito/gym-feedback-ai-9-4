@@ -29,26 +29,8 @@ export function WorkoutVideoComponent({
       onDurationUpdate(duration); // Update duration based on video
     };
 
-    let lastTime = 0;
-    let frameCount = 0;
-
-    const estimateFrameRate = () => {
-      const currentTime = video.currentTime;
-      if (currentTime !== lastTime) {
-        frameCount++;
-        const timeDiff = currentTime - lastTime;
-        if (timeDiff > 0) {
-          const estimatedFrameRate = frameCount / timeDiff;
-          setFrameRate(estimatedFrameRate);
-          frameCount = 0;
-          lastTime = currentTime;
-        }
-      }
-    };
-
     video.addEventListener('timeupdate', updateTime);
     video.addEventListener('loadedmetadata', updateDuration);
-    video.addEventListener('timeupdate', estimateFrameRate);
 
     if (isActive) {
       video.play().catch(err => console.error("Error playing video:", err));
@@ -59,15 +41,8 @@ export function WorkoutVideoComponent({
     return () => {
       video.removeEventListener('timeupdate', updateTime);
       video.removeEventListener('loadedmetadata', updateDuration);
-      video.removeEventListener('timeupdate', estimateFrameRate);
     };
   }, [isActive, onCurrentTimeUpdate, onDurationUpdate]);
-
-  const frameIndex = Math.floor(videoRef.current?.currentTime * frameRate);
-
-  useEffect(() => {
-    onFrameIndexUpdate(frameIndex); // Update frame index based on video
-  }, [frameIndex, onFrameIndexUpdate]);
 
   useEffect(() => {
     if (!poseLandmarker || !videoRef.current || !canvasRef.current) return;

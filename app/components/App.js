@@ -18,10 +18,7 @@ function App() {
   const [webcamLandmarks, setWebcamLandmarks] = useState([]);
   const [videoLandmarks, setVideoLandmarks] = useState([]);
   const [poseMatchData, setPoseMatchData] = useState(null);
-  const [videoFrameIndex, setVideoFrameIndex] = useState(0);
-  const [webcamFrameIndex, setWebcamFrameIndex] = useState(0);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
-  const [webcamCurrentTime, setWebcamCurrentTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
 
   // Calculate remaining time for video
@@ -33,7 +30,6 @@ function App() {
       .catch(error => console.error("Error initializing pose landmarkers:", error));
   }, []);
 
-  
   const calculatePoseMatch = useCallback((webcamLandmarks, videoLandmarks) => {
     const { angleDifferences, anomalousIndices, totalDifference, validAngles } = calculateAngleDifferencesAndAnomalies(
       webcamLandmarks,
@@ -60,10 +56,7 @@ function App() {
 
     // Add debug logging
     console.log('Debug values:', {
-        videoFrameIndex,
-        webcamFrameIndex,
         videoCurrentTime,
-        webcamCurrentTime,
         videoRemainingTime,
         averageDifference,
         matchPercentage,
@@ -81,14 +74,9 @@ function App() {
                 match: fairMatchThreshold
             },
             video_status: {
-              frame_index: videoFrameIndex,
               current: videoCurrentTime,
               remaining: videoRemainingTime
             },
-            webcam_status: {
-              frame_index_webcam: webcamFrameIndex,
-              current_time_webcam: webcamCurrentTime,
-            }
         },
     });
 
@@ -131,7 +119,7 @@ function App() {
       performanceFeedback: performanceLevel,
       mostMisalignedLandmarks: sortedLandmarks
     };
-  }, [videoFrameIndex, webcamFrameIndex, videoCurrentTime, webcamCurrentTime, videoRemainingTime]);
+  }, [videoCurrentTime, videoRemainingTime]);
 
   useEffect(() => {
     if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
@@ -139,6 +127,16 @@ function App() {
       setPoseMatchData(matchData);
     }
   }, [webcamLandmarks, videoLandmarks, calculatePoseMatch]);
+
+  // // Update the video frame counter only when the video frame index increments by 1
+  // useEffect(() => {
+  //   setVideoFrameCounter(prevCounter => {
+  //     if (videoFrameIndex === prevCounter + 1) {
+  //       return prevCounter + 1;
+  //     }
+  //     return prevCounter;
+  //   });
+  // }, [videoFrameIndex]);
 
   function getColorFromPercentage(percentage) {
     if (isNaN(percentage) || percentage === null) return 'rgb(255,0,0)';
@@ -168,7 +166,6 @@ function App() {
           poseLandmarker={landmarkers.videoLandmarker}
           onLandmarksUpdate={setVideoLandmarks}
           isActive={isActive}
-          onFrameIndexUpdate={setVideoFrameIndex}
           onCurrentTimeUpdate={setVideoCurrentTime}
           onDurationUpdate={setVideoDuration}
         />
@@ -182,8 +179,6 @@ function App() {
                 setWebcamLandmarks(landmarks);
               }
             }}
-            onFrameIndexUpdate={setWebcamFrameIndex}
-            onCurrentTimeUpdate={setWebcamCurrentTime}
             poseMatchData={poseMatchData}
           />
         )}
