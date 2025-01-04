@@ -20,15 +20,37 @@ function App() {
   const [poseMatchData, setPoseMatchData] = useState(null);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
+  const [lastFeedbackTime, setLastFeedbackTime] = useState(0);
 
   // Calculate remaining time for video
   const videoRemainingTime = videoDuration - videoCurrentTime;
+  const feedbackInterval = 5; // Set the interval in seconds
 
   useEffect(() => {
     PoseDetectionService.initialize()
       .then(setLandmarkers)
       .catch(error => console.error("Error initializing pose landmarkers:", error));
   }, []);
+
+  // const [sortedLandmarks, setSortedLandmarks] = useState([]);
+
+  
+
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     if (isActive && videoCurrentTime > 0) {
+  //       // Trigger feedback event
+  //       const feedbackText = `Please pay attention to ${sortedLandmarks.join(', ')}.`;
+  //       if ('speechSynthesis' in window) {
+  //         const utterance = new SpeechSynthesisUtterance(feedbackText);
+  //         window.speechSynthesis.speak(utterance);
+  //       }
+  //       console.log(`Feedback event triggered at ${videoCurrentTime} seconds`);
+  //     }
+  //   }, feedbackInterval * 1000); // Convert seconds to milliseconds
+
+  //   return () => clearInterval(intervalId); // Cleanup interval on component unmount
+  // }, [isActive, videoCurrentTime, sortedLandmarks]); // Ensure all dependencies are included
 
   const calculatePoseMatch = useCallback((webcamLandmarks, videoLandmarks) => {
     const { angleDifferences, anomalousIndices, totalDifference, validAngles } = calculateAngleDifferencesAndAnomalies(
@@ -54,31 +76,31 @@ function App() {
     const goodMatchThreshold = 40;         // was 50
     const fairMatchThreshold = 20;         // was 30
 
-    // Add debug logging
-    console.log('Debug values:', {
-        videoCurrentTime,
-        videoRemainingTime,
-        averageDifference,
-        matchPercentage,
-        thresholds: {
-            excellent: {
-                avg: excellentAverageThreshold,
-                match: excellentMatchThreshold
-            },
-            good: {
-                avg: goodAverageThreshold,
-                match: goodMatchThreshold
-            },
-            fair: {
-                avg: fairAverageThreshold,
-                match: fairMatchThreshold
-            },
-            video_status: {
-              current: videoCurrentTime,
-              remaining: videoRemainingTime
-            },
-        },
-    });
+    // // Add debug logging
+    // console.log('Debug values:', {
+    //     videoCurrentTime,
+    //     videoRemainingTime,
+    //     averageDifference,
+    //     matchPercentage,
+    //     thresholds: {
+    //         excellent: {
+    //             avg: excellentAverageThreshold,
+    //             match: excellentMatchThreshold
+    //         },
+    //         good: {
+    //             avg: goodAverageThreshold,
+    //             match: goodMatchThreshold
+    //         },
+    //         fair: {
+    //             avg: fairAverageThreshold,
+    //             match: fairMatchThreshold
+    //         },
+    //         video_status: {
+    //           current: videoCurrentTime,
+    //           remaining: videoRemainingTime
+    //         },
+    //     },
+    // });
 
     // Determine the performance level and color
     let performanceLevel, color;
@@ -104,12 +126,19 @@ function App() {
       .slice(0, 3)
       .map(([landmark]) => landmark);
 
-    // // Provide audio feedback
-    // const feedbackText = `Please pay attention to ${sortedLandmarks.join(', ')}.`;
-    // if ('speechSynthesis' in window) {
-    //   const utterance = new SpeechSynthesisUtterance(feedbackText);
-    //   window.speechSynthesis.speak(utterance);
-    // }
+    // // Update the state with the sorted landmarks
+    // setSortedLandmarks(sortedLandmarks);
+
+    // Provide audio feedback at 5 second intervals
+    if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastFeedbackTime) >= feedbackInterval) {
+      const feedbackText = `Please pay attention to ${sortedLandmarks.join(', ')}.`;
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(feedbackText);
+        window.speechSynthesis.speak(utterance);
+      }
+      console.log(`Feedback event triggered at ${videoCurrentTime} seconds`);
+      setLastFeedbackTime(videoCurrentTime); // Update the last feedback time
+    }
 
     return {
       percentage: matchPercentage,
@@ -119,7 +148,7 @@ function App() {
       performanceFeedback: performanceLevel,
       mostMisalignedLandmarks: sortedLandmarks
     };
-  }, [videoCurrentTime, videoRemainingTime]);
+  }, [videoCurrentTime, videoRemainingTime, lastFeedbackTime, feedbackInterval]);
 
   useEffect(() => {
     if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
@@ -127,16 +156,6 @@ function App() {
       setPoseMatchData(matchData);
     }
   }, [webcamLandmarks, videoLandmarks, calculatePoseMatch]);
-
-  // // Update the video frame counter only when the video frame index increments by 1
-  // useEffect(() => {
-  //   setVideoFrameCounter(prevCounter => {
-  //     if (videoFrameIndex === prevCounter + 1) {
-  //       return prevCounter + 1;
-  //     }
-  //     return prevCounter;
-  //   });
-  // }, [videoFrameIndex]);
 
   function getColorFromPercentage(percentage) {
     if (isNaN(percentage) || percentage === null) return 'rgb(255,0,0)';
