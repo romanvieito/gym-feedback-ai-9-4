@@ -18,6 +18,14 @@ function App() {
   const [webcamLandmarks, setWebcamLandmarks] = useState([]);
   const [videoLandmarks, setVideoLandmarks] = useState([]);
   const [poseMatchData, setPoseMatchData] = useState(null);
+  const [videoFrameIndex, setVideoFrameIndex] = useState(0);
+  const [webcamFrameIndex, setWebcamFrameIndex] = useState(0);
+  const [videoCurrentTime, setVideoCurrentTime] = useState(0);
+  const [webcamCurrentTime, setWebcamCurrentTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+
+  // Calculate remaining time for video
+  const videoRemainingTime = videoDuration - videoCurrentTime;
 
   useEffect(() => {
     PoseDetectionService.initialize()
@@ -52,6 +60,11 @@ function App() {
 
     // Add debug logging
     console.log('Debug values:', {
+        videoFrameIndex,
+        webcamFrameIndex,
+        videoCurrentTime,
+        webcamCurrentTime,
+        videoRemainingTime,
         averageDifference,
         matchPercentage,
         thresholds: {
@@ -66,8 +79,17 @@ function App() {
             fair: {
                 avg: fairAverageThreshold,
                 match: fairMatchThreshold
+            },
+            video_status: {
+              frame_index: videoFrameIndex,
+              current: videoCurrentTime,
+              remaining: videoRemainingTime
+            },
+            webcam_status: {
+              frame_index_webcam: webcamFrameIndex,
+              current_time_webcam: webcamCurrentTime,
             }
-        }
+        },
     });
 
     // Determine the performance level and color
@@ -109,7 +131,7 @@ function App() {
       performanceFeedback: performanceLevel,
       mostMisalignedLandmarks: sortedLandmarks
     };
-  }, []);
+  }, [videoFrameIndex, webcamFrameIndex, videoCurrentTime, webcamCurrentTime, videoRemainingTime]);
 
   useEffect(() => {
     if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
@@ -146,6 +168,9 @@ function App() {
           poseLandmarker={landmarkers.videoLandmarker}
           onLandmarksUpdate={setVideoLandmarks}
           isActive={isActive}
+          onFrameIndexUpdate={setVideoFrameIndex}
+          onCurrentTimeUpdate={setVideoCurrentTime}
+          onDurationUpdate={setVideoDuration}
         />
 
         {/* Webcam Component */}
@@ -157,6 +182,8 @@ function App() {
                 setWebcamLandmarks(landmarks);
               }
             }}
+            onFrameIndexUpdate={setWebcamFrameIndex}
+            onCurrentTimeUpdate={setWebcamCurrentTime}
             poseMatchData={poseMatchData}
           />
         )}
