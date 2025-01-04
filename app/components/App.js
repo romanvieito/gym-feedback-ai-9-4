@@ -20,11 +20,32 @@ function App() {
   const [poseMatchData, setPoseMatchData] = useState(null);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
-  const [lastFeedbackTime, setLastFeedbackTime] = useState(0);
+  const [lastCurrentTimeFeedback, setLastCurrentTimeFeedback] = useState(0);
+  const [lastRemainingTimeFeedback, setLastRemainingTimeFeedback] = useState(0);
 
   // Calculate remaining time for video
   const videoRemainingTime = videoDuration - videoCurrentTime;
-  const feedbackInterval = 5; // Set the interval in seconds
+  // const feedbackInterval = 10; // Set the interval in seconds
+  // const remainingTimeFeedbackInterval = 15; // Set the interval in seconds for remaining time feedback
+  
+
+  ///OJO AQUÍ
+  //FROM GPT estimate acceptable values for feedbackInterval 
+  //and remainingTimeFeedbackInterval is to base them on the 
+  //total video duration. 
+  // This allows the intervals to scale dynamically, 
+  //ensuring feedback is neither too frequent nor too sparse.
+
+
+  const minInterval = 5;  // Minimum interval in seconds
+  const maxInterval = 30; // Maximum interval in seconds
+  const feedbackFactor = 0.1;  // 10% of total video duration for general feedback
+  const remainingTimeFactor = 0.15; // 15% of total video duration for remaining time feedback
+  
+  // Dynamically calculate intervals
+  const feedbackInterval = Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor));
+  const remainingTimeFeedbackInterval = Math.max(minInterval, Math.min(maxInterval, videoDuration * remainingTimeFactor));
+  
 
   useEffect(() => {
     PoseDetectionService.initialize()
@@ -35,23 +56,6 @@ function App() {
   // const [sortedLandmarks, setSortedLandmarks] = useState([]);
 
   
-
-  // useEffect(() => {
-  //   const intervalId = setInterval(() => {
-  //     if (isActive && videoCurrentTime > 0) {
-  //       // Trigger feedback event
-  //       const feedbackText = `Please pay attention to ${sortedLandmarks.join(', ')}.`;
-  //       if ('speechSynthesis' in window) {
-  //         const utterance = new SpeechSynthesisUtterance(feedbackText);
-  //         window.speechSynthesis.speak(utterance);
-  //       }
-  //       console.log(`Feedback event triggered at ${videoCurrentTime} seconds`);
-  //     }
-  //   }, feedbackInterval * 1000); // Convert seconds to milliseconds
-
-  //   return () => clearInterval(intervalId); // Cleanup interval on component unmount
-  // }, [isActive, videoCurrentTime, sortedLandmarks]); // Ensure all dependencies are included
-
   const calculatePoseMatch = useCallback((webcamLandmarks, videoLandmarks) => {
     const { angleDifferences, anomalousIndices, totalDifference, validAngles } = calculateAngleDifferencesAndAnomalies(
       webcamLandmarks,
@@ -130,15 +134,35 @@ function App() {
     // setSortedLandmarks(sortedLandmarks);
 
     // Provide audio feedback at 5 second intervals
-    if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastFeedbackTime) >= feedbackInterval) {
+    // this is only triggered when the video is active and for now it is triggered every 5 seconds
+    // TODO: make it more comprehensive  considering the history of the performance in the "feedbackinterval"
+    if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastCurrentTimeFeedback) >= feedbackInterval) {
       const feedbackText = `Please pay attention to ${sortedLandmarks.join(', ')}.`;
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(feedbackText);
         window.speechSynthesis.speak(utterance);
       }
       console.log(`Feedback event triggered at ${videoCurrentTime} seconds`);
-      setLastFeedbackTime(videoCurrentTime); // Update the last feedback time
+      setLastCurrentTimeFeedback(videoCurrentTime); // Update the last feedback time
     }
+
+
+    if (isActive && videoRemainingTime > 0 && (videoCurrentTime - lastRemainingTimeFeedback) >= remainingTimeFeedbackInterval) {
+      const feedbackText = `You're doing great! Just ${Math.floor(videoRemainingTime)} seconds left. Keep pushing!`;
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(feedbackText);
+        window.speechSynthesis.speak(utterance);
+      }
+      console.log(`Feedback event triggered with ${videoRemainingTime} seconds remaining`);
+      setLastRemainingTimeFeedback(videoCurrentTime); // Update the last feedback time
+    }
+
+    console.log('Debug - isActive:', isActive);
+    console.log('Debug - videoRemainingTime:', videoRemainingTime);
+    console.log('Debug - lastRemainingTimeFeedback:', lastRemainingTimeFeedback);
+    console.log('Debug - feedbackInterval:', feedbackInterval);
+    console.log('Debug - remainingTimeFeedbackInterval:', remainingTimeFeedbackInterval);
+
 
     return {
       percentage: matchPercentage,
@@ -148,7 +172,7 @@ function App() {
       performanceFeedback: performanceLevel,
       mostMisalignedLandmarks: sortedLandmarks
     };
-  }, [videoCurrentTime, videoRemainingTime, lastFeedbackTime, feedbackInterval]);
+  }, [videoCurrentTime, videoRemainingTime, lastCurrentTimeFeedback, lastRemainingTimeFeedback, feedbackInterval, remainingTimeFeedbackInterval]);
 
   useEffect(() => {
     if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
