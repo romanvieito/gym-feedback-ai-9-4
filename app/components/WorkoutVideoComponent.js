@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { PoseLandmarker, DrawingUtils } from '@mediapipe/tasks-vision';
 import { PoseDetectionService } from '../services/PoseDetectionService';
 
+
 export function WorkoutVideoComponent({ 
   workout,
   poseLandmarker, 
