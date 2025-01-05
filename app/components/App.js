@@ -10,6 +10,7 @@ import { calculateAngleDifferencesAndAnomalies } from '../services/angleUtils';
 import { areLandmarksVisible } from '../services/poseUtils'; // Import the visibility check function
 
 import mixpanel from 'mixpanel-browser';
+import { YouTubePoseDetection } from './YouTubePoseDetection';
 
 // New function to calibrate landmarks
 const calibrateLandmarks = (landmarks, referenceLandmarks) => {
@@ -32,6 +33,11 @@ const calculateScale = (referenceLandmarks) => {
 
   // Default scale if shoulders are not detected
   return refShoulderDist > 0 ? 1 / refShoulderDist : 1;
+};
+
+// Function to check if the video source is a YouTube URL
+const isYouTubeUrl = (url) => {
+  return url.includes('youtube.com') || url.includes('youtu.be');
 };
 
 function App() {
@@ -237,15 +243,19 @@ function App() {
         padding: '20px',
         position: 'relative'
       }}>
-        {/* Workout Videos */}
-        <WorkoutVideoComponent
-          workout={workoutTypes[0]}
-          poseLandmarker={landmarkers.videoLandmarker}
-          onLandmarksUpdate={setVideoLandmarks}
-          isActive={isActive}
-          onCurrentTimeUpdate={setVideoCurrentTime}
-          onDurationUpdate={setVideoDuration}
-        />
+        {/* Conditionally render YouTube or Workout Video Component */}
+        {isYouTubeUrl(workoutTypes[0].video) ? (
+          <YouTubePoseDetection videoUrl={workoutTypes[0].video} />
+        ) : (
+          <WorkoutVideoComponent
+            workout={workoutTypes[0]}
+            poseLandmarker={landmarkers.videoLandmarker}
+            onLandmarksUpdate={setVideoLandmarks}
+            isActive={isActive}
+            onCurrentTimeUpdate={setVideoCurrentTime}
+            onDurationUpdate={setVideoDuration}
+          />
+        )}
 
         {/* Message on top of the video component */}
         {!landmarksVisible && (
@@ -281,6 +291,8 @@ function App() {
                   setWebcamLandmarks(landmarks);
                 }
               }}
+              onCurrentTimeUpdate={setVideoCurrentTime}
+              onFrameIndexUpdate={() => {}}
               poseMatchData={poseMatchData}
             />
           </div>
