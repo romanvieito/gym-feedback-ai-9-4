@@ -117,7 +117,7 @@ function App() {
     const goodAverageThreshold = 70;       // Higher threshold for good
     const fairAverageThreshold = 55;       // Higher threshold for fair
 
-    // Determine the performance level and color
+    // Determine the performance level and color to be corrected 
     let performanceLevel, color;
     if (matchPercentage >= excellentAverageThreshold) {
       performanceLevel = "Excellent";
