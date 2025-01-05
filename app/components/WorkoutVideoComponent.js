@@ -8,13 +8,13 @@ export function WorkoutVideoComponent({
   poseLandmarker, 
   onLandmarksUpdate,
   isActive,
-  onFrameIndexUpdate,
+  // onFrameIndexUpdate,
   onCurrentTimeUpdate,
   onDurationUpdate
 }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [frameRate, setFrameRate] = useState(30); // Default to 30 fps
+  // const [frameRate, setFrameRate] = useState(30); // Default to 30 fps
 
   useEffect(() => {
     const video = videoRef.current;

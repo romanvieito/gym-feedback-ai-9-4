@@ -112,12 +112,12 @@ function App() {
     // Normalize the difference to a 0-100 scale, with a maximum difference of 180 degrees
     const matchPercentage = validAngles > 0 ? Math.max(0, Math.min(100, (1 - (averageDifferenceMatch / 180)) * 100)) : 0;
 
-    // Define adaptive thresholds for ordinal scale
+    // TODO: Define adaptive thresholds for ordinal scale
     const excellentAverageThreshold = 85;  // Higher threshold for excellent
     const goodAverageThreshold = 70;       // Higher threshold for good
     const fairAverageThreshold = 55;       // Higher threshold for fair
 
-    // Determine the performance level and color to be corrected 
+    // TODO: Determine the performance level and color to be corrected 
     let performanceLevel, color;
     if (matchPercentage >= excellentAverageThreshold) {
       performanceLevel = "Excellent";
@@ -142,9 +142,6 @@ function App() {
       .slice(0, 3)
       .map(([landmark]) => landmark);
 
-    // // Update the state with the sorted landmarks
-    // setSortedLandmarks(sortedLandmarks);
-
     // Accumulate landmark performance
     Object.entries(angleDifferencesMatch).forEach(([landmark, diff]) => {
       setLandmarkPerformance(prev => ({
@@ -155,7 +152,8 @@ function App() {
 
     // Provide audio feedback at 5 second intervals
     if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastCurrentTimeFeedback) >= feedbackInterval) {
-      // Rank landmarks based on accumulated performance
+      //  Rank landmarks based on accumulated performance
+      //TODO: this has to be retested
       const worstLandmarks = Object.entries(landmarkPerformance)
         .sort(([, totalDiffA], [, totalDiffB]) => totalDiffB - totalDiffA)
         .slice(0, 3)
