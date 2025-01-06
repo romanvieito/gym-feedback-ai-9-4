@@ -6,6 +6,8 @@ import { computeAngle } from '../services/angleUtils';
 export function WebcamComponent({ 
   poseLandmarker, 
   onLandmarksUpdate,
+  onFrameIndexUpdate,
+  onCurrentTimeUpdate,
   poseMatchData 
 }) {
   const webcamRef = useRef(null);
@@ -13,6 +15,7 @@ export function WebcamComponent({
   const animationRef = useRef(null);
   const onLandmarksUpdateRef = useRef(onLandmarksUpdate);
   const poseMatchDataRef = useRef(poseMatchData);
+  const frameRate = 30; // Assume a frame rate for the webcam
 
   useEffect(() => {
     onLandmarksUpdateRef.current = onLandmarksUpdate;
@@ -89,6 +92,24 @@ export function WebcamComponent({
       }
     };
   }, [poseLandmarker, detectPose]);
+
+  useEffect(() => {
+    const updateWebcamData = () => {
+      const currentTime = performance.now() / 1000; // Use performance.now() for precise timing
+      onCurrentTimeUpdate(currentTime);
+
+      const frameIndex = Math.floor(currentTime * frameRate);
+      onFrameIndexUpdate(frameIndex);
+
+      // Simulate landmark detection
+      const landmarks = []; // Replace with actual landmark detection logic
+      onLandmarksUpdate(landmarks);
+    };
+
+    const intervalId = setInterval(updateWebcamData, 1000 / frameRate);
+
+    return () => clearInterval(intervalId);
+  }, [onCurrentTimeUpdate, onFrameIndexUpdate, onLandmarksUpdate]);
 
   return (
     <div style={{ 

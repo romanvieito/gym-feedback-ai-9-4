@@ -8,6 +8,10 @@ export const landmarkNames = [
   'Right Heel', 'Left Foot Index', 'Right Foot Index'
 ];
 
+export function areLandmarksVisible(landmarks, requiredIndices) {
+  return requiredIndices.every(index => landmarks[index] && landmarks[index].visibility > 0.5);
+}
+
 export const angleDict = {
   'right knee': [['Right Ankle', 'Right Knee', 'Right Hip'], 'flexion', -180, 1],
   'left knee': [['Left Ankle', 'Left Knee', 'Left Hip'], 'flexion', -180, 1],

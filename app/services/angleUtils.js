@@ -62,33 +62,36 @@ export function cosineDistanceBetweenAngles(angle1, angle2) {
 
 // Calculate angle differences and anomalies
 export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLandmarks, angleDict, landmarkNames) {
-  const angleDifferences = {}; // Initialize an object to store angle differences
+  const angleDifferencesMatch = {}; // Initialize an object to store angle differences
   const anomalousIndices = new Set(); // Initialize a set to store indices of anomalous landmarks
-  let totalDifference = 0; // Initialize a variable to accumulate total differences
+  let totalDifferenceMatch = 0; // Initialize a variable to accumulate total differences
   let validAngles = 0; // Initialize a counter for valid angles
 
-  for (const angName in angleDict) { // Iterate over each angle name in the angle dictionary
+  const angleKeys = Object.keys(angleDict).slice(10); // Get keys from angleDict starting from index 10
+
+  for (const angName of angleKeys) { // Iterate over each angle name in the angle dictionary  
     const currentAngle = computeAngle(angName, currentLandmarks, angleDict, landmarkNames); // Compute the current angle
     const videoAngle = computeAngle(angName, videoLandmarks, angleDict, landmarkNames); // Compute the video angle
 
     // // Debugging: Log the computed angles
-    // console.log(`Angle Name: ${angName}`);
-    // console.log(`Current Angle: ${currentAngle}`);
-    // console.log(`Video Angle: ${videoAngle}`);
+    console.log(`Angle Name: ${angName}`);
+    console.log(`Current Angle: ${currentAngle}`);
+    console.log(`Video Angle: ${videoAngle}`);
 
     if (!isNaN(currentAngle) && !isNaN(videoAngle)) { // Check if both angles are valid numbers
       const diff = cosineDistanceBetweenAngles(currentAngle, videoAngle); // Calculate the cosine distance between angles
-      angleDifferences[angName] = (1 - diff) * 100; // Store the angle difference as a percentage
-      totalDifference += angleDifferences[angName]; // Accumulate the total difference
-      //console.log(`angleDifferencesPercentage: ${angleDifferences[angName]}`);
+      angleDifferencesMatch[angName] = (1 - diff) * 100; // Store the angle difference as a percentage
+      totalDifferenceMatch += angleDifferencesMatch[angName]; // Accumulate the total difference
+      console.log(`angleDifferencesPercentage: ${angleDifferencesMatch[angName]}`);
+      console.log(`angleDifference: ${diff}`);
       validAngles++; // Increment the count of valid angles
 
-      const adaptiveThreshold = COSINE_DISTANCE_THRESHOLD + (totalDifference / (validAngles || 1)) * 0.05; // Calculate an adaptive threshold
+      const adaptiveThreshold = COSINE_DISTANCE_THRESHOLD + (totalDifferenceMatch / (validAngles || 1)) * 0.05; // Calculate an adaptive threshold
 
-      //console.log(`value: ${(totalDifference / (validAngles || 1)) * 0.05}`);
+      //console.log(`value: ${(totalDifferenceMatch / (validAngles || 1)) * 0.05}`);
       //console.log(`adaptiveThreshold: ${adaptiveThreshold}`);
 
-      if (angleDifferences[angName] > adaptiveThreshold) { // Check if the difference exceeds the adaptive threshold
+      if (angleDifferencesMatch[angName] > adaptiveThreshold) { // Check if the difference exceeds the adaptive threshold
         const landmarkNamesForAngle = angleDict[angName][0]; // Get the landmark names for the angle
         landmarkNamesForAngle.forEach(name => { // Iterate over each landmark name
           const index = landmarkNames.indexOf(name); // Find the index of the landmark name
@@ -105,9 +108,9 @@ export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLan
   }
 
   return {
-    angleDifferences, // Return the angle differences
+    angleDifferencesMatch, // Return the angle differences
     anomalousIndices: Array.from(anomalousIndices), // Convert the set of anomalous indices to an array and return it
-    totalDifference, // Return the total difference
+    totalDifferenceMatch, // Return the total difference
     validAngles // Return the count of valid angles
   };
 }

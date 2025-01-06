@@ -1,27 +1,50 @@
-import React, { useRef, useEffect } from 'react';
-// import { DrawingUtils, PoseLandmarker } from '@mediapipe/tasks-vision';
+
+
+import React, { useRef, useEffect, useState } from 'react';
 import { PoseLandmarker, DrawingUtils } from '@mediapipe/tasks-vision';
 import { PoseDetectionService } from '../services/PoseDetectionService';
+
 
 export function WorkoutVideoComponent({ 
   workout,
   poseLandmarker, 
   onLandmarksUpdate,
-  isActive
+  isActive,
+  onCurrentTimeUpdate,
+  onDurationUpdate
 }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  // const [frameRate, setFrameRate] = useState(30); // Default to 30 fps
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
+    const updateTime = () => {
+      const currentTime = video.currentTime;
+      onCurrentTimeUpdate(currentTime); // Update current time based on video
+    };
+
+    const updateDuration = () => {
+      const duration = video.duration;
+      onDurationUpdate(duration); // Update duration based on video
+    };
+
+    video.addEventListener('timeupdate', updateTime);
+    video.addEventListener('loadedmetadata', updateDuration);
 
     if (isActive) {
       video.play().catch(err => console.error("Error playing video:", err));
     } else {
       video.pause();
     }
-  }, [isActive]);
+
+    return () => {
+      video.removeEventListener('timeupdate', updateTime);
+      video.removeEventListener('loadedmetadata', updateDuration);
+    };
+  }, [isActive, onCurrentTimeUpdate, onDurationUpdate]);
 
   useEffect(() => {
     if (!poseLandmarker || !videoRef.current || !canvasRef.current) return;
