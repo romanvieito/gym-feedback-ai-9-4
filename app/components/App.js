@@ -257,27 +257,6 @@ function App() {
           />
         )}
 
-        {/* Message on top of the video component */}
-        {!landmarksVisible && (
-          <div style={{
-            position: 'absolute',
-            top: '0',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            backgroundColor: 'rgba(255, 0, 0, 0.8)',
-            color: 'white',
-            padding: '5px 10px',
-            borderRadius: '5px',
-            zIndex: 10,
-            whiteSpace: 'nowrap',
-            maxWidth: 'calc(100% - 20px)',
-            boxSizing: 'border-box',
-            textAlign: 'center'
-          }}>
-            Please adjust your position to capture all your full body otherwise our feedback might be inaccurate.
-          </div>
-        )}
-
         {/* Webcam Component */}
         {isActive && (
           <div style={{
@@ -304,7 +283,9 @@ function App() {
       <div style={{ 
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexDirection: 'column',
+        gap: '10px'
       }}>
         <button 
           onClick={() => {
@@ -347,6 +328,13 @@ function App() {
           )}
           {isActive ? 'Pause Workout' : 'Start Workout'}
         </button>
+        <span style={{
+          fontSize: '0.8rem',
+          color: 'gray',
+          textAlign: 'center'
+        }}>
+          *Ensure your full body is visible for accurate feedback.
+        </span>
       </div>
     </div>
   );
