@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { workoutTypes } from '../services/workoutData';
 import { WebcamComponent } from './WebcamComponent';
 import { WorkoutVideoComponent } from './WorkoutVideoComponent';
@@ -10,7 +10,7 @@ import { calculateAngleDifferencesAndAnomalies } from '../services/angleUtils';
 import { areLandmarksVisible } from '../services/poseUtils'; // Import the visibility check function
 
 import mixpanel from 'mixpanel-browser';
-import { YouTubePoseDetection } from './YouTubePoseDetection';
+import KalmanFilter from '../services/KalmanFilter';
 
 // New function to calibrate landmarks
 const calibrateLandmarks = (landmarks, referenceLandmarks) => {
@@ -40,6 +40,16 @@ const isYouTubeUrl = (url) => {
   return url.includes('youtube.com') || url.includes('youtu.be');
 };
 
+// Exponential Smoothing Function with Control Flag
+const smoothLandmarks = (prevLandmarks, newLandmarks, applySmoothing = true, alpha = 0.6) => {
+  if (!applySmoothing || !prevLandmarks) return newLandmarks;
+  return newLandmarks.map((landmark, i) => ({
+    x: alpha * landmark.x + (1 - alpha) * prevLandmarks[i].x,
+    y: alpha * landmark.y + (1 - alpha) * prevLandmarks[i].y,
+    z: alpha * landmark.z + (1 - alpha) * prevLandmarks[i].z,
+  }));
+};
+
 function App() {
   const [landmarkers, setLandmarkers] = useState({
     webcamLandmarker: null,
@@ -55,6 +65,13 @@ function App() {
   const [lastRemainingTimeFeedback, setLastRemainingTimeFeedback] = useState(0);
   const [landmarksVisible, setLandmarksVisible] = useState(true);
   const [landmarkPerformance, setLandmarkPerformance] = useState({});
+  const [prevWebcamLandmarks, setPrevWebcamLandmarks] = useState(null);
+  const [prevVideoLandmarks, setPrevVideoLandmarks] = useState(null);
+  const [applySmoothing, setApplySmoothing] = useState(true); // State to control smoothing
+  const [applyKalman, setApplyKalman] = useState(false); // State to control Kalman filtering
+
+  // Initialize Kalman filters for each landmark
+  const kalmanFilters = useRef([]);
 
   // Calculate remaining time for video
   const videoRemainingTime = videoDuration - videoCurrentTime;
@@ -209,16 +226,40 @@ function App() {
 
   useEffect(() => {
     if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
-      // *** Apply Calibration Before Comparison ***
-      // TODO: this calibration has to be retested, not sure id mediapipe already calibrates as expected
-      const calibratedLandmarks = calibrateLandmarks(webcamLandmarks, videoLandmarks);
-      /////*****OJO OJO OJO OJO theline bellow is ONLY to check what happens if we use the videoLandmarks directly for comparison
-      //const calibratedLandmarks = videoLandmarks
-      /////*****OJO OJO OJO OJO the line above is ONLY to check what happens if we use the videoLandmarks directly for comparison
-      const matchData = calculatePoseMatch(calibratedLandmarks, videoLandmarks);
+      // Initialize Kalman filters if not already done
+      if (kalmanFilters.current.length === 0) {
+        kalmanFilters.current = webcamLandmarks.map(() => new KalmanFilter());
+      }
+
+      // Apply Kalman filtering if enabled
+      const kalmanFilteredWebcamLandmarks = applyKalman
+        ? webcamLandmarks.map((landmark, i) => ({
+            x: kalmanFilters.current[i].filter(landmark.x),
+            y: kalmanFilters.current[i].filter(landmark.y),
+            z: kalmanFilters.current[i].filter(landmark.z),
+          }))
+        : webcamLandmarks;
+
+      const kalmanFilteredVideoLandmarks = applyKalman
+        ? videoLandmarks.map((landmark, i) => ({
+            x: kalmanFilters.current[i].filter(landmark.x),
+            y: kalmanFilters.current[i].filter(landmark.y),
+            z: kalmanFilters.current[i].filter(landmark.z),
+          }))
+        : videoLandmarks;
+
+      // Apply Exponential Smoothing after Kalman filtering
+      const smoothedWebcamLandmarks = smoothLandmarks(prevWebcamLandmarks, kalmanFilteredWebcamLandmarks, applySmoothing);
+      const smoothedVideoLandmarks = smoothLandmarks(prevVideoLandmarks, kalmanFilteredVideoLandmarks, applySmoothing);
+
+      setPrevWebcamLandmarks(smoothedWebcamLandmarks);
+      setPrevVideoLandmarks(smoothedVideoLandmarks);
+
+      const calibratedLandmarks = calibrateLandmarks(smoothedWebcamLandmarks, smoothedVideoLandmarks);
+      const matchData = calculatePoseMatch(calibratedLandmarks, smoothedVideoLandmarks);
       setPoseMatchData(matchData);
     }
-  }, [webcamLandmarks, videoLandmarks, calculatePoseMatch]);
+  }, [webcamLandmarks, videoLandmarks, calculatePoseMatch, applyKalman, applySmoothing]);
 
   function getColorFromPercentage(percentage) {
     if (isNaN(percentage) || percentage === null) return 'rgb(255,0,0)';
@@ -233,6 +274,43 @@ function App() {
       backgroundColor: 'white',
       color: 'black',
     }}>
+      {/* Add toggle buttons for Kalman filtering and smoothing */}
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: '20px'
+      }}>
+        <button 
+          onClick={() => setApplyKalman(!applyKalman)}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: applyKalman ? '#44aa44' : '#ff4444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            marginRight: '10px'
+          }}
+        >
+          {applyKalman ? 'Disable Kalman Filter' : 'Enable Kalman Filter'}
+        </button>
+        <button 
+          onClick={() => setApplySmoothing(!applySmoothing)}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: applySmoothing ? '#44aa44' : '#ff4444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            fontSize: '1rem',
+            cursor: 'pointer'
+          }}
+        >
+          {applySmoothing ? 'Disable Smoothing' : 'Enable Smoothing'}
+        </button>
+      </div>
 
       {/* Video Components Container */}
       <div style={{ 
@@ -243,19 +321,15 @@ function App() {
         padding: '20px',
         position: 'relative'
       }}>
-        {/* Conditionally render YouTube or Workout Video Component */}
-        {isYouTubeUrl(workoutTypes[0].video) ? (
-          <YouTubePoseDetection videoUrl={workoutTypes[0].video} />
-        ) : (
-          <WorkoutVideoComponent
-            workout={workoutTypes[0]}
-            poseLandmarker={landmarkers.videoLandmarker}
-            onLandmarksUpdate={setVideoLandmarks}
-            isActive={isActive}
-            onCurrentTimeUpdate={setVideoCurrentTime}
-            onDurationUpdate={setVideoDuration}
-          />
-        )}
+        {/* Workout Video Component */}
+        <WorkoutVideoComponent
+          workout={workoutTypes[0]}
+          poseLandmarker={landmarkers.videoLandmarker}
+          onLandmarksUpdate={setVideoLandmarks}
+          isActive={isActive}
+          onCurrentTimeUpdate={setVideoCurrentTime}
+          onDurationUpdate={setVideoDuration}
+        />
 
         {/* Message on top of the video component */}
         {!landmarksVisible && (
