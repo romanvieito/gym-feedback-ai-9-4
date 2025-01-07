@@ -23,9 +23,9 @@ export const angleDict = {
   'left elbow': [['Left Wrist', 'Left Elbow', 'Left Shoulder'], 'flexion', 180, -1],
   'right ankle': [['Right Knee', 'Right Ankle', 'Right Foot Index'], 'dorsiflexion', 90, 1],
   'left ankle': [['Left Knee', 'Left Ankle', 'Left Foot Index'], 'dorsiflexion', 90, 1],
-  'neck': [['Nose', 'Left Shoulder', 'Right Shoulder'], 'flexion', 90, -1],
-  'trunk': [['Left Shoulder', 'Left Hip', 'Left Ankle'], 'flexion', 0, -1],
-  'right wrist': [['Right Index', 'Right Wrist', 'Right Elbow'], 'flexion', 180, -1],
-  'left wrist': [['Left Index', 'Left Wrist', 'Left Elbow'], 'flexion', 180, -1]
+  // 'neck': [['Nose', 'Left Shoulder', 'Right Shoulder'], 'flexion', 90, -1],
+  // 'trunk': [['Left Shoulder', 'Left Hip', 'Left Ankle'], 'flexion', 0, -1],
+  // 'right wrist': [['Right Index', 'Right Wrist', 'Right Elbow'], 'flexion', 180, -1],
+  // 'left wrist': [['Left Index', 'Left Wrist', 'Left Elbow'], 'flexion', 180, -1]
 };
 //TODO los 4 ultimos angles (neck, trunk, right wrist, left wrist) los puso cursor, revisar si son correctos
