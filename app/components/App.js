@@ -50,6 +50,9 @@ const smoothLandmarks = (prevLandmarks, newLandmarks, applySmoothing = true, alp
   }));
 };
 
+const APPLY_SMOOTHING = true; // Set to true to enable exponential smoothing
+const APPLY_KALMAN = true;    // Set to true to enable Kalman filtering
+
 function App() {
   const [landmarkers, setLandmarkers] = useState({
     webcamLandmarker: null,
@@ -67,8 +70,6 @@ function App() {
   const [landmarkPerformance, setLandmarkPerformance] = useState({});
   const [prevWebcamLandmarks, setPrevWebcamLandmarks] = useState(null);
   const [prevVideoLandmarks, setPrevVideoLandmarks] = useState(null);
-  const [applySmoothing, setApplySmoothing] = useState(true); // State to control smoothing
-  const [applyKalman, setApplyKalman] = useState(false); // State to control Kalman filtering
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -232,7 +233,7 @@ function App() {
       }
 
       // Apply Kalman filtering if enabled
-      const kalmanFilteredWebcamLandmarks = applyKalman
+      const kalmanFilteredWebcamLandmarks = APPLY_KALMAN
         ? webcamLandmarks.map((landmark, i) => ({
             x: kalmanFilters.current[i].filter(landmark.x),
             y: kalmanFilters.current[i].filter(landmark.y),
@@ -240,7 +241,7 @@ function App() {
           }))
         : webcamLandmarks;
 
-      const kalmanFilteredVideoLandmarks = applyKalman
+      const kalmanFilteredVideoLandmarks = APPLY_KALMAN
         ? videoLandmarks.map((landmark, i) => ({
             x: kalmanFilters.current[i].filter(landmark.x),
             y: kalmanFilters.current[i].filter(landmark.y),
@@ -249,8 +250,8 @@ function App() {
         : videoLandmarks;
 
       // Apply Exponential Smoothing after Kalman filtering
-      const smoothedWebcamLandmarks = smoothLandmarks(prevWebcamLandmarks, kalmanFilteredWebcamLandmarks, applySmoothing);
-      const smoothedVideoLandmarks = smoothLandmarks(prevVideoLandmarks, kalmanFilteredVideoLandmarks, applySmoothing);
+      const smoothedWebcamLandmarks = smoothLandmarks(prevWebcamLandmarks, kalmanFilteredWebcamLandmarks, APPLY_SMOOTHING);
+      const smoothedVideoLandmarks = smoothLandmarks(prevVideoLandmarks, kalmanFilteredVideoLandmarks, APPLY_SMOOTHING);
 
       setPrevWebcamLandmarks(smoothedWebcamLandmarks);
       setPrevVideoLandmarks(smoothedVideoLandmarks);
@@ -259,7 +260,7 @@ function App() {
       const matchData = calculatePoseMatch(calibratedLandmarks, smoothedVideoLandmarks);
       setPoseMatchData(matchData);
     }
-  }, [webcamLandmarks, videoLandmarks, calculatePoseMatch, applyKalman, applySmoothing]);
+  }, [webcamLandmarks, videoLandmarks, calculatePoseMatch]);
 
   function getColorFromPercentage(percentage) {
     if (isNaN(percentage) || percentage === null) return 'rgb(255,0,0)';
@@ -274,44 +275,6 @@ function App() {
       backgroundColor: 'white',
       color: 'black',
     }}>
-      {/* Add toggle buttons for Kalman filtering and smoothing */}
-      <div style={{ 
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: '20px'
-      }}>
-        <button 
-          onClick={() => setApplyKalman(!applyKalman)}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: applyKalman ? '#44aa44' : '#ff4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            fontSize: '1rem',
-            cursor: 'pointer',
-            marginRight: '10px'
-          }}
-        >
-          {applyKalman ? 'Disable Kalman Filter' : 'Enable Kalman Filter'}
-        </button>
-        <button 
-          onClick={() => setApplySmoothing(!applySmoothing)}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: applySmoothing ? '#44aa44' : '#ff4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            fontSize: '1rem',
-            cursor: 'pointer'
-          }}
-        >
-          {applySmoothing ? 'Disable Smoothing' : 'Enable Smoothing'}
-        </button>
-      </div>
-
       {/* Video Components Container */}
       <div style={{ 
         display: 'flex', 
