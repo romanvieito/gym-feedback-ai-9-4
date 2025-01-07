@@ -9,6 +9,11 @@ class KalmanFilter {
       this.x = NaN; // Estimated signal without noise
     }
   
+    setParameters({ R, Q }) {
+      if (R !== undefined) this.R = R;
+      if (Q !== undefined) this.Q = Q;
+    }
+  
     filter(z, u = 0) {
       if (isNaN(this.x)) {
         this.x = (1 / this.C) * z;

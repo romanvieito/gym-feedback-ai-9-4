@@ -70,6 +70,8 @@ function App() {
   const [landmarkPerformance, setLandmarkPerformance] = useState({});
   const [prevWebcamLandmarks, setPrevWebcamLandmarks] = useState(null);
   const [prevVideoLandmarks, setPrevVideoLandmarks] = useState(null);
+  const [kalmanR, setKalmanR] = useState(0.01); // Measurement noise covariance
+  const [kalmanQ, setKalmanQ] = useState(0.1);  // Process noise covariance
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -98,6 +100,21 @@ function App() {
   const remainingTimeFeedbackInterval = Math.max(minInterval, Math.min(maxInterval, videoDuration * remainingTimeFactor));
   
 
+  const estimateKalmanParameters = (landmarks) => {
+    // Calculate variance of the landmarks
+    const variance = landmarks.reduce((acc, landmark) => {
+      return acc + Math.pow(landmark.x - landmark.y, 2) + Math.pow(landmark.y - landmark.z, 2);
+    }, 0) / landmarks.length;
+
+    // Adjust Q based on variance
+    const newQ = Math.min(1, Math.max(0.01, variance * 0.1));
+    setKalmanQ(newQ);
+
+    // Optionally adjust R based on some criteria
+    const newR = Math.min(1, Math.max(0.01, variance * 0.01));
+    setKalmanR(newR);
+  };
+
   useEffect(() => {
     PoseDetectionService.initialize()
       .then(setLandmarkers)
@@ -113,11 +130,11 @@ function App() {
 
     setLandmarksVisible(webcamVisible && videoVisible);
 
-    if (!webcamVisible || !videoVisible) {
-      console.log('Required landmarks are not visible. Skipping pose match calculation.');
-      // return; // Exit the function if required landmarks are not visible but we want to
-                 // so commented for now keep the feedback
-    }
+    // if (!webcamVisible || !videoVisible) {
+    //   console.log('Required landmarks are not visible. Skipping pose match calculation.');
+    //   // return; // Exit the function if required landmarks are not visible but we want to
+    //              // so commented for now keep the feedback
+    // }
 
     console.log('webcamVisible:', webcamVisible);
     console.log('videoVisible:', videoVisible);
@@ -227,10 +244,16 @@ function App() {
 
   useEffect(() => {
     if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
+      // Estimate Kalman parameters based on current landmarks
+      estimateKalmanParameters(webcamLandmarks);
+
       // Initialize Kalman filters if not already done
       if (kalmanFilters.current.length === 0) {
         kalmanFilters.current = webcamLandmarks.map(() => new KalmanFilter());
       }
+
+      // Update Kalman filter parameters dynamically
+      kalmanFilters.current.forEach(filter => filter.setParameters({ R: kalmanR, Q: kalmanQ }));
 
       // Apply Kalman filtering if enabled
       const kalmanFilteredWebcamLandmarks = APPLY_KALMAN
@@ -260,7 +283,7 @@ function App() {
       const matchData = calculatePoseMatch(calibratedLandmarks, smoothedVideoLandmarks);
       setPoseMatchData(matchData);
     }
-  }, [webcamLandmarks, videoLandmarks, calculatePoseMatch]);
+  }, [webcamLandmarks, videoLandmarks, calculatePoseMatch, kalmanR, kalmanQ]);
 
   function getColorFromPercentage(percentage) {
     if (isNaN(percentage) || percentage === null) return 'rgb(255,0,0)';
