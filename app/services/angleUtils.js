@@ -67,9 +67,46 @@ export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLan
   let totalDifferenceMatch = 0; // Initialize a variable to accumulate total differences
   let validAngles = 0; // Initialize a counter for valid angles
 
-  const angleKeys = Object.keys(angleDict).slice(10); // Get keys from angleDict starting from index 10
+  // const angleKeys = Object.keys(angleDict).slice(10); // Get keys from angleDict starting from index 10
 
-  for (const angName of angleKeys) { // Iterate over each angle name in the angle dictionary  
+  // console.log(`angleKeys: ${angleKeys}`);
+
+  for (const angName of Object.keys(angleDict)) { // Iterate over each angle name in the angle dictionary  
+    // const visibilityThreshold = 0.3; // Define the visibility threshold
+
+    // // Check visibility of currentLandmarks
+    // debugger;
+    // const isCurrentLandmarkVisible = angleDict[angName][0].every(kpt => {
+    //   const index = landmarkNames.indexOf(kpt);
+    //   if (index === -1) {
+    //     console.warn(`Keypoint ${kpt} not found in landmarkNames`);
+    //     return false;
+    //   }
+    //   const landmark = currentLandmarks[index];
+    //   if (!landmark) {
+    //     console.warn(`Landmark at index ${index} is undefined`);
+    //     return false;
+    //   }
+    //   console.log(`Landmark data for ${kpt}:`, landmark); // Log the entire landmark object
+    //   if (landmark.visibility === undefined) {
+    //     console.warn(`Visibility is undefined for landmark ${kpt} at index ${index}`);
+    //     return false;
+    //   }
+    //   if (landmark.visibility < visibilityThreshold) {
+    //     console.warn(`Landmark ${kpt} at index ${index} has low visibility: ${landmark.visibility}`);
+    //     return false;
+    //   }
+    //   return true;
+    // });
+
+    // if (!isCurrentLandmarkVisible) {
+    //   console.log(`Skipping angle calculation for ${angName} due to low visibility`);
+    //   continue; // Skip this angle calculation if visibility is below the threshold
+    // }
+
+    // console.log(`Calculation for ${angName} with visibility`);
+
+
     const currentAngle = computeAngle(angName, currentLandmarks, angleDict, landmarkNames); // Compute the current angle
     const videoAngle = computeAngle(angName, videoLandmarks, angleDict, landmarkNames); // Compute the video angle
 
