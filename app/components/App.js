@@ -222,14 +222,29 @@ function App() {
     }
 
 
-    if (isActive && videoRemainingTime > 0 && (videoCurrentTime - lastRemainingTimeFeedback) >= remainingTimeFeedbackInterval) {
-      const feedbackText = `You're doing great! Just ${Math.floor(videoRemainingTime)} seconds left. Keep pushing!`;
+    if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastRemainingTimeFeedback) >= remainingTimeFeedbackInterval) {
+      const minutes = Math.floor(videoCurrentTime / 60);
+      const seconds = Math.floor(videoCurrentTime % 60);
+      const timeText = minutes > 0 
+        ? `${minutes} minute${minutes !== 1 ? 's' : ''} and ${seconds} second${seconds !== 1 ? 's' : ''}`
+        : `${seconds} second${seconds !== 1 ? 's' : ''}`;
+        
+      const encouragingPhrases = [
+        `Great work! ${timeText} and counting. Every second counts!`,
+        `Fantastic effort! ${timeText} of awesome workout. You're crushing it!`,
+        `You're doing amazing! ${timeText} of exercise completed. Stay strong!`,
+        `Keep that energy going! You've been at it for ${timeText}. You've got this!`,
+        `Consistency is key! ${timeText} of movement. Feel the progress!`
+      ];
+
+      const randomPhrase = encouragingPhrases[Math.floor(Math.random() * encouragingPhrases.length)];
+      
       if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(feedbackText);
+        const utterance = new SpeechSynthesisUtterance(randomPhrase);
         window.speechSynthesis.speak(utterance);
       }
-      console.log(`Feedback event triggered with ${videoRemainingTime} seconds remaining`);
-      setLastRemainingTimeFeedback(videoCurrentTime); // Update the last feedback time
+      console.log(`Feedback event triggered at ${timeText}`);
+      setLastRemainingTimeFeedback(videoCurrentTime);
     }
 
     console.log('Debug - isActive:', isActive);
