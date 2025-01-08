@@ -9,7 +9,7 @@ export const workoutTypes = [
   //   video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/iso.mp4',
   // },
    {
-    title: 'Lose Weight (14 days)',
+    title: 'Lose Weight with Ease',
     video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/Lose-Weight(14days).mp4',
   },
   // {

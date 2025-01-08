@@ -25,7 +25,7 @@ export default function Home() {
   const handleWorkoutClick = () => {
     mixpanel.track('Workout Started', {
       workout: 'Day 1',
-      name: 'Lose Weight in 14 Days'
+      name: 'Lose Weight with Ease'
     });
     setShowApp(true);
   };
@@ -78,7 +78,7 @@ export default function Home() {
               />
               <div className="flex-1 text-left">
                 <div>DAY 1</div>
-                <p className="text-sm text-gray-600">Lose Weight in 14 Days</p>
+                <p className="text-sm text-gray-600">Lose Weight with Ease</p>
               </div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
