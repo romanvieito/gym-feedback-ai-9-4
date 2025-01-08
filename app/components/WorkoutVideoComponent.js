@@ -1,5 +1,3 @@
-
-
 import React, { useRef, useEffect, useState } from 'react';
 import { PoseLandmarker, DrawingUtils } from '@mediapipe/tasks-vision';
 import { PoseDetectionService } from '../services/PoseDetectionService';
@@ -108,21 +106,10 @@ export function WorkoutVideoComponent({
   }, [poseLandmarker, videoRef, canvasRef, onLandmarksUpdate, isActive]);
 
   return (
-    <div style={{ 
-      position: 'relative', 
-      width: '1024px',
-      height: '576px',
-      margin: '0 auto'
-    }}>
+    <div className="relative w-full aspect-video">
       <video 
         ref={videoRef} 
-        style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          zIndex: 1
-        }}
+        className="absolute inset-0 w-full h-full object-contain bg-gray-50 dark:bg-gray-900"
         controls={!isActive}
         controlsList="nodownload nofullscreen" 
         src={workout.video}
@@ -131,14 +118,7 @@ export function WorkoutVideoComponent({
       />
       <canvas 
         ref={canvasRef}
-        style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          pointerEvents: 'none',
-          zIndex: 2
-        }}
+        className="absolute inset-0 w-full h-full object-contain pointer-events-none"
       />
     </div>
   );

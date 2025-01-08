@@ -130,7 +130,6 @@ function App() {
     webcamLandmarks.forEach((landmark, index) => {
       console.log(`Landmark ${index}:`, landmark);
     });
-    debugger;
 
     const webcamVisible = areLandmarksVisible(webcamLandmarks, requiredIndices);
     const videoVisible = areLandmarksVisible(videoLandmarks, requiredIndices);
@@ -301,35 +300,24 @@ function App() {
   }
 
   return (
-    <div className="app" style={{ 
-      backgroundColor: 'white',
-      color: 'black',
-    }}>
+    <div className="w-full">
       {/* Video Components Container */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '20px',
-        padding: '20px',
-        position: 'relative'
-      }}>
-        {/* Workout Video Component */}
-        <WorkoutVideoComponent
-          workout={workoutTypes[0]}
-          poseLandmarker={landmarkers.videoLandmarker}
-          onLandmarksUpdate={setVideoLandmarks}
-          isActive={isActive}
-          onCurrentTimeUpdate={setVideoCurrentTime}
-          onDurationUpdate={setVideoDuration}
-        />
+      <div className="relative w-full max-w-[1280px] mx-auto">
+        {/* Main Workout Video */}
+        <div className="w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
+          <WorkoutVideoComponent
+            workout={workoutTypes[0]}
+            poseLandmarker={landmarkers.videoLandmarker}
+            onLandmarksUpdate={setVideoLandmarks}
+            isActive={isActive}
+            onCurrentTimeUpdate={setVideoCurrentTime}
+            onDurationUpdate={setVideoDuration}
+          />
+        </div>
 
-        {/* Webcam Component */}
+        {/* Webcam Component - Overlay */}
         {isActive && (
-          <div style={{
-            padding: '10px',
-            position: 'relative'
-          }}>
+          <div className="absolute top-4 right-4 w-[320px] rounded-xl overflow-hidden border-gray-200 dark:border-gray-800 shadow-lg">
             <WebcamComponent
               poseLandmarker={landmarkers.webcamLandmarker}
               onLandmarksUpdate={(landmarks) => {
@@ -343,17 +331,10 @@ function App() {
             />
           </div>
         )}
-
       </div>
       
       {/* Controls */}
-      <div style={{ 
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        flexDirection: 'column',
-        gap: '10px'
-      }}>
+      <div className="flex flex-col items-center gap-4 mt-8">
         <button 
           onClick={() => {
             const newIsActive = !isActive;
@@ -370,18 +351,14 @@ function App() {
               });
             }
           }}
-          style={{
-            padding: '10px 10px',
-            backgroundColor: isActive ? '#ff4444' : '#44aa44',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            fontSize: '1.1rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
+          className={`
+            px-6 py-3 rounded-lg font-medium
+            flex items-center gap-2
+            transition-all duration-200
+            ${isActive 
+              ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white' 
+              : 'bg-black hover:bg-gray-900 text-white'}
+          `}
         >
           {isActive ? (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -395,13 +372,10 @@ function App() {
           )}
           {isActive ? 'Pause Workout' : 'Start Workout'}
         </button>
-        <span style={{
-          fontSize: '0.8rem',
-          color: 'gray',
-          textAlign: 'center'
-        }}>
+
+        <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
           *Ensure your full body is visible for accurate feedback.
-        </span>
+        </p>
       </div>
     </div>
   );
