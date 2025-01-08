@@ -40,13 +40,13 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen p-2 flex flex-col items-center">
+    <main className="min-h-screen p-2 flex flex-col items-center bg-white dark:bg-black">
       {!showApp ? (
-        <div className="my-auto">
-          <h1 className="text-2xl font-bold mb-6 text-center">Workouts</h1>
+        <div className="my-auto w-full max-w-4xl px-4">
+          <h1 className="text-4xl font-bold mb-12 text-center tracking-tighter">Workouts</h1>
           <Link 
             href="https://24up.fit" 
-            className="absolute top-8 left-8 text-2xl hover:text-gray-600 flex items-center gap-2"
+            className="absolute top-8 left-8 text-sm hover:text-gray-600 flex items-center gap-2 font-medium"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -64,21 +64,21 @@ export default function Home() {
             </svg>
             Home
           </Link>
-          <div className="flex flex-col gap-4 w-full max-w-md">
+          <div className="flex flex-col gap-6 w-full max-w-md mx-auto">
             <button 
               onClick={handleWorkoutClick}
-              className="text-center p-4 border rounded-lg hover:bg-gray-100 flex items-center"
+              className="text-center p-6 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center group border border-gray-200 dark:border-gray-800 transition-all duration-200"
             >
               <Image
                 src="/images/1.png"
                 alt="Chest and Back workout"
                 width={60}
                 height={60}
-                className="rounded-full mr-4 object-cover"
+                className="rounded-lg mr-4 object-cover"
               />
               <div className="flex-1 text-left">
-                <div>DAY 1</div>
-                <p className="text-sm text-gray-600">Lose Weight with Ease</p>
+                <div className="font-medium">DAY 1</div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Lose Weight with Ease</p>
               </div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -90,25 +90,25 @@ export default function Home() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-gray-400"
+                className="text-gray-400 group-hover:text-gray-600 transition-colors"
               >
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </button>
 
             <div 
-              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative flex items-center"
+              className="p-6 rounded-xl flex items-center border border-gray-200 dark:border-gray-800 opacity-50"
             >
               <Image
                 src="/images/3.png"
                 alt="Shoulders and Leg workout"
                 width={60}
                 height={60}
-                className="rounded-full mr-4 object-cover"
+                className="rounded-lg mr-4 object-cover"
               />
               <div className="flex-1 text-left">
                 <div>DAY 2</div>
-                <p className="text-sm text-gray-600">Shoulders & Leg</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Shoulders & Leg</p>
               </div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -127,18 +127,18 @@ export default function Home() {
             </div>
 
             <div 
-              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative flex items-center"
+              className="p-6 rounded-xl flex items-center border border-gray-200 dark:border-gray-800 opacity-50"
             >
               <Image
                 src="/images/2.png"
                 alt="Quadriceps and Back workout"
                 width={60}
                 height={60}
-                className="rounded-full mr-4 object-cover"
+                className="rounded-lg mr-4 object-cover"
               />
               <div className="flex-1 text-left">
                 <div>DAY 3</div>
-                <p className="text-sm text-gray-600">Yoga for Beginners</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Yoga for Beginners</p>
               </div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -157,18 +157,18 @@ export default function Home() {
             </div>
 
             <div 
-              className="p-4 border rounded-lg cursor-not-allowed opacity-50 relative flex items-center"
+              className="p-6 rounded-xl flex items-center border border-gray-200 dark:border-gray-800 opacity-50"
             >
               <Image
                 src="/images/4.png"
                 alt="Biceps and Back workout"
                 width={60}
                 height={60}
-                className="rounded-full mr-4 object-cover"
+                className="rounded-lg mr-4 object-cover"
               />
               <div className="flex-1 text-left">
                 <div>DAY 4</div>
-                <p className="text-sm text-gray-600">Biceps and Back</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Biceps and Back</p>
               </div>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -189,9 +189,9 @@ export default function Home() {
             <Link 
               href="https://24up.fit/pricing"
               onClick={handlePremiumClick}
-              className="p-4 border rounded-lg hover:bg-gray-100 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50"
+              className="p-6 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center justify-center gap-3 border border-gray-200 dark:border-gray-800 transition-all duration-200"
             >
-              <span className="font-medium text-amber-800">Go Premium:</span>
+              <span className="font-medium">Go Premium</span>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
@@ -202,20 +202,19 @@ export default function Home() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-amber-600"
+                className="text-current"
               >
                 <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
               </svg>
-              <p className="text-sm text-amber-700">Unlock Every Workout Today!</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Unlock Every Workout Today!</p>
             </Link>
-
           </div>
         </div>
       ) : (
-        <div className="mt-1">
+        <div className="mt-4 w-full max-w-4xl">
           <button 
             onClick={handleBackClick}
-            className="mb-2 text-sm text-gray-600 hover:text-gray-800"
+            className="mb-6 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
           >
             ← Back to Workouts
           </button>
