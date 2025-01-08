@@ -113,13 +113,11 @@ export function WebcamComponent({
 
   return (
     <div style={{ 
-      position: 'fixed',
-      width: '320px', 
-      height: '240px',
-      margin: '0',
-      bottom: '20px',
-      right: '20px',
-      zIndex: 1000
+      position: 'relative',
+      width: '100%',
+      aspectRatio: '16/9',
+      overflow: 'hidden',
+      borderRadius: '0.75rem'
     }}>
       <video
         ref={webcamRef}

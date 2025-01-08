@@ -317,7 +317,7 @@ function App() {
 
         {/* Webcam Component - Overlay */}
         {isActive && (
-          <div className="absolute top-4 right-4 w-[320px] rounded-xl overflow-hidden border-gray-200 dark:border-gray-800 shadow-lg">
+          <div className="absolute bottom-4 right-4 w-[320px] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-lg bg-black/10 backdrop-blur-sm">
             <WebcamComponent
               poseLandmarker={landmarkers.webcamLandmarker}
               onLandmarksUpdate={(landmarks) => {
