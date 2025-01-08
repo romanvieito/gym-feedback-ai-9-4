@@ -8,7 +8,8 @@ export function WebcamComponent({
   onLandmarksUpdate,
   onFrameIndexUpdate,
   onCurrentTimeUpdate,
-  poseMatchData 
+  poseMatchData,
+  showPoseLines 
 }) {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
@@ -44,21 +45,26 @@ export function WebcamComponent({
       if (result?.landmarks?.[0]) {
         onLandmarksUpdateRef.current(result.landmarks[0]);
         
-        const drawingUtils = new DrawingUtils(canvasCtx);
-        const color = poseMatchDataRef.current?.color || '#0000ff';
-        
-        drawingUtils.drawLandmarks(result.landmarks[0], { radius: 6, color });
-        drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
-          lineWidth: 6,
-          color
-        });
+        if (showPoseLines) {
+          const drawingUtils = new DrawingUtils(canvasCtx);
+          const color = poseMatchDataRef.current?.color || '#0000ff';
+          
+          drawingUtils.drawLandmarks(result.landmarks[0], { radius: 6, color });
+          drawingUtils.drawConnectors(result.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, {
+            lineWidth: 6,
+            color
+          });
+        } else {
+          // Clear canvas when lines are hidden
+          canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        }
       }
     } catch (error) {
       console.error("Error detecting pose:", error);
     }
 
     animationRef.current = requestAnimationFrame(detectPose);
-  }, [poseLandmarker]);
+  }, [poseLandmarker, showPoseLines]);
 
   useEffect(() => {
     if (!canvasRef.current) return;

@@ -9,7 +9,8 @@ export function WorkoutVideoComponent({
   onLandmarksUpdate,
   isActive,
   onCurrentTimeUpdate,
-  onDurationUpdate
+  onDurationUpdate,
+  showPoseLines
 }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -58,27 +59,33 @@ export function WorkoutVideoComponent({
           if (result?.landmarks?.[0]) {
             onLandmarksUpdate(result.landmarks[0]);
             
-            // Draw reference landmarks in green
-            const video = videoRef.current;
-            const canvasCtx = canvasRef.current.getContext('2d');
-            const drawingUtils = new DrawingUtils(canvasCtx);
-            
-            canvasRef.current.width = video.videoWidth;
-            canvasRef.current.height = video.videoHeight;
-            
-            canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-            drawingUtils.drawLandmarks(result.landmarks[0], {
-              radius: 6,
-              color: '#00ff00'  // Reference pose always in green
-            });
-            drawingUtils.drawConnectors(
-              result.landmarks[0], 
-              PoseLandmarker.POSE_CONNECTIONS, 
-              {
-                lineWidth: 6,
+            // Only draw if showPoseLines is true
+            if (showPoseLines) {
+              const video = videoRef.current;
+              const canvasCtx = canvasRef.current.getContext('2d');
+              const drawingUtils = new DrawingUtils(canvasCtx);
+              
+              canvasRef.current.width = video.videoWidth;
+              canvasRef.current.height = video.videoHeight;
+              
+              canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+              drawingUtils.drawLandmarks(result.landmarks[0], {
+                radius: 6,
                 color: '#00ff00'
-              }
-            );
+              });
+              drawingUtils.drawConnectors(
+                result.landmarks[0], 
+                PoseLandmarker.POSE_CONNECTIONS, 
+                {
+                  lineWidth: 6,
+                  color: '#00ff00'
+                }
+              );
+            } else {
+              // Clear canvas when lines are hidden
+              const canvasCtx = canvasRef.current.getContext('2d');
+              canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            }
           }
         }
       } catch (error) {
@@ -103,7 +110,7 @@ export function WorkoutVideoComponent({
         cancelAnimationFrame(animationFrameId);
       }
     };
-  }, [poseLandmarker, videoRef, canvasRef, onLandmarksUpdate, isActive]);
+  }, [poseLandmarker, videoRef, canvasRef, onLandmarksUpdate, isActive, showPoseLines]);
 
   return (
     <div className="relative w-full aspect-video">
