@@ -189,7 +189,7 @@ export default function Home() {
             <Link 
               href="https://24up.fit/pricing"
               onClick={handlePremiumClick}
-              className="p-6 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center justify-center gap-3 border border-gray-200 dark:border-gray-800 transition-all duration-200"
+              className="p-6 rounded-xl bg-black hover:bg-gray-900 text-white flex items-center justify-center gap-3 transition-all duration-200"
             >
               <span className="font-medium">Go Premium</span>
               <svg
@@ -202,11 +202,11 @@ export default function Home() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-current"
+                className="text-white"
               >
                 <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
               </svg>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Unlock Every Workout Today!</p>
+              <p className="text-sm text-gray-200">Unlock Every Workout Today!</p>
             </Link>
           </div>
         </div>
