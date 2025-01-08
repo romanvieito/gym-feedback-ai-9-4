@@ -106,6 +106,7 @@ export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLan
 
     // console.log(`Calculation for ${angName} with visibility`);
 
+
     const currentAngle = computeAngle(angName, currentLandmarks, angleDict, landmarkNames); // Compute the current angle
     const videoAngle = computeAngle(angName, videoLandmarks, angleDict, landmarkNames); // Compute the video angle
 

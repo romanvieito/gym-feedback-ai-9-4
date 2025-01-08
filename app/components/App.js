@@ -124,17 +124,24 @@ function App() {
   
   const calculatePoseMatch = useCallback((webcamLandmarks, videoLandmarks) => {
     const requiredIndices = Array.from({ length: landmarkNames.length - 10 }, (_, i) => i + 10); // Indices from 10 onwards
+    
+    console.log('webcamLandmarks:', webcamLandmarks);
+    // If webcamLandmarks is an array of objects, log each object
+    webcamLandmarks.forEach((landmark, index) => {
+      console.log(`Landmark ${index}:`, landmark);
+    });
+    debugger;
 
     const webcamVisible = areLandmarksVisible(webcamLandmarks, requiredIndices);
     const videoVisible = areLandmarksVisible(videoLandmarks, requiredIndices);
 
     setLandmarksVisible(webcamVisible && videoVisible);
 
-    // if (!webcamVisible || !videoVisible) {
-    //   console.log('Required landmarks are not visible. Skipping pose match calculation.');
-    //   // return; // Exit the function if required landmarks are not visible but we want to
-    //              // so commented for now keep the feedback
-    // }
+    if (!webcamVisible || !videoVisible) {
+      console.log('Required landmarks are not visible. Skipping pose match calculation.');
+      // return; // Exit the function if required landmarks are not visible but we want to
+                 // so commented for now keep the feedback
+    }
 
     console.log('webcamVisible:', webcamVisible);
     console.log('videoVisible:', videoVisible);
