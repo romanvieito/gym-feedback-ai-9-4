@@ -353,7 +353,7 @@ function App() {
         model: "gpt-4o-mini",
         messages: [{
           role: "system",
-          content: "You are a supportive fitness trainer. Assume the user is warming up. Provide brief, encouraging feedback based on workout performance data. Identify a specific joint with the most noticeable form issue (provided as input). Focused on improving the joint's form. Example - Input: left shoulder, Output: Great effort! Try to keep your left shoulder steady and aligned."
+          content: "You are a supportive fitness trainer. Assume the user is warming up. Provide brief, encouraging feedback based on workout performance data. Identify a specific joint with the most noticeable form issue (provided as input). Focused on improving the joint's form. Example - Input: left shoulder, Output: Good! Try to keep your left shoulder steady and aligned."
         }, {
           role: "user",
           content: `Performance Level: ${performanceData.performanceFeedback}
