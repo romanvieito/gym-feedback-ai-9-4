@@ -11,6 +11,7 @@ import { areLandmarksVisible } from '../services/poseUtils'; // Import the visib
 
 import mixpanel from 'mixpanel-browser';
 import KalmanFilter from '../services/KalmanFilter';
+import OpenAI from 'openai';
 
 // New function to calibrate landmarks
 const calibrateLandmarks = (landmarks, referenceLandmarks) => {
@@ -77,6 +78,11 @@ function App() {
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
 
+  const [openai] = useState(new OpenAI({
+    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+    dangerouslyAllowBrowser: true
+  }));
+
   // Calculate remaining time for video
   const videoRemainingTime = videoDuration - videoCurrentTime;
   // const feedbackInterval = 10; // Set the interval in seconds
@@ -130,7 +136,7 @@ function App() {
         "Good to see you! Let’s get this session started!",
         "Time to get fit and feel amazing! I'm here to guide you through your workout.",
         "Welcome! Get ready for an energizing workout session!",
-        "Let's make today's workout count! Ready when you are!",
+        "Let’s make today’s workout count! Ready when you are!",
         "It’s time to move, groove, and improve! Let’s get this session started!",
         "Every rep brings you closer to your goals. Let’s kick things off strong!",
         "Excited to see you! Let’s ignite that energy and have a great workout!",
@@ -209,7 +215,7 @@ function App() {
     // TODO: has to move to angles to cope wit the iterval
     const sortedLandmarks = Object.entries(angleDifferencesMatch)
       .sort(([, diffA], [, diffB]) => diffB - diffA)
-      .slice(0, 3)
+      .slice(0, 1)
       .map(([landmark]) => landmark);
 
     // Accumulate landmark performance
@@ -226,7 +232,7 @@ function App() {
       //TODO: this has to be retested
       const worstLandmarks = Object.entries(landmarkPerformance)
         .sort(([, totalDiffA], [, totalDiffB]) => totalDiffB - totalDiffA)
-        .slice(0, 3)
+        .slice(0, 1)
         .map(([landmark]) => landmark);
 
       const feedbackText = `Please pay attention to ${worstLandmarks.join(', ')}.`;
@@ -337,6 +343,32 @@ function App() {
     return `rgb(${red},${green},0)`;
   }
 
+  // Add new function to generate AI feedback
+  const generateAIFeedback = async (performanceData) => {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "system",
+          content: "You are a supportive fitness trainer. Assume the user is warming up. Provide brief, encouraging feedback based on workout performance data. Identify a specific joint with the most noticeable form issue (provided as input). Focused on improving the joint's form. Example - Input: left shoulder, Output: Great effort! Try to keep your left shoulder steady and aligned."
+        }, {
+          role: "user",
+          content: `Performance Level: ${performanceData.performanceFeedback}
+            Match Percentage: ${performanceData.percentage.toFixed(1)}%
+            Joint to improve: ${performanceData.mostMisalignedLandmarks.join(', ')}`
+        }],
+        max_tokens: 100
+      });
+
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(response.choices[0].message.content);
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (error) {
+      console.error('Error generating AI feedback:', error);
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="relative w-full max-w-[1280px] mx-auto">
@@ -389,43 +421,57 @@ function App() {
       
       {/* Controls */}
       <div className="flex flex-col items-center gap-2 mt-3">
-        <button 
-          onClick={() => {
-            const newIsActive = !isActive;
-            setIsActive(newIsActive);
-            if (!newIsActive) {
-              setWebcamLandmarks([]);
-              setVideoLandmarks([]);
-              mixpanel.track('Workout Paused', {
-                platform: 'web_app'
-              });
-            } else {
-              mixpanel.track('Workout Resumed', {
-                platform: 'web_app'
-              });
-            }
-          }}
-          className={`
-            px-6 py-3 rounded-lg font-medium
-            flex items-center gap-2
-            transition-all duration-200
-            ${isActive 
-              ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white' 
-              : 'bg-black hover:bg-gray-900 text-white'}
-          `}
-        >
-          {isActive ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <rect x="6" y="4" width="4" height="16"/>
-              <rect x="14" y="4" width="4" height="16"/>
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => {
+              const newIsActive = !isActive;
+              setIsActive(newIsActive);
+              if (!newIsActive) {
+                setWebcamLandmarks([]);
+                setVideoLandmarks([]);
+                mixpanel.track('Workout Paused', {
+                  platform: 'web_app'
+                });
+              } else {
+                mixpanel.track('Workout Resumed', {
+                  platform: 'web_app'
+                });
+              }
+            }}
+            className={`
+              px-6 py-3 rounded-lg font-medium
+              flex items-center gap-2
+              transition-all duration-200
+              ${isActive 
+                ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white' 
+                : 'bg-black hover:bg-gray-900 text-white'}
+            `}
+          >
+            {isActive ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16"/>
+                <rect x="14" y="4" width="4" height="16"/>
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            )}
+            {isActive ? 'Pause Workout' : 'Start Workout'}
+          </button>
+
+          {!isActive && poseMatchData && (
+            <button
+              onClick={() => generateAIFeedback(poseMatchData)}
+              className="px-6 py-3 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 flex items-center gap-2"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              Get Feedback
+            </button>
           )}
-          {isActive ? 'Pause Workout' : 'Start Workout'}
-        </button>
+        </div>
 
         <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
           *Ensure your full body is visible for accurate feedback.
