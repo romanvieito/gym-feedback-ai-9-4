@@ -344,6 +344,11 @@ function App() {
   // Add new function to generate AI feedback
   const generateAIFeedback = async (performanceData) => {
     try {
+      // Track feedback request
+      mixpanel.track('AI Feedback Requested By User', {
+        platform: 'web_app',
+      });
+
       const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [{
@@ -358,11 +363,26 @@ function App() {
         max_tokens: 100
       });
 
+      // Track successful feedback generation
+      mixpanel.track('AI Feedback Generated', {
+        platform: 'web_app',
+        performanceLevel: performanceData.performanceFeedback,
+        matchPercentage: performanceData.percentage.toFixed(1),
+        jointToImprove: performanceData.mostMisalignedLandmarks.join(', '),
+        feedbackText: response.choices[0].message.content,
+        feedbackLength: response.choices[0].message.content.length
+      });
+
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(response.choices[0].message.content);
         window.speechSynthesis.speak(utterance);
       }
     } catch (error) {
+      // Track error in feedback generation
+      mixpanel.track('AI Feedback Error', {
+        platform: 'web_app',
+        errorMessage: error.message
+      });
       console.error('Error generating AI feedback:', error);
     }
   };
