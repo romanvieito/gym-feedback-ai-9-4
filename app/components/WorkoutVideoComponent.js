@@ -117,8 +117,6 @@ export function WorkoutVideoComponent({
       <video 
         ref={videoRef} 
         className="absolute inset-0 w-full h-full object-contain bg-gray-50 dark:bg-gray-900"
-        controls={!isActive}
-        controlsList="nodownload nofullscreen" 
         src={workout.video}
         playsInline
         crossOrigin="anonymous"

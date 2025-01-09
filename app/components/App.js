@@ -87,7 +87,6 @@ function App() {
   const videoRemainingTime = videoDuration - videoCurrentTime;
   // const feedbackInterval = 10; // Set the interval in seconds
   // const remainingTimeFeedbackInterval = 15; // Set the interval in seconds for remaining time feedback
-  
 
   ///OJO AQUÍ
   //FROM GPT estimate acceptable values for feedbackInterval 
@@ -95,7 +94,6 @@ function App() {
   //total video duration. 
   // This allows the intervals to scale dynamically, 
   //ensuring feedback is neither too frequent nor too sparse.
-
 
   const minInterval = 5;  // Minimum interval in seconds
   const maxInterval = 30; // Maximum interval in seconds
@@ -211,7 +209,7 @@ function App() {
 
     console.log(`Performance Level: ${performanceLevel}`);
 
-    // Identify the top 3 most misaligned landmarks 
+    // Identify the top most misaligned landmarks 
     // TODO: has to move to angles to cope wit the iterval
     const sortedLandmarks = Object.entries(angleDifferencesMatch)
       .sort(([, diffA], [, diffB]) => diffB - diffA)
