@@ -116,10 +116,32 @@ function App() {
     setKalmanR(newR);
   };
 
+  const welcomePlayedRef = useRef(false);
+
   useEffect(() => {
     PoseDetectionService.initialize()
       .then(setLandmarkers)
       .catch(error => console.error("Error initializing pose landmarkers:", error));
+
+    // Add welcome message when component mounts
+    if ('speechSynthesis' in window && !welcomePlayedRef.current) {
+      const welcomeMessages = [
+        "Hey there! Ready to sweat and shine? Let’s make every move count!",
+        "Good to see you! Let’s get this session started!",
+        "Time to get fit and feel amazing! I'm here to guide you through your workout.",
+        "Welcome! Get ready for an energizing workout session!",
+        "Let's make today's workout count! Ready when you are!",
+        "It’s time to move, groove, and improve! Let’s get this session started!",
+        "Every rep brings you closer to your goals. Let’s kick things off strong!",
+        "Excited to see you! Let’s ignite that energy and have a great workout!",
+        "Here we go! Today’s workout is your next step to greatness. Let’s begin!",
+        "Welcome! Let's set the tone for an great session. You’ve got this!"
+      ];
+      const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+      const utterance = new SpeechSynthesisUtterance(randomWelcome);
+      window.speechSynthesis.speak(utterance);
+      welcomePlayedRef.current = true;
+    }
   }, []);
 
   
