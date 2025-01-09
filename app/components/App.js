@@ -458,17 +458,22 @@ function App() {
             {isActive ? 'Pause Workout' : 'Start Workout'}
           </button>
 
-          {!isActive && poseMatchData && (
             <button
               onClick={() => generateAIFeedback(poseMatchData)}
-              className="px-6 py-3 rounded-lg font-medium bg-blue-600 hover:bg-blue-700 text-white transition-all duration-200 flex items-center gap-2"
+              disabled={isActive || !poseMatchData}
+              className={`
+                px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-all duration-200
+                ${isActive || !poseMatchData 
+                  ? 'bg-blue-300 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+                } text-white
+              `}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
               Get Feedback
             </button>
-          )}
         </div>
 
         <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
