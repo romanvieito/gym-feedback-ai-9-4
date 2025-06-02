@@ -12,29 +12,7 @@ import { areLandmarksVisible } from '../services/poseUtils'; // Import the visib
 import mixpanel from 'mixpanel-browser';
 import KalmanFilter from '../services/KalmanFilter';
 import OpenAI from 'openai';
-
-// New function to calibrate landmarks
-const calibrateLandmarks = (landmarks, referenceLandmarks) => {
-  if (!landmarks || !referenceLandmarks) return landmarks;
-
-  const scaleFactor = calculateScale(referenceLandmarks);
-  return landmarks.map((landmark, index) => ({
-    x: landmark.x * scaleFactor,
-    y: landmark.y * scaleFactor,
-    z: landmark.z * scaleFactor
-  }));
-};
-
-// Calculate scaling factor between webcam and video poses
-const calculateScale = (referenceLandmarks) => {
-  const refShoulderDist = Math.hypot(
-    referenceLandmarks[11].x - referenceLandmarks[12].x,
-    referenceLandmarks[11].y - referenceLandmarks[12].y
-  );
-
-  // Default scale if shoulders are not detected
-  return refShoulderDist > 0 ? 1 / refShoulderDist : 1;
-};
+import { CalibrationService } from '../services/CalibrationService';
 
 // Function to check if the video source is a YouTube URL
 const isYouTubeUrl = (url) => {
@@ -74,6 +52,8 @@ function App() {
   const [kalmanR, setKalmanR] = useState(0.01); // Measurement noise covariance
   const [kalmanQ, setKalmanQ] = useState(0.1);  // Process noise covariance
   const [showPoseLines, setShowPoseLines] = useState(false);
+  const [isCalibrated, setIsCalibrated] = useState(false);
+  const calibrationTimeoutRef = useRef(null);
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -130,16 +110,16 @@ function App() {
     // Add welcome message when component mounts
     if ('speechSynthesis' in window && !welcomePlayedRef.current) {
       const welcomeMessages = [
-        "Hey there! Ready to sweat and shine? Let’s make every move count!",
-        "Good to see you! Let’s get this session started!",
+        "Hey there! Ready to sweat and shine? Let's make every move count!",
+        "Good to see you! Let's get this session started!",
         "Time to get fit and feel amazing! I'm here to guide you through your workout.",
         "Welcome! Get ready for an energizing workout session!",
-        "Let’s make today’s workout count! Ready when you are!",
-        "It’s time to move, groove, and improve! Let’s get this session started!",
-        "Every rep brings you closer to your goals. Let’s kick things off strong!",
-        "Excited to see you! Let’s ignite that energy and have a great workout!",
-        "Here we go! Today’s workout is your next step to greatness. Let’s begin!",
-        "Welcome! Let's set the tone for an great session. You’ve got this!"
+        "Let's make today's workout count! Ready when you are!",
+        "It's time to move, groove, and improve! Let's get this session started!",
+        "Every rep brings you closer to your goals. Let's kick things off strong!",
+        "Excited to see you! Let's ignite that energy and have a great workout!",
+        "Here we go! Today's workout is your next step to greatness. Let's begin!",
+        "Welcome! Let's set the tone for an great session. You've got this!"
       ];
       const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
       const utterance = new SpeechSynthesisUtterance(randomWelcome);
@@ -290,6 +270,40 @@ function App() {
     };
   }, [videoCurrentTime, videoRemainingTime, lastCurrentTimeFeedback, lastRemainingTimeFeedback, feedbackInterval, remainingTimeFeedbackInterval, isActive]);
 
+  // Add calibration effect
+  useEffect(() => {
+    if (webcamLandmarks.length > 0 && videoLandmarks.length > 0 && !isCalibrated) {
+      // Clear any existing calibration timeout
+      if (calibrationTimeoutRef.current) {
+        clearTimeout(calibrationTimeoutRef.current);
+      }
+
+      // Set a new calibration timeout
+      calibrationTimeoutRef.current = setTimeout(async () => {
+        const success = await CalibrationService.calibrate(videoLandmarks, webcamLandmarks);
+        setIsCalibrated(success);
+        
+        if (success) {
+          console.log('Calibration successful');
+          // Optionally provide feedback to the user
+          if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance('Calibration complete. Ready to start.');
+            window.speechSynthesis.speak(utterance);
+          }
+        } else {
+          console.warn('Calibration failed');
+        }
+      }, 1000); // Wait for 1 second of stable poses before calibrating
+    }
+
+    return () => {
+      if (calibrationTimeoutRef.current) {
+        clearTimeout(calibrationTimeoutRef.current);
+      }
+    };
+  }, [webcamLandmarks, videoLandmarks, isCalibrated]);
+
+  // Update the landmark processing effect
   useEffect(() => {
     if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
       // Estimate Kalman parameters based on current landmarks
@@ -327,11 +341,18 @@ function App() {
       setPrevWebcamLandmarks(smoothedWebcamLandmarks);
       setPrevVideoLandmarks(smoothedVideoLandmarks);
 
-      const calibratedLandmarks = calibrateLandmarks(smoothedWebcamLandmarks, smoothedVideoLandmarks);
+      // Apply calibration if available
+      const calibratedLandmarks = CalibrationService.transformLandmarks(smoothedWebcamLandmarks);
       const matchData = calculatePoseMatch(calibratedLandmarks, smoothedVideoLandmarks);
       setPoseMatchData(matchData);
     }
   }, [webcamLandmarks, videoLandmarks, calculatePoseMatch, kalmanR, kalmanQ]);
+
+  // Add reset calibration function
+  const resetCalibration = useCallback(() => {
+    CalibrationService.resetCalibration();
+    setIsCalibrated(false);
+  }, []);
 
   function getColorFromPercentage(percentage) {
     if (isNaN(percentage) || percentage === null) return 'rgb(255,0,0)';
