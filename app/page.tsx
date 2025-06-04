@@ -13,6 +13,16 @@ mixpanel.init('b98359528baa013898b40c8583f849ce', {
 
 export default function Home() {
   const [showApp, setShowApp] = useState(false);
+  const [selectedWearable, setSelectedWearable] = useState('');
+
+  const wearables = [
+    { id: 'none', name: 'No wearable device' },
+    { id: 'apple', name: 'Apple Watch' },
+    { id: 'whoop', name: 'Whoop' },
+    { id: 'garmin', name: 'Garmin' },
+    { id: 'fitbit', name: 'Fitbit' },
+    { id: 'other', name: 'Other' }
+  ];
 
   useEffect(() => {
     // Track page view when component mounts
@@ -21,6 +31,13 @@ export default function Home() {
       platform: 'web_app'
     });
   }, []);
+
+  const handleWearableChange = (wearableId: string) => {
+    setSelectedWearable(wearableId);
+    mixpanel.track('Wearable Selected', {
+      wearable: wearableId
+    });
+  };
 
   const handleWorkoutClick = () => {
     mixpanel.track('Workout Started', {
@@ -43,27 +60,71 @@ export default function Home() {
     <main className="min-h-screen p-2 flex flex-col items-center bg-white dark:bg-black">
       {!showApp ? (
         <div className="my-auto w-full max-w-4xl px-4">
-          <h1 className="text-4xl font-bold mb-12 text-center tracking-tighter">Workouts</h1>
-          <Link 
-            href="https://24up.fit" 
-            className="absolute top-8 left-8 text-sm hover:text-gray-600 flex items-center gap-2 font-medium"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="flex justify-between items-center mb-12">
+            <Link 
+              href="https://24up.fit" 
+              className="text-sm hover:text-gray-600 flex items-center gap-2 font-medium"
             >
-              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-            Home
-          </Link>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              Home
+            </Link>
+            <div className="flex items-center gap-2">
+              <select
+                id="wearable-select"
+                value={selectedWearable}
+                onChange={(e) => handleWearableChange(e.target.value)}
+                className="text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent"
+              >
+                {wearables.map((wearable) => (
+                  <option key={wearable.id} value={wearable.id}>
+                    {wearable.name}
+                  </option>
+                ))}
+              </select>
+              <div className="relative group">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-gray-400 hover:text-gray-600 cursor-help"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
+                <div className="absolute right-0 top-6 w-64 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hidden group-hover:block z-10">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Connect your wearable device to:
+                  </p>
+                  <ul className="mt-2 text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                    <li>• Get personalized workout intensity recommendations</li>
+                    <li>• Monitor your recovery between sessions</li>
+                    <li>• View detailed performance analytics</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold mb-12 text-center tracking-tighter">Workouts</h1>
           <div className="flex flex-col gap-6 w-full max-w-md mx-auto">
             <button 
               onClick={handleWorkoutClick}
