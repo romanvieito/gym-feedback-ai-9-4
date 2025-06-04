@@ -124,8 +124,8 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-12 text-center tracking-tighter">Workouts</h1>
-          <div className="flex flex-col gap-6 w-full max-w-md mx-auto">
+          <h1 className="text-4xl font-bold mb-6 text-center tracking-tighter">Workouts</h1>
+          <div className="flex flex-col gap-3 w-full max-w-md mx-auto">
             <button 
               onClick={handleWorkoutClick}
               className="text-center p-6 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center group border border-gray-200 dark:border-gray-800 transition-all duration-200"
