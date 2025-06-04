@@ -59,8 +59,8 @@ export default function Home() {
   return (
     <main className="min-h-screen p-2 flex flex-col items-center bg-white dark:bg-black">
       {!showApp ? (
-        <div className="my-auto w-full max-w-4xl px-4">
-          <div className="flex justify-between items-center mb-12">
+        <div className="w-full max-w-4xl px-4">
+          <div className="flex justify-between items-center mb-5">
             <Link 
               href="https://24up.fit" 
               className="text-sm hover:text-gray-600 flex items-center gap-2 font-medium"
