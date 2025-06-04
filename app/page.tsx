@@ -60,7 +60,7 @@ export default function Home() {
     <main className="min-h-screen p-2 flex flex-col items-center bg-white dark:bg-black">
       {!showApp ? (
         <div className="w-full max-w-4xl px-2 sm:px-4 pt-4 sm:pt-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-4 sm:mb-5 gap-2 sm:gap-0">
+          <div className="flex flex-row justify-between items-center mb-4 sm:mb-5 w-full">
             <Link 
               href="https://24up.fit" 
               className="text-xs sm:text-sm hover:text-gray-600 flex items-center gap-2 font-medium"
@@ -81,12 +81,12 @@ export default function Home() {
               </svg>
               Home
             </Link>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2">
               <select
                 id="wearable-select"
                 value={selectedWearable}
                 onChange={(e) => handleWearableChange(e.target.value)}
-                className="w-full sm:w-auto text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent"
+                className="text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent"
               >
                 {wearables.map((wearable) => (
                   <option key={wearable.id} value={wearable.id}>
