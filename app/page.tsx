@@ -104,7 +104,17 @@ export default function Home() {
                   <span className="sr-only">Open menu</span>
                 </button>
                 {showMenu && (
-                  <div className="absolute right-0 mt-2 w-64 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+                  <div className="absolute right-0 mt-2 w-64 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20">
+                    <div className="mb-3">
+                      <span className="block text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Menu</span>
+                      <a
+                        href="/calendar"
+                        className="block w-full text-center text-sm font-bold p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors mb-3 shadow-sm"
+                      >
+                        📅 Calendar
+                      </a>
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
                     <label htmlFor="wearable-select" className="block text-xs sm:text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">Select Wearable</label>
                     <select
                       id="wearable-select"
