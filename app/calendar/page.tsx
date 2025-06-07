@@ -12,7 +12,7 @@ export default function CalendarPage() {
           <div className="w-full h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 mb-4">
             <span className="text-lg text-gray-400 dark:text-gray-500">[Calendar Component Coming Soon]</span>
           </div>
-          <p className="text-center text-gray-600 dark:text-gray-300 text-sm">We're building a calendar to help you track your workouts, progress, and more. Stay tuned!</p>
+          <p className="text-center text-gray-600 dark:text-gray-300 text-sm">We&apos;re building a calendar to help you track your workouts, progress, and more. Stay tuned!</p>
         </div>
       </div>
     </main>
