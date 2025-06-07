@@ -17,3 +17,16 @@ export const workoutTypes = [
   //   video: 'https://www.youtube.com/watch?v=UBMk30rjy0o',
   // },
 ]; 
+
+export const exercises = [
+  'Push-ups',
+  'Squats',
+  'Plank',
+  'Lunges',
+  'Jumping Jacks',
+  'Burpees',
+  'Mountain Climbers',
+  'Sit-ups',
+  'High Knees',
+  'Tricep Dips',
+]; 

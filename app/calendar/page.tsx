@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Calendar from '../components/Calendar';
 
 export default function CalendarPage() {
   return (
@@ -9,10 +10,9 @@ export default function CalendarPage() {
           <Link href="/" className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline">← Back to Home</Link>
         </div>
         <div className="flex flex-col items-center justify-center min-h-[300px]">
-          <div className="w-full h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 mb-4">
-            <span className="text-lg text-gray-400 dark:text-gray-500">[Calendar Component Coming Soon]</span>
+          <div className="w-full flex items-center justify-center mb-4">
+            <Calendar />
           </div>
-          <p className="text-center text-gray-600 dark:text-gray-300 text-sm">We&apos;re building a calendar to help you track your workouts, progress, and more. Stay tuned!</p>
         </div>
       </div>
     </main>
