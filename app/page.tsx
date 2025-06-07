@@ -15,6 +15,7 @@ export default function Home() {
   const [showApp, setShowApp] = useState(false);
   const [selectedWearable, setSelectedWearable] = useState('');
   const [showMenu, setShowMenu] = useState(false);
+  const [showWearableHelp, setShowWearableHelp] = useState(false);
 
   const wearables = [
     { id: 'none', name: 'No wearable device' },
@@ -106,7 +107,7 @@ export default function Home() {
                 {showMenu && (
                   <div className="absolute right-0 mt-2 w-64 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20">
                     <div className="mb-3">
-                      <span className="block text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Menu</span>
+                      <span className="block text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Settings</span>
                       <a
                         href="/calendar"
                         className="block w-full text-center text-sm font-bold p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors mb-3 shadow-sm"
@@ -115,12 +116,27 @@ export default function Home() {
                       </a>
                     </div>
                     <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-                    <label htmlFor="wearable-select" className="block text-xs sm:text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">Select Wearable</label>
+                    <div className="mb-2 flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="text-blue-500"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2a4 4 0 0 1 8 0v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      <label htmlFor="wearable-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Select Wearable</label>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Connect your device for personalized recommendations.</p>
                     <select
                       id="wearable-select"
                       value={selectedWearable}
                       onChange={(e) => handleWearableChange(e.target.value)}
-                      className="w-full text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent mb-2"
+                      className="w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-400 dark:focus:border-blue-600 transition-all duration-150 shadow-sm hover:border-blue-400 dark:hover:border-blue-500 mb-2 outline-none"
                     >
                       {wearables.map((wearable) => (
                         <option key={wearable.id} value={wearable.id}>
@@ -128,33 +144,40 @@ export default function Home() {
                         </option>
                       ))}
                     </select>
-                    <div className="flex items-start gap-2 mt-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-gray-400 mt-1"
+                    {/* Help Option for Wearable Info */}
+                    <div className="relative mt-2">
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline focus:outline-none"
+                        onClick={() => setShowWearableHelp((prev) => !prev)}
                       >
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M12 16v-4"></path>
-                        <path d="M12 8h.01"></path>
-                      </svg>
-                      <div>
-                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                          Connect your wearable device to:
-                        </p>
-                        <ul className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                          <li>• Get personalized workout intensity recommendations</li>
-                          <li>• Monitor your recovery between sessions</li>
-                          <li>• View detailed performance analytics</li>
-                        </ul>
-                      </div>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          className="inline-block text-blue-500"
+                        >
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M12 16v-4"></path>
+                          <path d="M12 8h.01"></path>
+                        </svg>
+                        Help
+                      </button>
+                      {showWearableHelp && (
+                        <div className="absolute left-0 mt-2 w-64 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-30">
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-1">
+                            Connect your wearable device to:
+                          </p>
+                          <ul className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                            <li>• Get personalized workout intensity recommendations</li>
+                            <li>• Monitor your recovery between sessions</li>
+                            <li>• View detailed performance analytics</li>
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
