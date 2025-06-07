@@ -37,25 +37,31 @@ export default function Home() {
   const handleWearableChange = (wearableId: string) => {
     setSelectedWearable(wearableId);
     mixpanel.track('Wearable Selected', {
-      wearable: wearableId
+      wearable: wearableId,
+      location: 'settings_menu',
     });
   };
 
   const handleWorkoutClick = () => {
     mixpanel.track('Workout Started', {
       workout: 'Day 1',
-      name: 'Lose Weight with Ease'
+      name: 'Lose Weight with Ease',
+      location: 'workout_list',
     });
     setShowApp(true);
   };
 
   const handleBackClick = () => {
-    mixpanel.track('Return to Workouts');
+    mixpanel.track('Return to Workouts', {
+      location: 'workout_app',
+    });
     setShowApp(false);
   };
 
   const handlePremiumClick = () => {
-    mixpanel.track('Premium Link Clicked');
+    mixpanel.track('Premium Link Clicked', {
+      location: 'workout_list',
+    });
   };
 
   // Add this handler for calendar click
