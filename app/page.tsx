@@ -14,6 +14,7 @@ mixpanel.init('b98359528baa013898b40c8583f849ce', {
 export default function Home() {
   const [showApp, setShowApp] = useState(false);
   const [selectedWearable, setSelectedWearable] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
 
   const wearables = [
     { id: 'none', name: 'No wearable device' },
@@ -82,45 +83,71 @@ export default function Home() {
               Home
             </Link>
             <div className="flex items-center gap-2">
-              <select
-                id="wearable-select"
-                value={selectedWearable}
-                onChange={(e) => handleWearableChange(e.target.value)}
-                className="text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent"
-              >
-                {wearables.map((wearable) => (
-                  <option key={wearable.id} value={wearable.id}>
-                    {wearable.name}
-                  </option>
-                ))}
-              </select>
-              <div className="relative group">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-gray-400 hover:text-gray-600 cursor-help"
+              {/* Menu Button */}
+              <div className="relative">
+                <button
+                  className="text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                  onClick={() => setShowMenu((prev) => !prev)}
+                  aria-haspopup="true"
+                  aria-expanded={showMenu}
                 >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M12 16v-4"></path>
-                  <path d="M12 8h.01"></path>
-                </svg>
-                <div className="absolute right-0 top-6 w-56 sm:w-64 p-2 sm:p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hidden group-hover:block z-10">
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                    Connect your wearable device to:
-                  </p>
-                  <ul className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                    <li>• Get personalized workout intensity recommendations</li>
-                    <li>• Monitor your recovery between sessions</li>
-                    <li>• View detailed performance analytics</li>
-                  </ul>
-                </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  <span className="sr-only">Open menu</span>
+                </button>
+                {showMenu && (
+                  <div className="absolute right-0 mt-2 w-64 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20">
+                    <label htmlFor="wearable-select" className="block text-xs sm:text-sm font-medium mb-2 text-gray-700 dark:text-gray-200">Select Wearable</label>
+                    <select
+                      id="wearable-select"
+                      value={selectedWearable}
+                      onChange={(e) => handleWearableChange(e.target.value)}
+                      className="w-full text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent mb-2"
+                    >
+                      {wearables.map((wearable) => (
+                        <option key={wearable.id} value={wearable.id}>
+                          {wearable.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex items-start gap-2 mt-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-gray-400 mt-1"
+                      >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4"></path>
+                        <path d="M12 8h.01"></path>
+                      </svg>
+                      <div>
+                        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                          Connect your wearable device to:
+                        </p>
+                        <ul className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                          <li>• Get personalized workout intensity recommendations</li>
+                          <li>• Monitor your recovery between sessions</li>
+                          <li>• View detailed performance analytics</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
