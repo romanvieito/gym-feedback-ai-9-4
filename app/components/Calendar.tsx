@@ -6,15 +6,11 @@ const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const Calendar: React.FC = () => {
   const today = new Date();
   
-  // Calculate tomorrow's date
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  
-  // Generate the 7 days starting from tomorrow
+  // Generate the 7 days starting from today
   const weekDays: Date[] = [];
   for (let i = 0; i < 7; i++) {
-    const date = new Date(tomorrow);
-    date.setDate(tomorrow.getDate() + i);
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
     weekDays.push(date);
   }
 
@@ -22,7 +18,7 @@ const Calendar: React.FC = () => {
     <div className="overflow-x-auto">
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-          WEEK OF {tomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {weekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          WEEK OF {today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {weekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </span>
       </div>
       <div className="border rounded-xl overflow-hidden shadow bg-white dark:bg-gray-900">
