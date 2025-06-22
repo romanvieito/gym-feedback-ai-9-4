@@ -22,29 +22,38 @@ const Calendar: React.FC = () => {
         </span>
       </div>
       <div className="border rounded-xl overflow-hidden shadow bg-white dark:bg-gray-900">
-        <div className="flex flex-col">
+        <div className="grid grid-cols-7">
           {weekDays.map((date, index) => (
-            <div 
-              key={index} 
-              className="flex items-center p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
-            >
-              <div className="flex flex-col items-center justify-center w-16 mr-4">
-                <div className="text-xs font-bold text-gray-500 uppercase">
-                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
-                </div>
-                <div className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                  {date.getDate()}
-                </div>
-              </div>
-              <ul className="text-sm text-gray-600 dark:text-gray-300 list-none p-0 m-0">
-                {exercises.length > 0 &&
-                  Array.from({ length: 3 }).map((_, i) => {
-                    const exerciseIdx = (date.getDate() * 3 + i) % exercises.length;
-                    return <li key={i}>{exercises[exerciseIdx]}</li>;
-                  })}
-              </ul>
+            <div key={index} className="py-2 px-2 text-xs font-bold text-center bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 uppercase">
+              {date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}
             </div>
           ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {weekDays.map((date, index) => {
+            const isToday = date.toDateString() === today.toDateString();
+            return (
+              <div 
+                key={index} 
+                className={`h-24 flex flex-col items-center justify-start border-b border-r border-gray-200 dark:border-gray-700 p-2 ${
+                  isToday ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                }`}
+              >
+                <div className={`text-xs font-bold mb-1 ${
+                  isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-800 dark:text-gray-100'
+                }`}>
+                  {date.getDate()}
+                </div>
+                <ul className="text-[11px] text-gray-600 dark:text-gray-300 list-none p-0 m-0 text-center">
+                  {exercises.length > 0 &&
+                    Array.from({ length: 3 }).map((_, i) => {
+                      const exerciseIdx = (date.getDate() * 3 + i) % exercises.length;
+                      return <li key={i}>{exercises[exerciseIdx]}</li>;
+                    })}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
