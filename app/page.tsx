@@ -75,7 +75,7 @@ export default function Home() {
         <div className="w-full max-w-4xl px-2 sm:px-4 pt-4 sm:pt-8">
           <div className="flex flex-row justify-between items-center mb-4 sm:mb-5 w-full">
             <Link 
-              href="https://24up.fit" 
+              href="https://24up.site" 
               className="text-xs sm:text-sm hover:text-gray-600 flex items-center gap-2 font-medium"
             >
               <svg
@@ -320,7 +320,7 @@ export default function Home() {
             </div>
 
             <Link 
-              href="https://24up.fit/pricing"
+              href="https://24up.site/pricing"
               onClick={handlePremiumClick}
               className="p-3 sm:p-6 rounded-xl bg-black hover:bg-gray-900 text-white flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 transition-all duration-200"
             >
