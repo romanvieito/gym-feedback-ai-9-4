@@ -41,3 +41,5 @@ __pycache__/
 .venv
 pyproject.toml
 poetry.lock
+# environment variables
+.env
