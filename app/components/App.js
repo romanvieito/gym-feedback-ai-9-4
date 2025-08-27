@@ -27,7 +27,7 @@ const smoothLandmarks = (prevLandmarks, newLandmarks, applySmoothing = true, alp
 const APPLY_SMOOTHING = true; // Set to true to enable exponential smoothing
 const APPLY_KALMAN = true;    // Set to true to enable Kalman filtering
 
-function App({ selectedFitnessGoal, selectedWearable }) {
+function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout = null }) {
   const [landmarkers, setLandmarkers] = useState({
     webcamLandmarker: null,
     videoLandmarker: null
@@ -107,7 +107,10 @@ function App({ selectedFitnessGoal, selectedWearable }) {
     if (selectedWearable) {
       console.log('Selected Wearable:', selectedWearable);
     }
-  }, [selectedFitnessGoal, selectedWearable]);
+    if (selectedWorkout) {
+      console.log('Selected Workout:', selectedWorkout);
+    }
+  }, [selectedFitnessGoal, selectedWearable, selectedWorkout]);
 
   // Smoothly fade the video element volume to a target over a short duration
   const fadeVideoVolumeTo = useCallback((targetVolume, durationMs = 200) => {
@@ -524,7 +527,7 @@ function App({ selectedFitnessGoal, selectedWearable }) {
         {/* Main Video Container - YouTube-style rounded corners and shadow */}
         <div className="w-full rounded-2xl overflow-hidden shadow-2xl bg-white">
           <WorkoutVideoComponent
-            workout={workoutTypes[0]}
+            workout={selectedWorkout || workoutTypes[0]}
             poseLandmarker={landmarkers.videoLandmarker}
             onLandmarksUpdate={setVideoLandmarks}
             isActive={isActive}
@@ -553,23 +556,6 @@ function App({ selectedFitnessGoal, selectedWearable }) {
           </div>
         )}
       </div>
-      
-      {/* Fitness Goal Indicator */}
-      {selectedFitnessGoal && (
-        <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded-full border border-green-200 dark:border-green-800">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            <span className="text-sm font-medium">
-              Goal: {selectedFitnessGoal === 'lose-weight' ? '🔥 Lose Weight' :
-                     selectedFitnessGoal === 'build-muscle' ? '💪 Build Muscle' :
-                     selectedFitnessGoal === 'flexibility' ? '🧘 Increase Flexibility' :
-                     selectedFitnessGoal === 'boost-energy' ? '💥 Boost Energy' : selectedFitnessGoal}
-            </span>
-          </div>
-        </div>
-      )}
       
       {/* Controls Section - YouTube-style centered layout */}
       <div className="flex flex-col items-center gap-6 mt-8">

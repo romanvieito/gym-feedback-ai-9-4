@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import App from '@/app/components/App'
 import mixpanel from 'mixpanel-browser';
+import { workoutTypes } from './services/workoutData';
 
 // Initialize Mixpanel with your project token
 mixpanel.init('b98359528baa013898b40c8583f849ce', {   
@@ -15,6 +16,7 @@ export default function Home() {
   const [showApp, setShowApp] = useState(false);
   const [selectedWearable, setSelectedWearable] = useState('');
   const [selectedFitnessGoal, setSelectedFitnessGoal] = useState('');
+  const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showWearableHelp, setShowWearableHelp] = useState(false);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
@@ -143,10 +145,11 @@ export default function Home() {
     });
   };
 
-  const handleWorkoutClick = () => {
+  const handleWorkoutClick = (workout: any) => {
+    setSelectedWorkout(workout);
     mixpanel.track('Workout Started', {
-      workout: 'Day 1',
-      name: 'Lose Weight with Ease',
+      workout: workout.title,
+      name: workout.title,
       location: 'workout_list',
       fitnessGoal: selectedFitnessGoal || 'none',
       wearable: selectedWearable || 'none',
@@ -159,6 +162,7 @@ export default function Home() {
       location: 'workout_app',
     });
     setShowApp(false);
+    setSelectedWorkout(null);
   };
 
   const handlePremiumClick = () => {
@@ -365,126 +369,39 @@ export default function Home() {
           </div>
           <h1 className="text-2xl sm:text-4xl font-bold mb-4 sm:mb-6 text-center tracking-tighter">Workouts</h1>
           <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-md mx-auto">
-            <button 
-              onClick={handleWorkoutClick}
-              className="text-center p-3 sm:p-6 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center group border border-gray-200 dark:border-gray-800 transition-all duration-200"
-            >
-              <Image
-                src="/images/1.png"
-                alt="Chest and Back workout"
-                width={40}
-                height={40}
-                className="rounded-lg mr-2 sm:mr-4 object-cover"
-              />
-              <div className="flex-1 text-left">
-                <div className="font-medium text-xs sm:text-base">DAY 1</div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Lose Weight with Ease</p>
-              </div>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-gray-400 group-hover:text-gray-600 transition-colors"
+            {workoutTypes.map((workout, index) => (
+              <button 
+                key={workout.title}
+                onClick={() => handleWorkoutClick(workout)}
+                className="text-center p-3 sm:p-6 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center group border border-gray-200 dark:border-gray-800 transition-all duration-200"
               >
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-
-            <div 
-              className="p-3 sm:p-6 rounded-xl flex items-center border border-gray-200 dark:border-gray-800 opacity-50"
-            >
-              <Image
-                src="/images/3.png"
-                alt="Shoulders and Leg workout"
-                width={40}
-                height={40}
-                className="rounded-lg mr-2 sm:mr-4 object-cover"
-              />
-              <div className="flex-1 text-left">
-                <div className="text-xs sm:text-base">DAY 2</div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Shoulders & Leg</p>
-              </div>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            </div>
-
-            <div 
-              className="p-3 sm:p-6 rounded-xl flex items-center border border-gray-200 dark:border-gray-800 opacity-50"
-            >
-              <Image
-                src="/images/2.png"
-                alt="Quadriceps and Back workout"
-                width={40}
-                height={40}
-                className="rounded-lg mr-2 sm:mr-4 object-cover"
-              />
-              <div className="flex-1 text-left">
-                <div className="text-xs sm:text-base">DAY 3</div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Yoga for Beginners</p>
-              </div>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            </div>
-
-            <div 
-              className="p-3 sm:p-6 rounded-xl flex items-center border border-gray-200 dark:border-gray-800 opacity-50"
-            >
-              <Image
-                src="/images/4.png"
-                alt="Biceps and Back workout"
-                width={40}
-                height={40}
-                className="rounded-lg mr-2 sm:mr-4 object-cover"
-              />
-              <div className="flex-1 text-left">
-                <div className="text-xs sm:text-base">DAY 4</div>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Biceps and Back</p>
-              </div>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-            </div>
+                <Image
+                  src={`/images/${(index % 4) + 1}.png`}
+                  alt={workout.title}
+                  width={40}
+                  height={40}
+                  className="rounded-lg mr-2 sm:mr-4 object-cover"
+                />
+                <div className="flex-1 text-left">
+                  <div className="font-medium text-xs sm:text-base">DAY {index + 1}</div>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{workout.title}</p>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-gray-400 group-hover:text-gray-600 transition-colors"
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+            ))}
 
             <Link 
               href="https://24up.site/pricing"
@@ -521,6 +438,7 @@ export default function Home() {
           <App 
             selectedFitnessGoal={selectedFitnessGoal}
             selectedWearable={selectedWearable}
+            selectedWorkout={selectedWorkout}
           />
         </div>
       )}
