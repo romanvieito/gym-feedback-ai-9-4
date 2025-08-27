@@ -543,7 +543,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         {/* Maximize Button - Only show when not maximized */}
         {!isMaximized && (
           <button
-            onClick={() => setIsMaximized(true)}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMaximized(true); }}
             className="absolute top-4 right-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -557,7 +557,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           <div className="fixed inset-0 z-50 bg-black">
             <div className="relative w-full h-full">
               <button
-                onClick={() => setIsMaximized(false)}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMaximized(false); }}
                 className="absolute top-4 left-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
