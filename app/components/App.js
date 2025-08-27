@@ -55,6 +55,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
   const originalVideoVolumeRef = useRef(1);
   const speechActiveCountRef = useRef(0);
   const volumeFadeRafRef = useRef(null);
+  const lastPlaybackRef = useRef({ time: 0, wasPlaying: false });
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -113,20 +114,41 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
     }
   }, [selectedFitnessGoal, selectedWearable, selectedWorkout]);
 
+  const toggleFullscreenPreservingPlayback = useCallback((nextMax) => {
+    const v = videoRef.current;
+    if (v) {
+      lastPlaybackRef.current.time = v.currentTime || 0;
+      lastPlaybackRef.current.wasPlaying = !v.paused && !v.ended;
+    }
+    setIsMaximized(nextMax);
+    requestAnimationFrame(() => {
+      const videoEl = videoRef.current;
+      if (!videoEl) return;
+      if (Number.isFinite(lastPlaybackRef.current.time)) {
+        try { videoEl.currentTime = lastPlaybackRef.current.time; } catch (_) {}
+      }
+      if (lastPlaybackRef.current.wasPlaying) {
+        try { videoEl.play().catch(() => {}); } catch (_) {}
+      } else {
+        try { videoEl.pause(); } catch (_) {}
+      }
+    });
+  }, []);
+
   // Keyboard shortcuts for maximize/minimize
   useEffect(() => {
     const handleKeyPress = (event) => {
       if (event.key === 'f' || event.key === 'F') {
-        setIsMaximized(!isMaximized);
+        toggleFullscreenPreservingPlayback(!isMaximized);
       }
       if (event.key === 'Escape' && isMaximized) {
-        setIsMaximized(false);
+        toggleFullscreenPreservingPlayback(false);
       }
     };
 
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [isMaximized]);
+  }, [isMaximized, toggleFullscreenPreservingPlayback]);
 
   // Smoothly fade the video element volume to a target over a short duration
   const fadeVideoVolumeTo = useCallback((targetVolume, durationMs = 200) => {
@@ -543,7 +565,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         {/* Maximize Button - Only show when not maximized */}
         {!isMaximized && (
           <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMaximized(true); }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(true); }}
             className="absolute top-4 right-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -557,7 +579,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           <div className="fixed inset-0 z-50 bg-black">
             <div className="relative w-full h-full">
               <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMaximized(false); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(false); }}
                 className="absolute top-4 left-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
