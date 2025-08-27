@@ -227,17 +227,9 @@ export default function Home() {
                           ⏳ Loading preferences...
                         </div>
                       )}
-                      <a
-                        href="/calendar"
-                        className="block w-full text-center text-sm font-bold p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors mb-3 shadow-sm"
-                        onClick={handleCalendarClick}
-                      >
-                        📅 Calendar
-                      </a>
                     </div>
                     
-                    {/* Fitness Goal Selection - Moved to top priority */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+                    {/* Fitness Goal Selection - FIRST PRIORITY */}
                     <div className="mb-2 flex items-center gap-2">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -278,12 +270,22 @@ export default function Home() {
                     
                     {/* Display selected goal description */}
                     {selectedFitnessGoal && (
-                      <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 mb-3">
                         {fitnessGoals.find(g => g.id === selectedFitnessGoal)?.description}
                       </div>
                     )}
                     
-                    {/* Wearable Selection - Moved below fitness goal */}
+                    {/* Calendar Option - SECOND PRIORITY */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+                    <a
+                      href="/calendar"
+                      className="block w-full text-center text-sm font-bold p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors mb-3 shadow-sm"
+                      onClick={handleCalendarClick}
+                    >
+                      📅 Calendar
+                    </a>
+                    
+                    {/* Wearable Selection - THIRD PRIORITY */}
                     <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
                     <div className="mb-2 flex items-center gap-2">
                       <svg
