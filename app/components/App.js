@@ -14,11 +14,6 @@ import KalmanFilter from '../services/KalmanFilter';
 
 import { CalibrationService } from '../services/CalibrationService';
 
-// Function to check if the video source is a YouTube URL
-const isYouTubeUrl = (url) => {
-  return url.includes('youtube.com') || url.includes('youtu.be');
-};
-
 // Exponential Smoothing Function with Control Flag
 const smoothLandmarks = (prevLandmarks, newLandmarks, applySmoothing = true, alpha = 0.6) => {
   if (!applySmoothing || !prevLandmarks) return newLandmarks;
@@ -54,6 +49,7 @@ function App() {
   const [showPoseLines, setShowPoseLines] = useState(false);
   const [isCalibrated, setIsCalibrated] = useState(false);
   const calibrationTimeoutRef = useRef(null);
+  const [feedbackVolume, setFeedbackVolume] = useState(0.8); // Feedback volume control
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
