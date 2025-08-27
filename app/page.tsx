@@ -235,44 +235,8 @@ export default function Home() {
                         📅 Calendar
                       </a>
                     </div>
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        className="text-blue-500"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2a4 4 0 0 1 8 0v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      <label htmlFor="wearable-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Select Wearable</label>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Connect your device for personalized recommendations.</p>
-                    <select
-                      id="wearable-select"
-                      value={selectedWearable}
-                      onChange={(e) => handleWearableChange(e.target.value)}
-                      disabled={!preferencesLoaded}
-                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-400 dark:focus:border-blue-600 transition-all duration-150 shadow-sm hover:border-blue-400 dark:hover:border-blue-500 mb-2 outline-none ${
-                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {!preferencesLoaded ? (
-                        <option value="">Loading preferences...</option>
-                      ) : (
-                        wearables.map((wearable) => (
-                          <option key={wearable.id} value={wearable.id}>
-                            {wearable.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
                     
-                    {/* Fitness Goal Selection */}
+                    {/* Fitness Goal Selection - Moved to top priority */}
                     <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
                     <div className="mb-2 flex items-center gap-2">
                       <svg
@@ -318,6 +282,44 @@ export default function Home() {
                         {fitnessGoals.find(g => g.id === selectedFitnessGoal)?.description}
                       </div>
                     )}
+                    
+                    {/* Wearable Selection - Moved below fitness goal */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="text-blue-500"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2a4 4 0 0 1 8 0v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      <label htmlFor="wearable-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Select Wearable</label>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Connect your device for personalized recommendations.</p>
+                    <select
+                      id="wearable-select"
+                      value={selectedWearable}
+                      onChange={(e) => handleWearableChange(e.target.value)}
+                      disabled={!preferencesLoaded}
+                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-400 dark:focus:border-blue-600 transition-all duration-150 shadow-sm hover:border-blue-400 dark:hover:border-blue-500 mb-2 outline-none ${
+                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {!preferencesLoaded ? (
+                        <option value="">Loading preferences...</option>
+                      ) : (
+                        wearables.map((wearable) => (
+                          <option key={wearable.id} value={wearable.id}>
+                            {wearable.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
 
                     {/* Help Option for Wearable Info */}
                     <div className="relative mt-2">
