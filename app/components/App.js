@@ -11,7 +11,7 @@ import { areLandmarksVisible } from '../services/poseUtils'; // Import the visib
 
 import mixpanel from 'mixpanel-browser';
 import KalmanFilter from '../services/KalmanFilter';
-import OpenAI from 'openai';
+
 import { CalibrationService } from '../services/CalibrationService';
 
 // Function to check if the video source is a YouTube URL
@@ -58,10 +58,7 @@ function App() {
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
 
-  const [openai] = useState(new OpenAI({
-    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true
-  }));
+  // OpenAI client removed - now using server-side API route
 
   // Calculate remaining time for video
   const videoRemainingTime = videoDuration - videoCurrentTime;
@@ -370,19 +367,27 @@ function App() {
         platform: 'web_app',
       });
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{
-          role: "system",
-          content: "You are a supportive fitness trainer. Assume the user is warming up. Provide brief, encouraging feedback based on workout performance data. Identify a specific joint with the most noticeable form issue (provided as input). Focused on improving the joint's form. Example - Input: left shoulder, Output: Good! Try to keep your left shoulder steady and aligned."
-        }, {
-          role: "user",
-          content: `Performance Level: ${performanceData.performanceFeedback}
-            Match Percentage: ${performanceData.percentage.toFixed(1)}%
-            Joint to improve: ${performanceData.mostMisalignedLandmarks.join(', ')}`
-        }],
-        max_tokens: 100
+      const response = await fetch('/api/ai/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          performanceFeedback: performanceData.performanceFeedback,
+          percentage: performanceData.percentage,
+          mostMisalignedLandmarks: performanceData.mostMisalignedLandmarks
+        })
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
+        const errorDetails = errorData.details || '';
+        throw new Error(`${errorMessage}${errorDetails ? ` - ${errorDetails}` : ''}`);
+      }
+
+      const data = await response.json();
+      const feedbackText = data.feedback;
 
       // Track successful feedback generation
       mixpanel.track('AI Feedback Generated', {
@@ -390,12 +395,12 @@ function App() {
         performanceLevel: performanceData.performanceFeedback,
         matchPercentage: performanceData.percentage.toFixed(1),
         jointToImprove: performanceData.mostMisalignedLandmarks.join(', '),
-        feedbackText: response.choices[0].message.content,
-        feedbackLength: response.choices[0].message.content.length
+        feedbackText: feedbackText,
+        feedbackLength: feedbackText.length
       });
 
       if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(response.choices[0].message.content);
+        const utterance = new SpeechSynthesisUtterance(feedbackText);
         window.speechSynthesis.speak(utterance);
       }
     } catch (error) {
@@ -405,6 +410,16 @@ function App() {
         errorMessage: error.message
       });
       console.error('Error generating AI feedback:', error);
+      
+      // Provide user-friendly error message
+      if ('speechSynthesis' in window) {
+        const errorMessage = error.message.includes('OpenAI API key not configured') 
+          ? "AI feedback is not configured. Please contact support."
+          : "Sorry, I couldn't generate feedback right now. Please try again.";
+        
+        const utterance = new SpeechSynthesisUtterance(errorMessage);
+        window.speechSynthesis.speak(utterance);
+      }
     }
   };
 
