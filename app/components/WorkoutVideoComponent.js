@@ -52,10 +52,13 @@ export function WorkoutVideoComponent({
 
     const detectAndDrawPose = async () => {
       try {
-        if (videoRef.current.readyState >= 2 && !videoRef.current.paused) {
+        const videoEl = videoRef.current;
+        const canvasEl = canvasRef.current;
+        if (!videoEl || !canvasEl) return;
+        if (videoEl.readyState >= 2 && !videoEl.paused) {
           const result = await PoseDetectionService.detectPoseInVideo(
             poseLandmarker,
-            videoRef.current
+            videoEl
           );
 
           if (result?.landmarks?.[0]) {
@@ -63,14 +66,14 @@ export function WorkoutVideoComponent({
             
             // Only draw if showPoseLines is true
             if (showPoseLines) {
-              const video = videoRef.current;
-              const canvasCtx = canvasRef.current.getContext('2d');
+              const video = videoEl;
+              const canvasCtx = canvasEl.getContext('2d');
               const drawingUtils = new DrawingUtils(canvasCtx);
               
-              canvasRef.current.width = video.videoWidth;
-              canvasRef.current.height = video.videoHeight;
+              canvasEl.width = video.videoWidth;
+              canvasEl.height = video.videoHeight;
               
-              canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+              canvasCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
               drawingUtils.drawLandmarks(result.landmarks[0], {
                 radius: 6,
                 color: '#00ff00'
@@ -85,8 +88,8 @@ export function WorkoutVideoComponent({
               );
             } else {
               // Clear canvas when lines are hidden
-              const canvasCtx = canvasRef.current.getContext('2d');
-              canvasCtx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+              const canvasCtx = canvasEl.getContext('2d');
+              canvasCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
             }
           }
         }

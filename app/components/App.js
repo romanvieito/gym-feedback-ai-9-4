@@ -55,7 +55,6 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
   const originalVideoVolumeRef = useRef(1);
   const speechActiveCountRef = useRef(0);
   const volumeFadeRafRef = useRef(null);
-  const currentUtteranceRef = useRef(null);
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -180,83 +179,16 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
 
   // Centralized speech with ducking helper (with safety restore and queue cancel)
   const speakWithDucking = useCallback((text) => {
-    if (!('speechSynthesis' in window) || !text) {
-      console.log('Speech synthesis not available or no text:', { hasSpeech: 'speechSynthesis' in window, text });
-      return;
-    }
-    
+    if (!('speechSynthesis' in window) || !text) return;
     const synth = window.speechSynthesis;
-    console.log('Attempting to speak:', text);
-    console.log('Current speech synthesis state:', synth.speaking, synth.paused, synth.pending);
-    
-    // If a previous utterance exists, clear it to avoid GC-related cancel issues
-    if (currentUtteranceRef.current) {
-      try {
-        synth.cancel();
-      } catch (_) {}
-      currentUtteranceRef.current = null;
-    }
-
-    // Force reset stuck speech synthesis state
-    if (synth.speaking && !synth.pending) {
-      console.log('Speech synthesis appears stuck, forcing reset...');
-      try {
-        synth.cancel();
-        // Small delay to let the cancel complete
-        setTimeout(() => speakWithDucking(text), 100);
-        return;
-      } catch (error) {
-        console.log('Error forcing reset:', error);
-      }
-    }
-    
-    // Don't wait if speech is pending (actively starting)
-    if (synth.pending) {
-      console.log('Speech is pending, waiting...');
-      setTimeout(() => speakWithDucking(text), 100);
-      return;
-    }
-
-    // Ensure voices are loaded (first call can return empty and cause silent cancel)
-    const voices = synth.getVoices();
-    if (!voices || voices.length === 0) {
-      console.log('Voices not loaded yet, waiting for voiceschanged...');
-      const handler = () => {
-        synth.removeEventListener('voiceschanged', handler);
-        speakWithDucking(text);
-      };
-      try {
-        synth.addEventListener('voiceschanged', handler);
-      } catch (_) {
-        synth.onvoiceschanged = handler;
-      }
-      return;
-    }
+    // Prevent long queues and overlapping states
+    try { synth.cancel(); } catch (_) {}
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.volume = Math.max(0, Math.min(1, feedbackVolume));
-    utterance.rate = 0.9; // Slightly slower for clarity
-    utterance.pitch = 1.0;
-    // Pick a stable voice (prefer en-*) to avoid platform defaults that sometimes fail
-    try {
-      const preferred = voices.find(v => (v.lang || '').toLowerCase().startsWith('en')) || voices[0];
-      if (preferred) utterance.voice = preferred;
-      console.log('Selected voice:', preferred?.name, preferred?.lang);
-    } catch (_) {}
-    
-    console.log('Created utterance with volume:', utterance.volume);
 
     let safetyTimerId = null;
-    let hasStarted = false;
-    let startTimeout = null;
-    
     utterance.onstart = () => {
-      hasStarted = true;
-      if (startTimeout) {
-        clearTimeout(startTimeout);
-        startTimeout = null;
-      }
-      console.log('Speech started successfully:', text);
       duckVideoVolume();
       const wordCount = (text.match(/\S+/g) || []).length;
       const estimateMs = Math.min(12000, Math.max(1500, wordCount * 400));
@@ -268,80 +200,16 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         }
       }, estimateMs);
     };
-    
-    utterance.onend = () => {
-      console.log('Speech ended successfully');
-      const cleanup = () => {
-        if (safetyTimerId) {
-          clearTimeout(safetyTimerId);
-          safetyTimerId = null;
-        }
-        if (startTimeout) {
-          clearTimeout(startTimeout);
-          startTimeout = null;
-        }
-        currentUtteranceRef.current = null;
-        restoreVideoVolumeIfIdle();
-      };
-      cleanup();
-    };
-    
-    utterance.onerror = (event) => {
-      console.error('Speech synthesis error:', event.error, event.message);
-      
-      if (startTimeout) {
-        clearTimeout(startTimeout);
-        startTimeout = null;
+    const cleanup = () => {
+      if (safetyTimerId) {
+        clearTimeout(safetyTimerId);
+        safetyTimerId = null;
       }
-      
-      // Only retry if it's not a cancellation error and hasn't started
-      if (event.error !== 'canceled' && !hasStarted) {
-        console.log('Retrying speech synthesis...');
-        setTimeout(() => speakWithDucking(text), 200);
-      }
-      
-      const cleanup = () => {
-        if (safetyTimerId) {
-          clearTimeout(safetyTimerId);
-          safetyTimerId = null;
-        }
-        currentUtteranceRef.current = null;
-        restoreVideoVolumeIfIdle();
-      };
-      cleanup();
+      restoreVideoVolumeIfIdle();
     };
-    
-    // Use a more robust approach to start speech
-    const startSpeech = () => {
-      try {
-        // Resume if paused, otherwise speak
-        if (synth.paused) {
-          synth.resume();
-        } else {
-          synth.speak(utterance);
-        }
-        console.log('Speech synthesis initiated');
-        
-        // Set a timeout to detect if speech doesn't start
-        startTimeout = setTimeout(() => {
-          if (!hasStarted && !synth.speaking) {
-            console.warn('Speech synthesis timeout, forcing reset...');
-            synth.cancel();
-            setTimeout(() => speakWithDucking(text), 200);
-          }
-        }, 1000);
-        
-      } catch (error) {
-        console.error('Error starting speech synthesis:', error);
-      }
-    };
-    
-    // Keep a reference to prevent GC-related cancellations on some browsers
-    currentUtteranceRef.current = utterance;
-
-    // Start speech with a small delay to ensure browser is ready
-    setTimeout(startSpeech, 50);
-    
+    utterance.onend = cleanup;
+    utterance.onerror = cleanup;
+    synth.speak(utterance);
   }, [duckVideoVolume, restoreVideoVolumeIfIdle, feedbackVolume]);
 
   useEffect(() => {
@@ -623,8 +491,6 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
 
       const data = await response.json();
       const feedbackText = data.feedback;
-      
-      console.log('AI Feedback received:', feedbackText);
 
       // Track successful feedback generation
       mixpanel.track('AI Feedback Generated', {
@@ -636,21 +502,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         feedbackLength: feedbackText.length
       });
 
-      // Test speech synthesis first
-      console.log('About to speak feedback:', feedbackText);
       speakWithDucking(feedbackText);
-      
-      // Fallback: if speech doesn't work, show in console and play fallback audio
-      setTimeout(() => {
-        const synth = window.speechSynthesis;
-        if (!synth.speaking && !synth.pending) {
-          console.warn('Speech synthesis may have failed, showing feedback in console');
-          console.log('AI Feedback (text only):', feedbackText);
-          // Play fallback audio to indicate feedback was received
-          playFallbackAudio();
-        }
-      }, 2000);
-      
     } catch (error) {
       // Track error in feedback generation
       mixpanel.track('AI Feedback Error', {
@@ -666,56 +518,6 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
       speakWithDucking(errorMessage);
     }
   };
-
-  // Test speech synthesis function
-  const testSpeech = useCallback(() => {
-    console.log('Testing speech synthesis...');
-    speakWithDucking("This is a test of the speech synthesis system. Can you hear this?");
-  }, [speakWithDucking]);
-
-  // Fallback audio notification using Web Audio API
-  const playFallbackAudio = useCallback(() => {
-    try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
-      
-      console.log('Fallback audio played');
-    } catch (error) {
-      console.error('Fallback audio failed:', error);
-    }
-  }, []);
-
-  // Manual reset function for stuck speech synthesis
-  const resetSpeechSynthesis = useCallback(() => {
-    if ('speechSynthesis' in window) {
-      const synth = window.speechSynthesis;
-      console.log('Resetting speech synthesis...');
-      console.log('Before reset - State:', synth.speaking, synth.paused, synth.pending);
-      
-      try {
-        synth.cancel();
-        synth.pause();
-        synth.resume();
-        console.log('After reset - State:', synth.speaking, synth.paused, synth.pending);
-      } catch (error) {
-        console.error('Error resetting speech synthesis:', error);
-      }
-    }
-  }, []);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -750,13 +552,10 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           </button>
         )}
 
-        {/* Unified video container to prevent remount on fullscreen toggle */}
-        <div className={isMaximized 
-          ? "fixed inset-0 z-50 bg-black relative w-full h-full"
-          : "w-full rounded-2xl overflow-hidden shadow-2xl bg-white relative"}
-        >
-            {/* Minimize Button - Only show when maximized */}
-            {isMaximized && (
+        {/* Fullscreen overlay when maximized */}
+        {isMaximized && (
+          <div className="fixed inset-0 z-50 bg-black">
+            <div className="relative w-full h-full">
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsMaximized(false); }}
                 className="absolute top-4 left-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
@@ -765,8 +564,42 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
                   <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
                 </svg>
               </button>
-            )}
+              <WorkoutVideoComponent
+                workout={selectedWorkout || workoutTypes[0]}
+                poseLandmarker={landmarkers.videoLandmarker}
+                onLandmarksUpdate={setVideoLandmarks}
+                isActive={isActive}
+                onCurrentTimeUpdate={setVideoCurrentTime}
+                onDurationUpdate={setVideoDuration}
+                showPoseLines={showPoseLines}
+                onVideoRef={(el) => { videoRef.current = el; }}
+                isMaximized={true}
+              />
 
+              {/* Webcam PiP visible in fullscreen */}
+              {isActive && (
+                <div className="absolute bottom-6 right-6 w-[320px] h-[240px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white z-50">
+                  <WebcamComponent
+                    poseLandmarker={landmarkers.webcamLandmarker}
+                    onLandmarksUpdate={(landmarks) => {
+                      if (isActive) {
+                        setWebcamLandmarks(landmarks);
+                      }
+                    }}
+                    onCurrentTimeUpdate={setVideoCurrentTime}
+                    onFrameIndexUpdate={() => {}}
+                    poseMatchData={poseMatchData}
+                    showPoseLines={showPoseLines}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Main Video Container - YouTube-style rounded corners and shadow */}
+        {!isMaximized && (
+          <div className="w-full rounded-2xl overflow-hidden shadow-2xl bg-white">
             <WorkoutVideoComponent
               workout={selectedWorkout || workoutTypes[0]}
               poseLandmarker={landmarkers.videoLandmarker}
@@ -776,27 +609,29 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
               onDurationUpdate={setVideoDuration}
               showPoseLines={showPoseLines}
               onVideoRef={(el) => { videoRef.current = el; }}
-              isMaximized={isMaximized}
+              isMaximized={false}
             />
+          </div>
+        )}
 
-            {/* Webcam PiP (inside the same container to keep relative positioning) */}
-            {isActive && (
-              <div className={`absolute bottom-6 right-6 ${isMaximized ? 'w-[320px] h-[240px]' : 'w-[280px] h-[210px]'} rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white z-50`}>
-                <WebcamComponent
-                  poseLandmarker={landmarkers.webcamLandmarker}
-                  onLandmarksUpdate={(landmarks) => {
-                    if (isActive) {
-                      setWebcamLandmarks(landmarks);
-                    }
-                  }}
-                  onCurrentTimeUpdate={setVideoCurrentTime}
-                  onFrameIndexUpdate={() => {}}
-                  poseMatchData={poseMatchData}
-                  showPoseLines={showPoseLines}
-                />
-              </div>
-            )}
-        </div>
+        {/* Webcam Overlay - YouTube-style picture-in-picture */}
+        {isActive && !isMaximized && (
+          <div className="absolute bottom-6 right-6 w-[280px] h-[210px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white">
+            <WebcamComponent
+              poseLandmarker={landmarkers.webcamLandmarker}
+              onLandmarksUpdate={(landmarks) => {
+                if (isActive) {
+                  setWebcamLandmarks(landmarks);
+                }
+              }}
+              onCurrentTimeUpdate={setVideoCurrentTime}
+              onFrameIndexUpdate={() => {}}
+              poseMatchData={poseMatchData}
+              showPoseLines={showPoseLines}
+            />
+          </div>
+        )}
+      </div>
       
       {/* Controls Section - YouTube-style centered layout */}
       <div className="flex flex-col items-center gap-6 mt-8">
@@ -857,37 +692,6 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
             </svg>
             Get Feedback
           </button>
-
-          <button
-            onClick={testSpeech}
-            className="px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl bg-green-600 hover:bg-green-700 border-2 border-green-600 text-white"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 2v20M2 12h20" />
-            </svg>
-            Test Speech
-          </button>
-
-          <button
-            onClick={playFallbackAudio}
-            className="px-6 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl bg-purple-600 hover:bg-purple-700 border-2 border-purple-600 text-white"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18V5l12-2v13" />
-            </svg>
-            Test Audio
-          </button>
-
-          <button
-            onClick={resetSpeechSynthesis}
-            className="px-6 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl bg-orange-600 hover:bg-orange-700 border-2 border-orange-600 text-white"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z" />
-              <path d="M12 7v5l3 3" />
-            </svg>
-            Reset Speech
-          </button>
         </div>
 
         {/* Info Text - YouTube-style subtle text */}
@@ -898,8 +702,6 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           <p className="text-xs text-gray-500 dark:text-gray-500 text-center mt-2">
           </p>
         </div>
-      </div>
-      {/* Close relative container */}
       </div>
     </div>
   );
