@@ -700,7 +700,6 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
             💡 The more we see, the more precise the feedback!
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-500 text-center mt-2">
-            💻 Press <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs">F</kbd> to toggle fullscreen, <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs">ESC</kbd> to exit
           </p>
         </div>
       </div>
