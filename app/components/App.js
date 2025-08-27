@@ -598,19 +598,21 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         )}
 
         {/* Main Video Container - YouTube-style rounded corners and shadow */}
-        <div className="w-full rounded-2xl overflow-hidden shadow-2xl bg-white">
-          <WorkoutVideoComponent
-            workout={selectedWorkout || workoutTypes[0]}
-            poseLandmarker={landmarkers.videoLandmarker}
-            onLandmarksUpdate={setVideoLandmarks}
-            isActive={isActive}
-            onCurrentTimeUpdate={setVideoCurrentTime}
-            onDurationUpdate={setVideoDuration}
-            showPoseLines={showPoseLines}
-            onVideoRef={(el) => { videoRef.current = el; }}
-            isMaximized={false}
-          />
-        </div>
+        {!isMaximized && (
+          <div className="w-full rounded-2xl overflow-hidden shadow-2xl bg-white">
+            <WorkoutVideoComponent
+              workout={selectedWorkout || workoutTypes[0]}
+              poseLandmarker={landmarkers.videoLandmarker}
+              onLandmarksUpdate={setVideoLandmarks}
+              isActive={isActive}
+              onCurrentTimeUpdate={setVideoCurrentTime}
+              onDurationUpdate={setVideoDuration}
+              showPoseLines={showPoseLines}
+              onVideoRef={(el) => { videoRef.current = el; }}
+              isMaximized={false}
+            />
+          </div>
+        )}
 
         {/* Webcam Overlay - YouTube-style picture-in-picture */}
         {isActive && !isMaximized && (
