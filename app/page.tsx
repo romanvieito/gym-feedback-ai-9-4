@@ -376,7 +376,7 @@ export default function Home() {
                 className="text-center p-3 sm:p-6 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center group border border-gray-200 dark:border-gray-800 transition-all duration-200"
               >
                 <Image
-                  src={`/images/${(index % 4) + 1}.png`}
+                  src={workout.image}
                   alt={workout.title}
                   width={40}
                   height={40}
