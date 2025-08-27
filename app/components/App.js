@@ -33,6 +33,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
     videoLandmarker: null
   });
   const [isActive, setIsActive] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [webcamLandmarks, setWebcamLandmarks] = useState([]);
   const [videoLandmarks, setVideoLandmarks] = useState([]);
   const [poseMatchData, setPoseMatchData] = useState(null);
@@ -111,6 +112,21 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
       console.log('Selected Workout:', selectedWorkout);
     }
   }, [selectedFitnessGoal, selectedWearable, selectedWorkout]);
+
+  // Keyboard shortcuts for maximize/minimize
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === 'f' || event.key === 'F') {
+        setIsMaximized(!isMaximized);
+      }
+      if (event.key === 'Escape' && isMaximized) {
+        setIsMaximized(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [isMaximized]);
 
   // Smoothly fade the video element volume to a target over a short duration
   const fadeVideoVolumeTo = useCallback((targetVolume, durationMs = 200) => {
@@ -524,6 +540,45 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           )}
         </button>
 
+        {/* Maximize Button - Only show when not maximized */}
+        {!isMaximized && (
+          <button
+            onClick={() => setIsMaximized(true)}
+            className="absolute top-4 right-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m8-3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+            </svg>
+          </button>
+        )}
+
+        {/* Fullscreen overlay when maximized */}
+        {isMaximized && (
+          <div className="fixed inset-0 z-50 bg-black">
+            <div className="relative w-full h-full">
+              <button
+                onClick={() => setIsMaximized(false)}
+                className="absolute top-4 left-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                </svg>
+              </button>
+              <WorkoutVideoComponent
+                workout={selectedWorkout || workoutTypes[0]}
+                poseLandmarker={landmarkers.videoLandmarker}
+                onLandmarksUpdate={setVideoLandmarks}
+                isActive={isActive}
+                onCurrentTimeUpdate={setVideoCurrentTime}
+                onDurationUpdate={setVideoDuration}
+                showPoseLines={showPoseLines}
+                onVideoRef={(el) => { videoRef.current = el; }}
+                isMaximized={true}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Main Video Container - YouTube-style rounded corners and shadow */}
         <div className="w-full rounded-2xl overflow-hidden shadow-2xl bg-white">
           <WorkoutVideoComponent
@@ -535,12 +590,13 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
             onDurationUpdate={setVideoDuration}
             showPoseLines={showPoseLines}
             onVideoRef={(el) => { videoRef.current = el; }}
+            isMaximized={false}
           />
         </div>
 
         {/* Webcam Overlay - YouTube-style picture-in-picture */}
-        {isActive && (
-          <div className="absolute bottom-1 right-1 w-[280px] h-[210px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white">
+        {isActive && !isMaximized && (
+          <div className="absolute bottom-6 right-6 w-[280px] h-[210px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white">
             <WebcamComponent
               poseLandmarker={landmarkers.webcamLandmarker}
               onLandmarksUpdate={(landmarks) => {
@@ -565,16 +621,23 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
             onClick={() => {
               const newIsActive = !isActive;
               setIsActive(newIsActive);
-              if (!newIsActive) {
-                setWebcamLandmarks([]);
-                setVideoLandmarks([]);
-                mixpanel.track('Workout Paused', {
-                  platform: 'web_app'
-                });
-              } else {
+              
+              // Auto-maximize when workout starts
+              if (newIsActive) {
+                setIsMaximized(true);
                 mixpanel.track('Workout Resumed', {
                   platform: 'web_app'
                 });
+              } else {
+                // Keep maximized state when pausing
+                mixpanel.track('Workout Paused', {
+                  platform: 'web_app'
+                });
+              }
+              
+              if (!newIsActive) {
+                setWebcamLandmarks([]);
+                setVideoLandmarks([]);
               }
             }}
             className={`
@@ -621,6 +684,9 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         <div className="px-6 py-3">
           <p className="text-sm text-gray-600 dark:text-gray-400 text-center font-medium">
             💡 The more we see, the more precise the feedback!
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500 text-center mt-2">
+            💻 Press <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs">F</kbd> to toggle fullscreen, <kbd className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs">ESC</kbd> to exit
           </p>
         </div>
       </div>

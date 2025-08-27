@@ -11,7 +11,8 @@ export function WorkoutVideoComponent({
   onCurrentTimeUpdate,
   onDurationUpdate,
   showPoseLines,
-  onVideoRef
+  onVideoRef,
+  isMaximized = false
 }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -113,14 +114,21 @@ export function WorkoutVideoComponent({
     };
   }, [poseLandmarker, videoRef, canvasRef, onLandmarksUpdate, isActive, showPoseLines]);
 
+  const containerClass = isMaximized
+    ? 'relative w-full h-full'
+    : 'relative w-full aspect-video';
+  const videoBgClass = isMaximized
+    ? 'bg-black'
+    : 'bg-gray-50 dark:bg-gray-900';
+
   return (
-    <div className="relative w-full aspect-video">
+    <div className={containerClass}>
       <video 
         ref={(el) => { 
           videoRef.current = el; 
           if (onVideoRef) onVideoRef(el);
         }} 
-        className="absolute inset-0 w-full h-full object-contain bg-gray-50 dark:bg-gray-900"
+        className={`absolute inset-0 w-full h-full object-contain ${videoBgClass}`}
         src={workout.video}
         playsInline
         crossOrigin="anonymous"
