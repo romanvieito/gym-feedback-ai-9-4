@@ -121,8 +121,10 @@ export function WorkoutVideoComponent({
     ? 'bg-black'
     : 'bg-gray-50 dark:bg-gray-900';
 
+  const stopAll = (e) => { e.preventDefault(); e.stopPropagation(); };
+
   return (
-    <div className={containerClass}>
+    <div className={containerClass} onClick={stopAll} onDoubleClick={stopAll} onMouseDown={stopAll}>
       <video 
         ref={(el) => { 
           videoRef.current = el; 
@@ -132,10 +134,16 @@ export function WorkoutVideoComponent({
         src={workout.video}
         playsInline
         crossOrigin="anonymous"
+        onClick={stopAll}
+        onDoubleClick={stopAll}
+        onMouseDown={stopAll}
       />
       <canvas 
         ref={canvasRef}
         className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+        onClick={stopAll}
+        onDoubleClick={stopAll}
+        onMouseDown={stopAll}
       />
     </div>
   );
