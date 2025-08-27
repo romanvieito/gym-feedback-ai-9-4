@@ -540,7 +540,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
 
         {/* Webcam Overlay - YouTube-style picture-in-picture */}
         {isActive && (
-          <div className="absolute bottom-6 right-6 w-[360px] h-[270px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white">
+          <div className="absolute bottom-1 right-1 w-[280px] h-[210px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white">
             <WebcamComponent
               poseLandmarker={landmarkers.webcamLandmarker}
               onLandmarksUpdate={(landmarks) => {

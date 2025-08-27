@@ -121,7 +121,7 @@ export function WebcamComponent({
     <div style={{ 
       position: 'relative',
       width: '100%',
-      aspectRatio: '16/9',
+      height: '100%',
       overflow: 'hidden',
       borderRadius: '0.75rem'
     }}>
