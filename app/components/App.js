@@ -641,21 +641,15 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
             onClick={() => {
               const newIsActive = !isActive;
               setIsActive(newIsActive);
-              
-              // Auto-maximize when workout starts
+
               if (newIsActive) {
-                setIsMaximized(true);
                 mixpanel.track('Workout Resumed', {
                   platform: 'web_app'
                 });
               } else {
-                // Keep maximized state when pausing
                 mixpanel.track('Workout Paused', {
                   platform: 'web_app'
                 });
-              }
-              
-              if (!newIsActive) {
                 setWebcamLandmarks([]);
                 setVideoLandmarks([]);
               }
