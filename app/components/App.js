@@ -575,6 +575,24 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
                 onVideoRef={(el) => { videoRef.current = el; }}
                 isMaximized={true}
               />
+
+              {/* Webcam PiP visible in fullscreen */}
+              {isActive && (
+                <div className="absolute bottom-6 right-6 w-[320px] h-[240px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white z-50">
+                  <WebcamComponent
+                    poseLandmarker={landmarkers.webcamLandmarker}
+                    onLandmarksUpdate={(landmarks) => {
+                      if (isActive) {
+                        setWebcamLandmarks(landmarks);
+                      }
+                    }}
+                    onCurrentTimeUpdate={setVideoCurrentTime}
+                    onFrameIndexUpdate={() => {}}
+                    poseMatchData={poseMatchData}
+                    showPoseLines={showPoseLines}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
