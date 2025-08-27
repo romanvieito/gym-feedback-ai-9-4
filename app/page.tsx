@@ -60,6 +60,28 @@ export default function Home() {
       setSelectedFitnessGoal(savedFitnessGoal);
     }
     
+    // Try to load existing fitness goal from database if we have a session user ID
+    const loadExistingFitnessGoal = async () => {
+      try {
+        const sessionUserId = sessionStorage.getItem('sessionUserId');
+        if (sessionUserId) {
+          const response = await fetch(`/api/fitness-goal?userId=${sessionUserId}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.data && data.data.length > 0) {
+              const existingGoal = data.data[0];
+              setSelectedFitnessGoal(existingGoal.goal_value);
+              localStorage.setItem('selectedFitnessGoal', existingGoal.goal_value);
+              console.log('Loaded existing fitness goal from database:', existingGoal);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load existing fitness goal:', error);
+      }
+    };
+    
+    loadExistingFitnessGoal();
     setPreferencesLoaded(true);
   }, []);
 
@@ -81,12 +103,19 @@ export default function Home() {
       localStorage.setItem('selectedFitnessGoal', goalId);
     }
     
-    // Save to database (you can generate a unique user ID or use a session ID)
+    // Save to database with consistent user ID
     try {
-      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Get or create a consistent user ID for this session
+      let userId = sessionStorage.getItem('sessionUserId');
+      if (!userId) {
+        userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem('sessionUserId', userId);
+      }
+      
       const goalText = fitnessGoals.find(g => g.id === goalId)?.name || '';
       
-      await fetch('/api/fitness-goal', {
+      // First try to update existing record, if not exists then insert
+      const response = await fetch('/api/fitness-goal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,8 +124,15 @@ export default function Home() {
           userId,
           goalValue: goalId,
           goalText,
+          updateExisting: true, // Flag to indicate we want to update existing records
         }),
       });
+      
+      if (response.ok) {
+        console.log('Fitness goal saved successfully');
+      } else {
+        console.error('Failed to save fitness goal');
+      }
     } catch (error) {
       console.error('Failed to save fitness goal to database:', error);
     }

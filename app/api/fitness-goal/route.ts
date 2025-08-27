@@ -3,7 +3,7 @@ import { sql } from '@vercel/postgres';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, goalValue, goalText } = await request.json();
+    const { userId, goalValue, goalText, updateExisting } = await request.json();
     
     if (!userId || !goalValue) {
       return NextResponse.json(
@@ -12,16 +12,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert the user's fitness goal (simple insert for now)
-    const result = await sql`
-      INSERT INTO user_fitness_goals (user_id, goal_value, goal_text, created_at, updated_at)
-      VALUES (${userId}, ${goalValue}, ${goalText || ''}, NOW(), NOW())
-      RETURNING *
-    `;
+    let result;
+    let action = 'inserted';
+    
+    if (updateExisting) {
+      // First check if user already has a fitness goal record
+      const existingGoal = await sql`
+        SELECT * FROM user_fitness_goals 
+        WHERE user_id = ${userId}
+        LIMIT 1
+      `;
+      
+      if (existingGoal.rows.length > 0) {
+        // Update existing record
+        result = await sql`
+          UPDATE user_fitness_goals 
+          SET goal_value = ${goalValue}, goal_text = ${goalText || ''}, updated_at = NOW()
+          WHERE user_id = ${userId}
+          RETURNING *
+        `;
+        action = 'updated';
+      } else {
+        // Insert new record if none exists
+        result = await sql`
+          INSERT INTO user_fitness_goals (user_id, goal_value, goal_text, created_at, updated_at)
+          VALUES (${userId}, ${goalValue}, ${goalText || ''}, NOW(), NOW())
+          RETURNING *
+        `;
+        action = 'inserted';
+      }
+    } else {
+      // Simple insert for backward compatibility
+      result = await sql`
+        INSERT INTO user_fitness_goals (user_id, goal_value, goal_text, created_at, updated_at)
+        VALUES (${userId}, ${goalValue}, ${goalText || ''}, NOW(), NOW())
+        RETURNING *
+      `;
+    }
 
     return NextResponse.json({ 
       success: true, 
-      data: result.rows[0] 
+      data: result.rows[0],
+      action: action
     });
 
   } catch (error) {
