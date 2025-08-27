@@ -27,7 +27,7 @@ const smoothLandmarks = (prevLandmarks, newLandmarks, applySmoothing = true, alp
 const APPLY_SMOOTHING = true; // Set to true to enable exponential smoothing
 const APPLY_KALMAN = true;    // Set to true to enable Kalman filtering
 
-function App() {
+function App({ selectedFitnessGoal, selectedWearable }) {
   const [landmarkers, setLandmarkers] = useState({
     webcamLandmarker: null,
     videoLandmarker: null
@@ -49,7 +49,11 @@ function App() {
   const [showPoseLines, setShowPoseLines] = useState(false);
   const [isCalibrated, setIsCalibrated] = useState(false);
   const calibrationTimeoutRef = useRef(null);
+  const videoRef = useRef(null); // Reference to control video volume
   const [feedbackVolume, setFeedbackVolume] = useState(0.8); // Feedback volume control
+  const originalVideoVolumeRef = useRef(1);
+  const speechActiveCountRef = useRef(0);
+  const volumeFadeRafRef = useRef(null);
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -95,6 +99,100 @@ function App() {
 
   const welcomePlayedRef = useRef(false);
 
+  // Log fitness goal and wearable when component mounts
+  useEffect(() => {
+    if (selectedFitnessGoal) {
+      console.log('Selected Fitness Goal:', selectedFitnessGoal);
+    }
+    if (selectedWearable) {
+      console.log('Selected Wearable:', selectedWearable);
+    }
+  }, [selectedFitnessGoal, selectedWearable]);
+
+  // Smoothly fade the video element volume to a target over a short duration
+  const fadeVideoVolumeTo = useCallback((targetVolume, durationMs = 200) => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+
+    const startVolume = videoEl.volume;
+    const clampedTarget = Math.max(0, Math.min(1, targetVolume));
+    if (Math.abs(startVolume - clampedTarget) < 0.01) {
+      videoEl.volume = clampedTarget;
+      return;
+    }
+
+    if (volumeFadeRafRef.current) cancelAnimationFrame(volumeFadeRafRef.current);
+    const startTime = performance.now();
+
+    const step = (now) => {
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / durationMs);
+      const newVolume = startVolume + (clampedTarget - startVolume) * t;
+      videoEl.volume = Math.max(0, Math.min(1, newVolume));
+      if (t < 1) {
+        volumeFadeRafRef.current = requestAnimationFrame(step);
+      }
+    };
+    volumeFadeRafRef.current = requestAnimationFrame(step);
+  }, []);
+
+  const duckVideoVolume = useCallback(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    // Store the original volume only once per ducking session start
+    if (speechActiveCountRef.current === 0) {
+      originalVideoVolumeRef.current = videoEl.volume ?? 1;
+      // Duck to 15% for clarity
+      fadeVideoVolumeTo(0.15, 180);
+    }
+    speechActiveCountRef.current += 1;
+  }, [fadeVideoVolumeTo]);
+
+  const restoreVideoVolumeIfIdle = useCallback(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    if (speechActiveCountRef.current <= 0) return;
+    speechActiveCountRef.current -= 1;
+    if (speechActiveCountRef.current === 0) {
+      fadeVideoVolumeTo(originalVideoVolumeRef.current ?? 1, 220);
+    }
+  }, [fadeVideoVolumeTo]);
+
+  // Centralized speech with ducking helper (with safety restore and queue cancel)
+  const speakWithDucking = useCallback((text) => {
+    if (!('speechSynthesis' in window) || !text) return;
+    const synth = window.speechSynthesis;
+    // Prevent long queues and overlapping states
+    try { synth.cancel(); } catch (_) {}
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.volume = Math.max(0, Math.min(1, feedbackVolume));
+
+    let safetyTimerId = null;
+    utterance.onstart = () => {
+      duckVideoVolume();
+      const wordCount = (text.match(/\S+/g) || []).length;
+      const estimateMs = Math.min(12000, Math.max(1500, wordCount * 400));
+      safetyTimerId = setTimeout(() => {
+        restoreVideoVolumeIfIdle();
+        if (safetyTimerId) {
+          clearTimeout(safetyTimerId);
+          safetyTimerId = null;
+        }
+      }, estimateMs);
+    };
+    const cleanup = () => {
+      if (safetyTimerId) {
+        clearTimeout(safetyTimerId);
+        safetyTimerId = null;
+      }
+      restoreVideoVolumeIfIdle();
+    };
+    utterance.onend = cleanup;
+    utterance.onerror = cleanup;
+    synth.speak(utterance);
+  }, [duckVideoVolume, restoreVideoVolumeIfIdle, feedbackVolume]);
+
   useEffect(() => {
     PoseDetectionService.initialize()
       .then(setLandmarkers)
@@ -115,8 +213,7 @@ function App() {
         "Welcome! Let's set the tone for an great session. You've got this!"
       ];
       const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-      const utterance = new SpeechSynthesisUtterance(randomWelcome);
-      window.speechSynthesis.speak(utterance);
+      speakWithDucking(randomWelcome);
       welcomePlayedRef.current = true;
     }
   }, []);
@@ -208,10 +305,7 @@ function App() {
 
       const feedbackText = `Please pay attention to ${worstLandmarks.join(', ')}.`;
 
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(feedbackText);
-        window.speechSynthesis.speak(utterance);
-      }
+      speakWithDucking(feedbackText);
 
       console.log(`Feedback event triggered: ${feedbackText}`);
       setLastCurrentTimeFeedback(videoCurrentTime); // Update the last feedback time
@@ -238,10 +332,7 @@ function App() {
 
       const randomPhrase = encouragingPhrases[Math.floor(Math.random() * encouragingPhrases.length)];
       
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(randomPhrase);
-        window.speechSynthesis.speak(utterance);
-      }
+      speakWithDucking(randomPhrase);
       console.log(`Feedback event triggered at ${timeText}`);
       setLastRemainingTimeFeedback(videoCurrentTime);
     }
@@ -279,10 +370,7 @@ function App() {
         if (success) {
           console.log('Calibration successful');
           // Optionally provide feedback to the user
-          if ('speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance('Calibration complete. Ready to start.');
-            window.speechSynthesis.speak(utterance);
-          }
+          speakWithDucking('Calibration complete. Ready to start.');
         } else {
           console.warn('Calibration failed');
         }
@@ -395,10 +483,7 @@ function App() {
         feedbackLength: feedbackText.length
       });
 
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(feedbackText);
-        window.speechSynthesis.speak(utterance);
-      }
+      speakWithDucking(feedbackText);
     } catch (error) {
       // Track error in feedback generation
       mixpanel.track('AI Feedback Error', {
@@ -408,23 +493,20 @@ function App() {
       console.error('Error generating AI feedback:', error);
       
       // Provide user-friendly error message
-      if ('speechSynthesis' in window) {
-        const errorMessage = error.message.includes('OpenAI API key not configured') 
-          ? "AI feedback is not configured. Please contact support."
-          : "Sorry, I couldn't generate feedback right now. Please try again.";
-        
-        const utterance = new SpeechSynthesisUtterance(errorMessage);
-        window.speechSynthesis.speak(utterance);
-      }
+      const errorMessage = error.message.includes('OpenAI API key not configured') 
+        ? "AI feedback is not configured. Please contact support."
+        : "Sorry, I couldn't generate feedback right now. Please try again.";
+      speakWithDucking(errorMessage);
     }
   };
 
   return (
-    <div className="w-full">
-      <div className="relative w-full max-w-[1280px] mx-auto">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative w-full">
+        {/* Toggle Pose Lines Button - YouTube-style floating action button */}
         <button
           onClick={() => setShowPoseLines(!showPoseLines)}
-          className="absolute top-1 right-1 z-20 p-1 rounded-lg text-xs font-medium bg-black/50 hover:bg-black/70 text-white backdrop-blur-sm transition-all duration-200"
+          className="absolute top-4 right-4 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
         >
           {showPoseLines ? (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -439,7 +521,8 @@ function App() {
           )}
         </button>
 
-        <div className="w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
+        {/* Main Video Container - YouTube-style rounded corners and shadow */}
+        <div className="w-full rounded-2xl overflow-hidden shadow-2xl bg-white">
           <WorkoutVideoComponent
             workout={workoutTypes[0]}
             poseLandmarker={landmarkers.videoLandmarker}
@@ -448,11 +531,13 @@ function App() {
             onCurrentTimeUpdate={setVideoCurrentTime}
             onDurationUpdate={setVideoDuration}
             showPoseLines={showPoseLines}
+            onVideoRef={(el) => { videoRef.current = el; }}
           />
         </div>
 
+        {/* Webcam Overlay - YouTube-style picture-in-picture */}
         {isActive && (
-          <div className="absolute bottom-4 right-4 w-[320px] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-lg bg-black/10 backdrop-blur-sm">
+          <div className="absolute bottom-6 right-6 w-[360px] h-[270px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white">
             <WebcamComponent
               poseLandmarker={landmarkers.webcamLandmarker}
               onLandmarksUpdate={(landmarks) => {
@@ -469,9 +554,27 @@ function App() {
         )}
       </div>
       
-      {/* Controls */}
-      <div className="flex flex-col items-center gap-2 mt-3">
-        <div className="flex gap-2">
+      {/* Fitness Goal Indicator */}
+      {selectedFitnessGoal && (
+        <div className="mt-6 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200 rounded-full border border-green-200 dark:border-green-800">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span className="text-sm font-medium">
+              Goal: {selectedFitnessGoal === 'lose-weight' ? '🔥 Lose Weight' :
+                     selectedFitnessGoal === 'build-muscle' ? '💪 Build Muscle' :
+                     selectedFitnessGoal === 'flexibility' ? '🧘 Increase Flexibility' :
+                     selectedFitnessGoal === 'boost-energy' ? '💥 Boost Energy' : selectedFitnessGoal}
+            </span>
+          </div>
+        </div>
+      )}
+      
+      {/* Controls Section - YouTube-style centered layout */}
+      <div className="flex flex-col items-center gap-6 mt-8">
+        {/* Main Control Buttons */}
+        <div className="flex gap-4">
           <button 
             onClick={() => {
               const newIsActive = !isActive;
@@ -489,48 +592,51 @@ function App() {
               }
             }}
             className={`
-              px-6 py-3 rounded-lg font-medium
-              flex items-center gap-2
-              transition-all duration-200
+              px-8 py-4 rounded-full font-semibold text-base
+              flex items-center gap-3
+              transition-all duration-200 shadow-lg hover:shadow-xl
               ${isActive 
-                ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white' 
-                : 'bg-black hover:bg-gray-900 text-white'}
+                ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-2 border-gray-200' 
+                : 'bg-red-600 hover:bg-red-700 text-white border-2 border-red-600'}
             `}
           >
             {isActive ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="6" y="4" width="4" height="16"/>
                 <rect x="14" y="4" width="4" height="16"/>
               </svg>
             ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M8 5v14l11-7z"/>
               </svg>
             )}
             {isActive ? 'Pause Workout' : 'Start Workout'}
           </button>
 
-            <button
-              onClick={() => generateAIFeedback(poseMatchData)}
-              disabled={isActive || !poseMatchData}
-              className={`
-                px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-all duration-200
-                ${isActive || !poseMatchData 
-                  ? 'bg-blue-300 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700'
-                } text-white
-              `}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              Get Feedback
-            </button>
+          <button
+            onClick={() => generateAIFeedback(poseMatchData)}
+            disabled={isActive || !poseMatchData}
+            className={`
+              px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl
+              ${isActive || !poseMatchData 
+                ? 'bg-gray-300 cursor-not-allowed border-2 border-gray-300' 
+                : 'bg-blue-600 hover:bg-blue-700 border-2 border-blue-600'
+              } text-white
+            `}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Get Feedback
+          </button>
         </div>
 
-        <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-          *Ensure your full body is visible for accurate feedback.
-        </p>
+        {/* Info Text - YouTube-style subtle text */}
+        <div className="px-6 py-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center font-medium">
+            💡 The more we see, the more precise the feedback!
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -10,7 +10,8 @@ export function WorkoutVideoComponent({
   isActive,
   onCurrentTimeUpdate,
   onDurationUpdate,
-  showPoseLines
+  showPoseLines,
+  onVideoRef
 }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -115,7 +116,10 @@ export function WorkoutVideoComponent({
   return (
     <div className="relative w-full aspect-video">
       <video 
-        ref={videoRef} 
+        ref={(el) => { 
+          videoRef.current = el; 
+          if (onVideoRef) onVideoRef(el);
+        }} 
         className="absolute inset-0 w-full h-full object-contain bg-gray-50 dark:bg-gray-900"
         src={workout.video}
         playsInline

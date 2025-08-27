@@ -14,8 +14,10 @@ mixpanel.init('b98359528baa013898b40c8583f849ce', {
 export default function Home() {
   const [showApp, setShowApp] = useState(false);
   const [selectedWearable, setSelectedWearable] = useState('');
+  const [selectedFitnessGoal, setSelectedFitnessGoal] = useState('');
   const [showMenu, setShowMenu] = useState(false);
   const [showWearableHelp, setShowWearableHelp] = useState(false);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   const wearables = [
     { id: 'none', name: 'No wearable device' },
@@ -26,6 +28,16 @@ export default function Home() {
     { id: 'other', name: 'Other' }
   ];
 
+  const fitnessGoals = [
+    { id: 'lose-weight', name: '🔥 Lose weight', description: 'Burn calories and shed pounds' },
+    { id: 'build-muscle', name: '💪 Build muscle', description: 'Gain strength and muscle mass' },
+    { id: 'improve-endurance', name: '🏃‍♂️ Improve endurance/cardio', description: 'Increase stamina and cardiovascular health' },
+    { id: 'flexibility', name: '🧘 Increase flexibility & mobility', description: 'Improve range of motion' },
+    { id: 'boost-energy', name: '💥 Boost energy and daily performance', description: 'Enhance overall vitality' },
+    { id: 'recover-injury', name: '🛠️ Recover from injury', description: 'Rehabilitate and regain strength after injury' },
+    { id: 'stay-active', name: '🙌 Just want to stay active', description: 'Maintain a healthy and active lifestyle' }
+  ];
+
   useEffect(() => {
     // Track page view when component mounts
     mixpanel.track('Page View', {
@@ -34,10 +46,63 @@ export default function Home() {
     });
   }, []);
 
+  // Load saved preferences from localStorage after component mounts
+  useEffect(() => {
+    const savedWearable = localStorage.getItem('selectedWearable');
+    const savedFitnessGoal = localStorage.getItem('selectedFitnessGoal');
+    
+    console.log('Loading saved preferences:', { savedWearable, savedFitnessGoal });
+    
+    if (savedWearable) {
+      setSelectedWearable(savedWearable);
+    }
+    if (savedFitnessGoal) {
+      setSelectedFitnessGoal(savedFitnessGoal);
+    }
+    
+    setPreferencesLoaded(true);
+  }, []);
+
   const handleWearableChange = (wearableId: string) => {
     setSelectedWearable(wearableId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedWearable', wearableId);
+    }
     mixpanel.track('Wearable Selected', {
       wearable: wearableId,
+      location: 'settings_menu',
+    });
+  };
+
+  const handleFitnessGoalChange = async (goalId: string) => {
+    console.log('Fitness goal changed to:', goalId);
+    setSelectedFitnessGoal(goalId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedFitnessGoal', goalId);
+    }
+    
+    // Save to database (you can generate a unique user ID or use a session ID)
+    try {
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const goalText = fitnessGoals.find(g => g.id === goalId)?.name || '';
+      
+      await fetch('/api/fitness-goal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          goalValue: goalId,
+          goalText,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to save fitness goal to database:', error);
+    }
+    
+    mixpanel.track('Fitness Goal Selected', {
+      goal: goalId,
       location: 'settings_menu',
     });
   };
@@ -47,6 +112,8 @@ export default function Home() {
       workout: 'Day 1',
       name: 'Lose Weight with Ease',
       location: 'workout_list',
+      fitnessGoal: selectedFitnessGoal || 'none',
+      wearable: selectedWearable || 'none',
     });
     setShowApp(true);
   };
@@ -119,6 +186,11 @@ export default function Home() {
                   <div className="absolute right-0 mt-2 w-64 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20">
                     <div className="mb-3">
                       <span className="block text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Settings</span>
+                      {!preferencesLoaded && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">
+                          ⏳ Loading preferences...
+                        </div>
+                      )}
                       <a
                         href="/calendar"
                         className="block w-full text-center text-sm font-bold p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors mb-3 shadow-sm"
@@ -148,14 +220,69 @@ export default function Home() {
                       id="wearable-select"
                       value={selectedWearable}
                       onChange={(e) => handleWearableChange(e.target.value)}
-                      className="w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-400 dark:focus:border-blue-600 transition-all duration-150 shadow-sm hover:border-blue-400 dark:hover:border-blue-500 mb-2 outline-none"
+                      disabled={!preferencesLoaded}
+                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-400 dark:focus:border-blue-600 transition-all duration-150 shadow-sm hover:border-blue-400 dark:hover:border-blue-500 mb-2 outline-none ${
+                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     >
-                      {wearables.map((wearable) => (
-                        <option key={wearable.id} value={wearable.id}>
-                          {wearable.name}
-                        </option>
-                      ))}
+                      {!preferencesLoaded ? (
+                        <option value="">Loading preferences...</option>
+                      ) : (
+                        wearables.map((wearable) => (
+                          <option key={wearable.id} value={wearable.id}>
+                            {wearable.name}
+                          </option>
+                        ))
+                      )}
                     </select>
+                    
+                    {/* Fitness Goal Selection */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="text-green-500"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <label htmlFor="fitness-goal-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Fitness Goal</label>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Choose your primary fitness objective.</p>
+                    <select
+                      id="fitness-goal-select"
+                      value={selectedFitnessGoal}
+                      onChange={(e) => handleFitnessGoalChange(e.target.value)}
+                      disabled={!preferencesLoaded}
+                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-green-200 dark:border-green-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-green-400 dark:focus:border-green-600 transition-all duration-150 shadow-sm hover:border-green-400 dark:hover:border-green-500 mb-2 outline-none ${
+                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {!preferencesLoaded ? (
+                        <option value="">Loading preferences...</option>
+                      ) : (
+                        <>
+                          <option value="">Select your fitness goal</option>
+                          {fitnessGoals.map((goal) => (
+                            <option key={goal.id} value={goal.id}>
+                              {goal.name}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                    </select>
+                    
+                    {/* Display selected goal description */}
+                    {selectedFitnessGoal && (
+                      <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                        {fitnessGoals.find(g => g.id === selectedFitnessGoal)?.description}
+                      </div>
+                    )}
+
                     {/* Help Option for Wearable Info */}
                     <div className="relative mt-2">
                       <button
@@ -351,7 +478,10 @@ export default function Home() {
           >
             ← Back to Workouts
           </button>
-          <App />
+          <App 
+            selectedFitnessGoal={selectedFitnessGoal}
+            selectedWearable={selectedWearable}
+          />
         </div>
       )}
     </main>
