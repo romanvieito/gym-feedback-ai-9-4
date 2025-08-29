@@ -56,6 +56,9 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
   const speechActiveCountRef = useRef(0);
   const volumeFadeRafRef = useRef(null);
   const lastPlaybackRef = useRef({ time: 0, wasPlaying: false });
+  const audioContextRef = useRef(null);
+  const audioUnlockedRef = useRef(false);
+  const currentAudioRef = useRef(null);
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -199,48 +202,87 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
     }
   }, [fadeVideoVolumeTo]);
 
-  // Centralized speech with ducking helper (with safety restore and queue cancel)
-  const speakWithDucking = useCallback((text) => {
-    if (!('speechSynthesis' in window) || !text) return;
-    const synth = window.speechSynthesis;
-    // Prevent long queues and overlapping states
-    try { synth.cancel(); } catch (_) {}
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.volume = Math.max(0, Math.min(1, feedbackVolume));
-
-    let safetyTimerId = null;
-    utterance.onstart = () => {
-      duckVideoVolume();
-      const wordCount = (text.match(/\S+/g) || []).length;
-      const estimateMs = Math.min(12000, Math.max(1500, wordCount * 400));
-      safetyTimerId = setTimeout(() => {
-        restoreVideoVolumeIfIdle();
-        if (safetyTimerId) {
-          clearTimeout(safetyTimerId);
-          safetyTimerId = null;
-        }
-      }, estimateMs);
-    };
-    const cleanup = () => {
-      if (safetyTimerId) {
-        clearTimeout(safetyTimerId);
-        safetyTimerId = null;
+  // Ensure audio can play by creating/resuming an AudioContext on user gesture
+  const ensureAudioUnlocked = useCallback(async () => {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) {
+        audioUnlockedRef.current = true; // No WebAudio required on this browser
+        return true;
       }
+      if (!audioContextRef.current) {
+        audioContextRef.current = new Ctx();
+      }
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      audioUnlockedRef.current = audioContextRef.current.state === 'running';
+      return audioUnlockedRef.current;
+    } catch (_) {
+      return false;
+    }
+  }, []);
+
+  // Centralized TTS with ducking using server-side TTS MP3
+  const speakWithDucking = useCallback(async (text, options = {}) => {
+    if (!text) return;
+
+    // Stop any current audio and add a tiny delay before starting a new one
+    try {
+      if (currentAudioRef.current) {
+        try { currentAudioRef.current.pause(); } catch (_) {}
+        try { currentAudioRef.current.src = ''; } catch (_) {}
+        currentAudioRef.current = null;
+        await new Promise(r => setTimeout(r, 120));
+      }
+    } catch (_) {}
+
+    duckVideoVolume();
+
+    try {
+      const resp = await fetch('/api/ai/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, voice: options.voice || 'alloy', format: 'mp3' })
+      });
+      if (!resp.ok) throw new Error('TTS request failed');
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const audioEl = new Audio(url);
+      audioEl.volume = Math.max(0, Math.min(1, feedbackVolume));
+      currentAudioRef.current = audioEl;
+
+      const cleanup = () => {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+        restoreVideoVolumeIfIdle();
+        if (currentAudioRef.current === audioEl) {
+          currentAudioRef.current = null;
+        }
+      };
+
+      audioEl.onended = cleanup;
+      audioEl.onerror = cleanup;
+
+      // Best-effort unlock before play
+      try { await ensureAudioUnlocked(); } catch (_) {}
+
+      try {
+        await audioEl.play();
+      } catch (e) {
+        cleanup();
+      }
+    } catch (e) {
       restoreVideoVolumeIfIdle();
-    };
-    utterance.onend = cleanup;
-    utterance.onerror = cleanup;
-    synth.speak(utterance);
-  }, [duckVideoVolume, restoreVideoVolumeIfIdle, feedbackVolume]);
+    }
+  }, [duckVideoVolume, restoreVideoVolumeIfIdle, feedbackVolume, ensureAudioUnlocked]);
 
   useEffect(() => {
     PoseDetectionService.initialize()
       .then(setLandmarkers)
       .catch(error => console.error("Error initializing pose landmarkers:", error));
 
-    // Add welcome message when component mounts
-    if ('speechSynthesis' in window && !welcomePlayedRef.current) {
+    // Welcome message only after audio is unlocked (skips autoplay restrictions)
+    if (!welcomePlayedRef.current && audioUnlockedRef.current) {
       const welcomeMessages = [
         "Hey there! Ready to sweat and shine? Let's make every move count!",
         "Good to see you! Let's get this session started!",
@@ -258,6 +300,21 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
       welcomePlayedRef.current = true;
     }
   }, []);
+
+  // Resume audio on visibility change when returning to the tab
+  useEffect(() => {
+    const onVis = async () => {
+      if (!document.hidden) {
+        await ensureAudioUnlocked();
+        const a = currentAudioRef.current;
+        if (a && a.paused) {
+          try { await a.play(); } catch (_) {}
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [ensureAudioUnlocked]);
 
   
   const calculatePoseMatch = useCallback((webcamLandmarks, videoLandmarks) => {
@@ -660,7 +717,8 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         {/* Main Control Buttons */}
         <div className="flex gap-4">
           <button 
-            onClick={() => {
+            onClick={async () => {
+              await ensureAudioUnlocked();
               const newIsActive = !isActive;
               setIsActive(newIsActive);
 
@@ -699,7 +757,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           </button>
 
           <button
-            onClick={() => generateAIFeedback(poseMatchData)}
+            onClick={async () => { await ensureAudioUnlocked(); generateAIFeedback(poseMatchData); }}
             disabled={isActive || !poseMatchData}
             className={`
               px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl
