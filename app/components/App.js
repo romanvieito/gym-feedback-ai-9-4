@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { workoutTypes } from '../services/workoutData';
 import { WebcamComponent } from './WebcamComponent';
 import { WorkoutVideoComponent } from './WorkoutVideoComponent';
+import SubtitleComponent from './SubtitleComponent';
 import { PoseDetectionService } from '../services/PoseDetectionService';
 import { angleDict, landmarkNames } from '../services/poseUtils';
 import { calculateAngleDifferencesAndAnomalies } from '../services/angleUtils';
@@ -59,6 +60,9 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
   const audioContextRef = useRef(null);
   const audioUnlockedRef = useRef(false);
   const currentAudioRef = useRef(null);
+  
+  // Subtitle state management
+  const [showSubtitles, setShowSubtitles] = useState(true);
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -227,6 +231,11 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
   const speakWithDucking = useCallback(async (text, options = {}) => {
     if (!text) return;
 
+    // Show subtitles if enabled
+    if (showSubtitles && window.subtitleComponent) {
+      window.subtitleComponent.displaySubtitle(text);
+    }
+
     // Stop any current audio and add a tiny delay before starting a new one
     try {
       if (currentAudioRef.current) {
@@ -258,6 +267,10 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         if (currentAudioRef.current === audioEl) {
           currentAudioRef.current = null;
         }
+        // Hide subtitles when audio ends
+        if (showSubtitles && window.subtitleComponent) {
+          window.subtitleComponent.hideSubtitle();
+        }
       };
 
       audioEl.onended = cleanup;
@@ -273,8 +286,12 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
       }
     } catch (e) {
       restoreVideoVolumeIfIdle();
+      // Hide subtitles on error
+      if (showSubtitles && window.subtitleComponent) {
+        window.subtitleComponent.hideSubtitle();
+      }
     }
-  }, [duckVideoVolume, restoreVideoVolumeIfIdle, feedbackVolume, ensureAudioUnlocked]);
+  }, [duckVideoVolume, restoreVideoVolumeIfIdle, feedbackVolume, ensureAudioUnlocked, showSubtitles]);
 
   useEffect(() => {
     PoseDetectionService.initialize()
@@ -315,6 +332,8 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [ensureAudioUnlocked]);
+
+
 
   
   const calculatePoseMatch = useCallback((webcamLandmarks, videoLandmarks) => {
@@ -619,11 +638,18 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           )}
         </button>
 
+        {/* Subtitle Component */}
+        <SubtitleComponent
+          showSubtitles={showSubtitles}
+          onToggleSubtitles={() => setShowSubtitles(!showSubtitles)}
+          isMaximized={false}
+        />
+
         {/* Maximize Button - Only show when not maximized */}
         {!isMaximized && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(true); }}
-            className="absolute bottom-4 right-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+            className="absolute bottom-4 right-36 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M8 3H5a2 2 0 0 0-2 2v3m8-3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
@@ -672,6 +698,13 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
                   />
                 </div>
               )}
+
+              {/* Subtitle Component for fullscreen */}
+              <SubtitleComponent
+                showSubtitles={showSubtitles}
+                onToggleSubtitles={() => setShowSubtitles(!showSubtitles)}
+                isMaximized={true}
+              />
             </div>
           </div>
         )}
@@ -710,6 +743,8 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
             />
           </div>
         )}
+
+
       </div>
       
       {/* Controls Section - YouTube-style centered layout */}
