@@ -20,6 +20,7 @@ export default function Home() {
   const [showMenu, setShowMenu] = useState(false);
   const [showWearableHelp, setShowWearableHelp] = useState(false);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const premiumLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || 'https://24up.site/pricing';
 
   const wearables = [
     { id: 'none', name: 'No wearable device' },
@@ -168,6 +169,8 @@ export default function Home() {
   const handlePremiumClick = () => {
     mixpanel.track('Premium Link Clicked', {
       location: 'workout_list',
+      href: premiumLink,
+      isStripe: premiumLink.includes('stripe.com'),
     });
   };
 
@@ -404,7 +407,7 @@ export default function Home() {
             ))}
 
             <Link 
-              href="https://24up.site/pricing"
+              href={premiumLink}
               onClick={handlePremiumClick}
               className="p-3 sm:p-6 rounded-xl bg-black hover:bg-gray-900 text-white flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 transition-all duration-200"
             >
