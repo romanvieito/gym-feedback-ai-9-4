@@ -433,7 +433,7 @@ export default function Home() {
             onClick={handleBackClick}
             className="mb-6 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
           >
-            ← Back to Workouts
+            ← Home
           </button>
           <App 
             selectedFitnessGoal={selectedFitnessGoal}
