@@ -182,7 +182,7 @@ export default function Home() {
         <div className="w-full max-w-4xl px-2 sm:px-4 pt-4 sm:pt-8">
           <div className="flex flex-row justify-between items-center mb-4 sm:mb-5 w-full">
             <Link 
-              href="https://24up.site" 
+              href="/"
               className="text-xs sm:text-sm hover:text-gray-600 flex items-center gap-2 font-medium"
             >
               <svg
@@ -367,7 +367,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-bold mb-4 sm:mb-6 text-center tracking-tighter">Workouts</h1>
+          {/* <h1 className="text-2xl sm:text-4xl font-bold mb-4 sm:mb-6 text-center tracking-tighter">Workouts</h1> */}
           <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-md mx-auto">
             {workoutTypes.map((workout, index) => (
               <button 
