@@ -1,15 +1,5 @@
 export const workoutTypes = [
   {
-    title: 'Pilates',
-    image: '/images/1.png',
-    video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/get_down.mp4',
-  },
-  {
-    title: 'Isometrics',
-    image: '/images/2.png',
-    video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/iso.mp4',
-  },
-   {
     title: 'Lose Weight with Ease',
     image: '/images/3.png',
     video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/Lose-Weight(14days).mp4',
@@ -23,6 +13,16 @@ export const workoutTypes = [
     title: 'Standing Flabby Stomach Workout',
     image: '/images/1.png',
     video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/StandingFlabbyStomachWorkout.mp4',
+  },
+  {
+    title: 'Pilates',
+    image: '/images/1.png',
+    video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/get_down.mp4',
+  },
+  {
+    title: 'Isometrics',
+    image: '/images/2.png',
+    video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/iso.mp4',
   },
   {
     title: 'Best Exercises to Build Your Ab Workouts',
