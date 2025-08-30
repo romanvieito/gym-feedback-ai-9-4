@@ -25,9 +25,11 @@ const nextConfig = {
       },
     ];
   },
-  // New experimental configuration
+  // Update per Next.js deprecation
   experimental: {
-    outputFileTracingIgnores: ['public/videos/*']
+    outputFileTracingExcludes: {
+      '*': ['public/videos/*']
+    }
   }
 };
 

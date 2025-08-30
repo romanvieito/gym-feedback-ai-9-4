@@ -5,6 +5,7 @@ import { workoutTypes } from '../services/workoutData';
 import { WebcamComponent } from './WebcamComponent';
 import { WorkoutVideoComponent } from './WorkoutVideoComponent';
 import SubtitleComponent from './SubtitleComponent';
+import FeedbackManager from './FeedbackManager';
 import { PoseDetectionService } from '../services/PoseDetectionService';
 import { angleDict, landmarkNames } from '../services/poseUtils';
 import { calculateAngleDifferencesAndAnomalies } from '../services/angleUtils';
@@ -53,13 +54,8 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
   const calibrationTimeoutRef = useRef(null);
   const videoRef = useRef(null); // Reference to control video volume
   const [feedbackVolume, setFeedbackVolume] = useState(0.8); // Feedback volume control
-  const originalVideoVolumeRef = useRef(1);
-  const speechActiveCountRef = useRef(0);
-  const volumeFadeRafRef = useRef(null);
   const lastPlaybackRef = useRef({ time: 0, wasPlaying: false });
-  const audioContextRef = useRef(null);
-  const audioUnlockedRef = useRef(false);
-  const currentAudioRef = useRef(null);
+  // Audio unlocking, ducking, and playback handled by FeedbackManager
   
   // Subtitle state management
   const [showSubtitles, setShowSubtitles] = useState(true);
@@ -157,181 +153,27 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [isMaximized, toggleFullscreenPreservingPlayback]);
 
-  // Smoothly fade the video element volume to a target over a short duration
-  const fadeVideoVolumeTo = useCallback((targetVolume, durationMs = 200) => {
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
 
-    const startVolume = videoEl.volume;
-    const clampedTarget = Math.max(0, Math.min(1, targetVolume));
-    if (Math.abs(startVolume - clampedTarget) < 0.01) {
-      videoEl.volume = clampedTarget;
-      return;
-    }
 
-    if (volumeFadeRafRef.current) cancelAnimationFrame(volumeFadeRafRef.current);
-    const startTime = performance.now();
-
-    const step = (now) => {
-      const elapsed = now - startTime;
-      const t = Math.min(1, elapsed / durationMs);
-      const newVolume = startVolume + (clampedTarget - startVolume) * t;
-      videoEl.volume = Math.max(0, Math.min(1, newVolume));
-      if (t < 1) {
-        volumeFadeRafRef.current = requestAnimationFrame(step);
-      }
-    };
-    volumeFadeRafRef.current = requestAnimationFrame(step);
-  }, []);
-
-  const duckVideoVolume = useCallback(() => {
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-    // Store the original volume only once per ducking session start
-    if (speechActiveCountRef.current === 0) {
-      originalVideoVolumeRef.current = videoEl.volume ?? 1;
-      // Duck to 15% for clarity
-      fadeVideoVolumeTo(0.15, 180);
-    }
-    speechActiveCountRef.current += 1;
-  }, [fadeVideoVolumeTo]);
-
-  const restoreVideoVolumeIfIdle = useCallback(() => {
-    const videoEl = videoRef.current;
-    if (!videoEl) return;
-    if (speechActiveCountRef.current <= 0) return;
-    speechActiveCountRef.current -= 1;
-    if (speechActiveCountRef.current === 0) {
-      fadeVideoVolumeTo(originalVideoVolumeRef.current ?? 1, 220);
-    }
-  }, [fadeVideoVolumeTo]);
-
-  // Ensure audio can play by creating/resuming an AudioContext on user gesture
-  const ensureAudioUnlocked = useCallback(async () => {
-    try {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx) {
-        audioUnlockedRef.current = true; // No WebAudio required on this browser
-        return true;
-      }
-      if (!audioContextRef.current) {
-        audioContextRef.current = new Ctx();
-      }
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
-      }
-      audioUnlockedRef.current = audioContextRef.current.state === 'running';
-      return audioUnlockedRef.current;
-    } catch (_) {
-      return false;
-    }
-  }, []);
-
-  // Centralized TTS with ducking using server-side TTS MP3
+  // Delegate to FeedbackManager instance
+  const feedbackMgrRef = useRef(null);
   const speakWithDucking = useCallback(async (text, options = {}) => {
-    if (!text) return;
-
-    // Show subtitles if enabled
-    if (showSubtitles && window.subtitleComponent) {
-      window.subtitleComponent.displaySubtitle(text);
-    }
-
-    // Stop any current audio and add a tiny delay before starting a new one
-    try {
-      if (currentAudioRef.current) {
-        try { currentAudioRef.current.pause(); } catch (_) {}
-        try { currentAudioRef.current.src = ''; } catch (_) {}
-        currentAudioRef.current = null;
-        await new Promise(r => setTimeout(r, 120));
-      }
-    } catch (_) {}
-
-    duckVideoVolume();
-
-    try {
-      const resp = await fetch('/api/ai/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice: options.voice || 'alloy', format: 'mp3' })
-      });
-      if (!resp.ok) throw new Error('TTS request failed');
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const audioEl = new Audio(url);
-      audioEl.volume = Math.max(0, Math.min(1, feedbackVolume));
-      currentAudioRef.current = audioEl;
-
-      const cleanup = () => {
-        try { URL.revokeObjectURL(url); } catch (_) {}
-        restoreVideoVolumeIfIdle();
-        if (currentAudioRef.current === audioEl) {
-          currentAudioRef.current = null;
-        }
-        // Hide subtitles when audio ends
-        if (showSubtitles && window.subtitleComponent) {
-          window.subtitleComponent.hideSubtitle();
-        }
-      };
-
-      audioEl.onended = cleanup;
-      audioEl.onerror = cleanup;
-
-      // Best-effort unlock before play
-      try { await ensureAudioUnlocked(); } catch (_) {}
-
-      try {
-        await audioEl.play();
-      } catch (e) {
-        cleanup();
-      }
-    } catch (e) {
-      restoreVideoVolumeIfIdle();
-      // Hide subtitles on error
-      if (showSubtitles && window.subtitleComponent) {
-        window.subtitleComponent.hideSubtitle();
-      }
-    }
-  }, [duckVideoVolume, restoreVideoVolumeIfIdle, feedbackVolume, ensureAudioUnlocked, showSubtitles]);
+    try { await feedbackMgrRef.current?.speak(text, options); } catch (_) {}
+  }, []);
 
   useEffect(() => {
     PoseDetectionService.initialize()
       .then(setLandmarkers)
       .catch(error => console.error("Error initializing pose landmarkers:", error));
 
-    // Welcome message only after audio is unlocked (skips autoplay restrictions)
-    if (!welcomePlayedRef.current && audioUnlockedRef.current) {
-      const welcomeMessages = [
-        "Hey there! Ready to sweat and shine? Let's make every move count!",
-        "Good to see you! Let's get this session started!",
-        "Time to get fit and feel amazing! I'm here to guide you through your workout.",
-        "Welcome! Get ready for an energizing workout session!",
-        "Let's make today's workout count! Ready when you are!",
-        "It's time to move, groove, and improve! Let's get this session started!",
-        "Every rep brings you closer to your goals. Let's kick things off strong!",
-        "Excited to see you! Let's ignite that energy and have a great workout!",
-        "Here we go! Today's workout is your next step to greatness. Let's begin!",
-        "Welcome! Let's set the tone for an great session. You've got this!"
-      ];
-      const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-      speakWithDucking(randomWelcome);
+    // Welcome message via FeedbackManager (fire-and-forget)
+    if (!welcomePlayedRef.current) {
+      try { feedbackMgrRef.current?.playWelcomeOnce(); } catch (_) {}
       welcomePlayedRef.current = true;
     }
   }, []);
 
-  // Resume audio on visibility change when returning to the tab
-  useEffect(() => {
-    const onVis = async () => {
-      if (!document.hidden) {
-        await ensureAudioUnlocked();
-        const a = currentAudioRef.current;
-        if (a && a.paused) {
-          try { await a.play(); } catch (_) {}
-        }
-      }
-    };
-    document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
-  }, [ensureAudioUnlocked]);
+  // Visibility resume handled by FeedbackManager
 
 
 
@@ -432,24 +274,14 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
     }
 
 
-    if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastRemainingTimeFeedback) >= remainingTimeFeedbackInterval) {
+    else if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastRemainingTimeFeedback) >= remainingTimeFeedbackInterval) {
       const minutes = Math.floor(videoCurrentTime / 60);
       const seconds = Math.floor(videoCurrentTime % 60);
       const timeText = minutes > 0 
         ? `${minutes} minute${minutes !== 1 ? 's' : ''} and ${seconds} second${seconds !== 1 ? 's' : ''}`
         : `${seconds} second${seconds !== 1 ? 's' : ''}`;
         
-      const encouragingPhrases = [
-        `Great work! ${timeText} and counting. Every second counts!`,
-        `Fantastic effort! ${timeText} of awesome workout. You're crushing it!`,
-        `You're doing amazing! ${timeText} of exercise completed. Stay strong!`,
-        `Keep that energy going! You've been at it for ${timeText}. You've got this!`,
-        `Consistency is key! ${timeText} of movement. Feel the progress!`
-      ];
-
-      const randomPhrase = encouragingPhrases[Math.floor(Math.random() * encouragingPhrases.length)];
-      
-      speakWithDucking(randomPhrase);
+      try { feedbackMgrRef.current?.speakEncouragement(timeText); } catch (_) {}
       console.log(`Feedback event triggered at ${timeText}`);
       setLastRemainingTimeFeedback(videoCurrentTime);
     }
@@ -645,6 +477,14 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           isMaximized={false}
         />
 
+        {/* Feedback Manager (hidden) */}
+        <FeedbackManager
+          ref={feedbackMgrRef}
+          getVideoEl={() => videoRef.current}
+          feedbackVolume={feedbackVolume}
+          showSubtitles={showSubtitles}
+        />
+
         {/* Maximize Button - Only show when not maximized */}
         {!isMaximized && (
           <button
@@ -752,8 +592,8 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         {/* Main Control Buttons */}
         <div className="flex gap-4">
           <button 
+            type="button"
             onClick={async () => {
-              await ensureAudioUnlocked();
               const newIsActive = !isActive;
               setIsActive(newIsActive);
 
@@ -792,7 +632,8 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           </button>
 
           <button
-            onClick={async () => { await ensureAudioUnlocked(); generateAIFeedback(poseMatchData); }}
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); generateAIFeedback(poseMatchData); }}
             disabled={isActive || !poseMatchData}
             className={`
               px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl
