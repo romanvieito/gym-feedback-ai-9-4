@@ -604,7 +604,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         {/* Toggle Pose Lines Button - YouTube-style floating action button */}
         <button
           onClick={() => setShowPoseLines(!showPoseLines)}
-          className="absolute top-4 right-4 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+          className="absolute bottom-4 right-4 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
         >
           {showPoseLines ? (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -623,7 +623,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
         {!isMaximized && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(true); }}
-            className="absolute top-4 right-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+            className="absolute bottom-4 right-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M8 3H5a2 2 0 0 0-2 2v3m8-3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
@@ -695,7 +695,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
 
         {/* Webcam Overlay - YouTube-style picture-in-picture */}
         {isActive && !isMaximized && (
-          <div className="absolute bottom-6 right-6 w-[280px] h-[210px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white">
+          <div className="absolute bottom-2 right-2 w-[280px] h-[210px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white">
             <WebcamComponent
               poseLandmarker={landmarkers.webcamLandmarker}
               onLandmarksUpdate={(landmarks) => {
