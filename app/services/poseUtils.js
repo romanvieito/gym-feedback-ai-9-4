@@ -21,8 +21,8 @@ export function areLandmarksVisible(landmarks, requiredIndices, config = null) {
     const landmarkName = landmarkNames[index];
     const threshold = currentConfig.landmarkVisibilityThresholds[landmarkName] || currentConfig.defaultVisibilityThreshold;
     
-    // Treat missing visibility as visible; enforce threshold only when present
-    if (lm.visibility === undefined || lm.visibility >= threshold) {
+    // Require visibility to be present and above threshold (be stricter)
+    if (lm.visibility !== undefined && lm.visibility >= threshold) {
       visibleCount++;
     }
   }
@@ -52,46 +52,46 @@ export const angleDict = {
 // Configuration for pose detection thresholds and settings
 export const poseDetectionConfig = {
   // Global visibility threshold (can be overridden per landmark)
-  defaultVisibilityThreshold: 0.5,
+  defaultVisibilityThreshold: 0.7,
   
   // Per-joint anomaly thresholds (percentage similarity below which joint is considered anomalous)
   anomalyThresholds: {
-    'right knee': 70,    // Knees are critical for form - higher threshold
-    'left knee': 70,
-    'right hip': 65,     // Hips are important for stability
-    'left hip': 65,
-    'right shoulder': 60, // Shoulders can have more natural variation
-    'left shoulder': 60,
-    'right elbow': 65,   // Elbows are important for arm exercises
-    'left elbow': 65,
-    'right ankle': 55,   // Ankles can have more variation
-    'left ankle': 55,
+    'right knee': 80,
+    'left knee': 80,
+    'right hip': 75,
+    'left hip': 75,
+    'right shoulder': 70,
+    'left shoulder': 70,
+    'right elbow': 75,
+    'left elbow': 75,
+    'right ankle': 65,
+    'left ankle': 65,
   },
   
   // Per-landmark visibility thresholds (overrides default)
   landmarkVisibilityThresholds: {
     // Core landmarks that are critical for pose detection
-    'Left Shoulder': 0.6,
-    'Right Shoulder': 0.6,
-    'Left Hip': 0.6,
-    'Right Hip': 0.6,
-    'Left Knee': 0.5,
-    'Right Knee': 0.5,
-    'Left Ankle': 0.4,
-    'Right Ankle': 0.4,
+    'Left Shoulder': 0.8,
+    'Right Shoulder': 0.8,
+    'Left Hip': 0.8,
+    'Right Hip': 0.8,
+    'Left Knee': 0.7,
+    'Right Knee': 0.7,
+    'Left Ankle': 0.6,
+    'Right Ankle': 0.6,
     // Face landmarks can be less strict
-    'Nose': 0.3,
-    'Left Eye': 0.3,
-    'Right Eye': 0.3,
+    'Nose': 0.5,
+    'Left Eye': 0.4,
+    'Right Eye': 0.4,
     // Hand landmarks can vary more
-    'Left Wrist': 0.4,
-    'Right Wrist': 0.4,
-    'Left Elbow': 0.5,
-    'Right Elbow': 0.5,
+    'Left Wrist': 0.6,
+    'Right Wrist': 0.6,
+    'Left Elbow': 0.7,
+    'Right Elbow': 0.7,
   },
   
   // Minimum number of landmarks that must be visible for pose detection
-  minVisibleLandmarks: 15,
+  minVisibleLandmarks: 20,
   
   // Required landmark indices for pose matching (indices 10+ are body landmarks)
   requiredLandmarkIndices: Array.from({ length: landmarkNames.length - 10 }, (_, i) => i + 10)

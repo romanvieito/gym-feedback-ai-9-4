@@ -249,8 +249,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
 
     if (!webcamVisible || !videoVisible) {
       console.log('Required landmarks are not visible. Skipping pose match calculation.');
-      // return; // Exit the function if required landmarks are not visible but we want to
-                 // so commented for now keep the feedback
+      return; // Be strict: do not compute or speak feedback when not visible
     }
 
     console.log('webcamVisible:', webcamVisible);
@@ -270,9 +269,9 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
     const matchPercentage = validAngles > 0 ? Math.max(0, Math.min(100, averageDifferenceMatch)) : 0;
 
     // TODO: Define adaptive thresholds for ordinal scale
-    const excellentAverageThreshold = 85;  // Higher threshold for excellent
-    const goodAverageThreshold = 70;       // Higher threshold for good
-    const fairAverageThreshold = 55;       // Higher threshold for fair
+    const excellentAverageThreshold = 95;  // Stricter: require very high match
+    const goodAverageThreshold = 85;       // Stricter good threshold
+    const fairAverageThreshold = 70;       // Stricter fair threshold
 
     // TODO: Determine the performance level and color to be corrected 
     let performanceLevel, color;
