@@ -12,7 +12,8 @@ export function WorkoutVideoComponent({
   onDurationUpdate,
   showPoseLines,
   onVideoRef,
-  isMaximized = false
+  isMaximized = false,
+  onTogglePlayPause
 }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -124,29 +125,30 @@ export function WorkoutVideoComponent({
     ? 'bg-black'
     : 'bg-gray-50 dark:bg-gray-900';
 
-  const stopAll = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const handleVideoClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onTogglePlayPause) {
+      onTogglePlayPause();
+    }
+  };
 
   return (
-    <div className={containerClass} onClick={stopAll} onDoubleClick={stopAll} onMouseDown={stopAll}>
+    <div className={containerClass}>
       <video 
         ref={(el) => { 
           videoRef.current = el; 
           if (onVideoRef) onVideoRef(el);
         }} 
-        className={`absolute inset-0 w-full h-full object-contain ${videoBgClass}`}
+        className={`absolute inset-0 w-full h-full object-contain ${videoBgClass} cursor-pointer`}
         src={workout.video}
         playsInline
         crossOrigin="anonymous"
-        onClick={stopAll}
-        onDoubleClick={stopAll}
-        onMouseDown={stopAll}
+        onClick={handleVideoClick}
       />
       <canvas 
         ref={canvasRef}
         className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-        onClick={stopAll}
-        onDoubleClick={stopAll}
-        onMouseDown={stopAll}
       />
     </div>
   );

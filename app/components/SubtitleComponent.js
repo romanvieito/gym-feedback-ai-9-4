@@ -69,7 +69,7 @@ const SubtitleComponent = ({
       {/* Toggle Subtitles Button */}
       <button
         onClick={onToggleSubtitles}
-        className={`absolute bottom-4 right-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl ${className}`}
+        className={`absolute bottom-4 right-20 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl ${className}`}
       >
         {showSubtitles ? (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
