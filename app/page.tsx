@@ -174,10 +174,7 @@ export default function Home() {
     });
   };
 
-  // Add this handler for calendar click
-  const handleCalendarClick = () => {
-    mixpanel.track('Calendar Link Clicked', { location: 'settings_menu' });
-  };
+
 
   return (
     <main className="min-h-screen p-2 flex flex-col items-center bg-white dark:bg-black">
@@ -282,15 +279,7 @@ export default function Home() {
                       </div>
                     )}
                     
-                    {/* Calendar Option - SECOND PRIORITY */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
-                    <a
-                      href="/calendar"
-                      className="block w-full text-center text-sm font-bold p-2 rounded-lg bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors mb-3 shadow-sm"
-                      onClick={handleCalendarClick}
-                    >
-                      📅 Calendar
-                    </a>
+
                     
                     {/* Wearable Selection - THIRD PRIORITY */}
                     <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
