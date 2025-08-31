@@ -28,7 +28,7 @@ const smoothLandmarks = (prevLandmarks, newLandmarks, applySmoothing = true, alp
 const APPLY_SMOOTHING = true; // Set to true to enable exponential smoothing
 const APPLY_KALMAN = true;    // Set to true to enable Kalman filtering
 
-function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout = null }) {
+function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedWearable = '', selectedWorkout = null }) {
   const [landmarkers, setLandmarkers] = useState({
     webcamLandmarker: null,
     videoLandmarker: null

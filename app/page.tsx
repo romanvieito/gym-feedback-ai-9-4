@@ -16,6 +16,7 @@ export default function Home() {
   const [showApp, setShowApp] = useState(false);
   const [selectedWearable, setSelectedWearable] = useState('');
   const [selectedFitnessGoal, setSelectedFitnessGoal] = useState('');
+  const [selectedFocusArea, setSelectedFocusArea] = useState('');
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showWearableHelp, setShowWearableHelp] = useState(false);
@@ -41,6 +42,13 @@ export default function Home() {
     { id: 'stay-active', name: '🙌 Just want to stay active', description: 'Maintain a healthy and active lifestyle' }
   ];
 
+  const focusAreas = [
+    { id: 'upper-body', name: '💪 Upper body', description: 'Chest, shoulders, arms, and back' },
+    { id: 'lower-body', name: '🦵 Lower body', description: 'Legs, glutes, and calves' },
+    { id: 'core', name: '🔥 Core', description: 'Abs, obliques, and lower back' },
+    { id: 'full-body', name: '🌟 Full body', description: 'Complete body workout' }
+  ];
+
   useEffect(() => {
     // Track page view when component mounts
     mixpanel.track('Page View', {
@@ -53,14 +61,18 @@ export default function Home() {
   useEffect(() => {
     const savedWearable = localStorage.getItem('selectedWearable');
     const savedFitnessGoal = localStorage.getItem('selectedFitnessGoal');
+    const savedFocusArea = localStorage.getItem('selectedFocusArea');
     
-    console.log('Loading saved preferences:', { savedWearable, savedFitnessGoal });
+    console.log('Loading saved preferences:', { savedWearable, savedFitnessGoal, savedFocusArea });
     
     if (savedWearable) {
       setSelectedWearable(savedWearable);
     }
     if (savedFitnessGoal) {
       setSelectedFitnessGoal(savedFitnessGoal);
+    }
+    if (savedFocusArea) {
+      setSelectedFocusArea(savedFocusArea);
     }
     
     // Try to load existing fitness goal from database if we have a session user ID
@@ -146,6 +158,19 @@ export default function Home() {
     });
   };
 
+  const handleFocusAreaChange = (focusAreaId: string) => {
+    console.log('Focus area changed to:', focusAreaId);
+    setSelectedFocusArea(focusAreaId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedFocusArea', focusAreaId);
+    }
+    
+    mixpanel.track('Focus Area Selected', {
+      focusArea: focusAreaId,
+      location: 'settings_menu',
+    });
+  };
+
   const handleWorkoutClick = (workout: any) => {
     setSelectedWorkout(workout);
     mixpanel.track('Workout Started', {
@@ -153,6 +178,7 @@ export default function Home() {
       name: workout.title,
       location: 'workout_list',
       fitnessGoal: selectedFitnessGoal || 'none',
+      focusArea: selectedFocusArea || 'none',
       wearable: selectedWearable || 'none',
     });
     setShowApp(true);
@@ -279,8 +305,53 @@ export default function Home() {
                       </div>
                     )}
                     
+                    {/* Focus Area Targeting - SECOND PRIORITY */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="text-purple-500"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      <label htmlFor="focus-area-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Focus Area Targeting</label>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Choose which body areas to focus on during workouts.</p>
+                    <select
+                      id="focus-area-select"
+                      value={selectedFocusArea}
+                      onChange={(e) => handleFocusAreaChange(e.target.value)}
+                      disabled={!preferencesLoaded}
+                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-purple-200 dark:border-purple-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-purple-400 dark:focus:border-purple-600 transition-all duration-150 shadow-sm hover:border-purple-400 dark:hover:border-purple-500 mb-2 outline-none ${
+                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {!preferencesLoaded ? (
+                        <option value="">Loading preferences...</option>
+                      ) : (
+                        <>
+                          <option value="">Select focus area</option>
+                          {focusAreas.map((area) => (
+                            <option key={area.id} value={area.id}>
+                              {area.name}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                    </select>
 
-                    
+                    {/* Display selected focus area description */}
+                    {selectedFocusArea && (
+                      <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 mb-3">
+                        {focusAreas.find(a => a.id === selectedFocusArea)?.description}
+                      </div>
+                    )}
+
                     {/* Wearable Selection - THIRD PRIORITY */}
                     <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
                     <div className="mb-2 flex items-center gap-2">
@@ -429,6 +500,7 @@ export default function Home() {
           </button>
           <App 
             selectedFitnessGoal={selectedFitnessGoal}
+            selectedFocusArea={selectedFocusArea}
             selectedWearable={selectedWearable}
             selectedWorkout={selectedWorkout}
           />
