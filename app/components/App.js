@@ -7,7 +7,7 @@ import { WorkoutVideoComponent } from './WorkoutVideoComponent';
 import SubtitleComponent from './SubtitleComponent';
 import FeedbackManager from './FeedbackManager';
 import PerformanceSummaryModal from './PerformanceSummaryModal';
-import ProgressDashboard from './ProgressDashboard';
+
 import Tooltip from './Tooltip';
 import { ProgressTrackingService } from '../services/ProgressTrackingService';
 import { PoseDetectionService } from '../services/PoseDetectionService';
@@ -68,7 +68,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   const [workoutCompleted, setWorkoutCompleted] = useState(false);
   const [performanceHistory, setPerformanceHistory] = useState([]);
   const [showPerformanceSummary, setShowPerformanceSummary] = useState(false);
-  const [showProgressDashboard, setShowProgressDashboard] = useState(false);
+
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -891,19 +891,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
             </button>
           </Tooltip>
 
-          <Tooltip content="View your workout history, performance statistics, and progress tracking">
-            <button
-              type="button"
-              onClick={() => setShowProgressDashboard(true)}
-              className="px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl bg-purple-600 hover:bg-purple-700 text-white border-2 border-purple-600"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 3v18h18" />
-                <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
-              </svg>
-              Progress
-            </button>
-          </Tooltip>
+
         </div>
 
         {/* Info Text - YouTube-style subtle text */}
@@ -929,11 +917,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         onUpdateRating={updateWorkoutRating}
       />
 
-      {/* Progress Dashboard */}
-      <ProgressDashboard
-        isOpen={showProgressDashboard}
-        onClose={() => setShowProgressDashboard(false)}
-      />
+
     </div>
   );
 }

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import App from '@/app/components/App'
 import Tooltip from '@/app/components/Tooltip'
+import ProgressDashboard from '@/app/components/ProgressDashboard'
 import mixpanel from 'mixpanel-browser';
 import { workoutTypes } from './services/workoutData';
 
@@ -23,6 +24,7 @@ export default function Home() {
   const [showMenu, setShowMenu] = useState(false);
   const [showWearableHelp, setShowWearableHelp] = useState(false);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [showProgressDashboard, setShowProgressDashboard] = useState(false);
   const premiumLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || 'https://24up.site/pricing';
 
   const wearables = [
@@ -301,6 +303,27 @@ export default function Home() {
               </Link>
             </Tooltip>
             <div className="flex items-center gap-2">
+              {/* Progress Button */}
+              <Tooltip content="View your workout history, performance statistics, and progress tracking">
+                <button
+                  className="text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                  onClick={() => setShowProgressDashboard(true)}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3v18h18" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
+                  </svg>
+                  <span className="sr-only">View progress</span>
+                </button>
+              </Tooltip>
+              
               {/* Menu Button */}
               <div className="relative">
                 <Tooltip content="Open settings menu to configure your fitness goals, focus areas, and preferences">
@@ -636,6 +659,12 @@ export default function Home() {
           />
         </div>
       )}
+      
+      {/* Progress Dashboard */}
+      <ProgressDashboard
+        isOpen={showProgressDashboard}
+        onClose={() => setShowProgressDashboard(false)}
+      />
     </main>
   );
 }
