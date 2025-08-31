@@ -488,12 +488,14 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           )}
         </button>
 
-        {/* Subtitle Component */}
-        <SubtitleComponent
-          showSubtitles={showSubtitles}
-          onToggleSubtitles={() => setShowSubtitles(!showSubtitles)}
-          isMaximized={false}
-        />
+        {/* Subtitle Component - only render when not maximized */}
+        {!isMaximized && (
+          <SubtitleComponent
+            showSubtitles={showSubtitles}
+            onToggleSubtitles={() => setShowSubtitles(!showSubtitles)}
+            isMaximized={false}
+          />
+        )}
 
         {/* Feedback Manager (hidden) */}
         <FeedbackManager
@@ -576,12 +578,14 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
                 </div>
               )}
 
-              {/* Subtitle Component for fullscreen */}
-              <SubtitleComponent
-                showSubtitles={showSubtitles}
-                onToggleSubtitles={() => setShowSubtitles(!showSubtitles)}
-                isMaximized={true}
-              />
+              {/* Subtitle Component for fullscreen - only render when maximized */}
+              {isMaximized && (
+                <SubtitleComponent
+                  showSubtitles={showSubtitles}
+                  onToggleSubtitles={() => setShowSubtitles(!showSubtitles)}
+                  isMaximized={true}
+                />
+              )}
             </div>
           </div>
         )}

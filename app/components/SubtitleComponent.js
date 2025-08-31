@@ -13,7 +13,7 @@ const SubtitleComponent = ({
   const subtitleTimeoutRef = useRef(null);
 
   // Function to display subtitles with text
-  const displaySubtitle = useCallback((text) => {
+  const displaySubtitle = useCallback((text, options = {}) => {
     if (!text || !showSubtitles) return;
 
     setSubtitleText(text);
@@ -24,13 +24,17 @@ const SubtitleComponent = ({
       clearTimeout(subtitleTimeoutRef.current);
     }
     
-    // Hide subtitles after estimated duration (roughly 150 words per minute)
-    const wordCount = text.split(' ').length;
-    const estimatedDuration = Math.max(3000, (wordCount / 150) * 60 * 1000); // Minimum 3 seconds
-    subtitleTimeoutRef.current = setTimeout(() => {
-      setSubtitleVisible(false);
-      setSubtitleText('');
-    }, estimatedDuration);
+    // Optionally auto-hide after a duration; default is to persist until explicitly hidden
+    const { autoHide = false, durationMs } = options || {};
+    if (autoHide) {
+      const wordCount = text.split(' ').length;
+      const estimatedDuration = Math.max(3000, (wordCount / 150) * 60 * 1000); // Minimum 3 seconds
+      const hideAfter = Number.isFinite(durationMs) ? durationMs : estimatedDuration;
+      subtitleTimeoutRef.current = setTimeout(() => {
+        setSubtitleVisible(false);
+        setSubtitleText('');
+      }, hideAfter);
+    }
   }, [showSubtitles]);
 
   // Function to hide subtitles

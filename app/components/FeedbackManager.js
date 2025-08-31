@@ -112,11 +112,7 @@ const FeedbackManager = forwardRef(function FeedbackManager(
     if (!text) return;
 
     const seq = ++speakSeqRef.current;
-
-    // Show subtitles if enabled
-    if (showSubtitles && window.subtitleComponent) {
-      try { window.subtitleComponent.displaySubtitle(text); } catch (_) {}
-    }
+    
 
     // Preempt current audio and in-flight fetch
     try {
@@ -128,6 +124,10 @@ const FeedbackManager = forwardRef(function FeedbackManager(
         try { currentAudioRef.current.src = ''; } catch (_) {}
         currentAudioRef.current = null;
         restoreVideoVolumeIfIdle();
+        // Explicitly hide any active subtitle when preempting
+        if (showSubtitles && window.subtitleComponent) {
+          try { window.subtitleComponent.hideSubtitle(); } catch (_) {}
+        }
         await new Promise(r => setTimeout(r, 120));
       }
     } catch (_) {}
@@ -174,6 +174,10 @@ const FeedbackManager = forwardRef(function FeedbackManager(
       duckVideoVolume();
       try {
         await audioEl.play();
+        // Display subtitles only once playback actually starts
+        if (seq === speakSeqRef.current && showSubtitles && window.subtitleComponent) {
+          try { window.subtitleComponent.displaySubtitle(text, { autoHide: false }); } catch (_) {}
+        }
       } catch (_) {
         cleanup();
       }
