@@ -384,6 +384,24 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
     setIsCalibrated(false);
   }, []);
 
+  // Add toggle video play/pause function
+  const toggleVideoPlayPause = useCallback(() => {
+    const newIsActive = !isActive;
+    setIsActive(newIsActive);
+
+    if (newIsActive) {
+      mixpanel.track('Workout Resumed', {
+        platform: 'web_app'
+      });
+    } else {
+      mixpanel.track('Workout Paused', {
+        platform: 'web_app'
+      });
+      setWebcamLandmarks([]);
+      setVideoLandmarks([]);
+    }
+  }, [isActive]);
+
   function getColorFromPercentage(percentage) {
     if (isNaN(percentage) || percentage === null) return 'rgb(255,0,0)';
     
@@ -503,11 +521,29 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
             <div className="relative w-full h-full">
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(false); }}
-                className="absolute top-4 left-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+                className="absolute bottom-4 right-36 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
                 </svg>
+              </button>
+              
+              {/* Toggle Pose Lines Button - Fullscreen */}
+              <button
+                onClick={() => setShowPoseLines(!showPoseLines)}
+                className="absolute bottom-4 right-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+              >
+                {showPoseLines ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
               </button>
               <WorkoutVideoComponent
                 workout={selectedWorkout || workoutTypes[0]}
@@ -519,11 +555,12 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
                 showPoseLines={showPoseLines}
                 onVideoRef={(el) => { videoRef.current = el; }}
                 isMaximized={true}
+                onTogglePlayPause={toggleVideoPlayPause}
               />
 
               {/* Webcam PiP visible in fullscreen */}
               {isActive && (
-                <div className="absolute bottom-6 right-6 w-[320px] h-[240px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white z-50">
+                <div className="absolute bottom-2 right-2 w-[320px] h-[240px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white z-40">
                   <WebcamComponent
                     poseLandmarker={landmarkers.webcamLandmarker}
                     onLandmarksUpdate={(landmarks) => {
@@ -562,6 +599,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
               showPoseLines={showPoseLines}
               onVideoRef={(el) => { videoRef.current = el; }}
               isMaximized={false}
+              onTogglePlayPause={toggleVideoPlayPause}
             />
           </div>
         )}
