@@ -28,7 +28,7 @@ const smoothLandmarks = (prevLandmarks, newLandmarks, applySmoothing = true, alp
 const APPLY_SMOOTHING = true; // Set to true to enable exponential smoothing
 const APPLY_KALMAN = true;    // Set to true to enable Kalman filtering
 
-function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedWearable = '', selectedWorkout = null }) {
+function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbackInterval = '', selectedWearable = '', selectedWorkout = null }) {
   const [landmarkers, setLandmarkers] = useState({
     webcamLandmarker: null,
     videoLandmarker: null
@@ -76,14 +76,46 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedWearabl
   // This allows the intervals to scale dynamically, 
   //ensuring feedback is neither too frequent nor too sparse.
 
+  // Feedback interval options mapping
+  const feedbackIntervalOptions = {
+    '1min': 60,   // 1 minute
+    '2min': 120,  // 2 minutes  
+    '5min': 300   // 5 minutes
+  };
+
+  // Use user-selected feedback interval or fallback to dynamic calculation
+  const userFeedbackInterval = selectedFeedbackInterval ? feedbackIntervalOptions[selectedFeedbackInterval] : null;
+  
   const minInterval = 5;  // Minimum interval in seconds
   const maxInterval = 30; // Maximum interval in seconds
   const feedbackFactor = 0.1;  // 10% of total video duration for general feedback
   const remainingTimeFactor = 0.15; // 15% of total video duration for remaining time feedback
   
-  // Dynamically calculate intervals
-  const feedbackInterval = Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor));
+  // Use user-selected interval or dynamically calculate intervals
+  const feedbackInterval = userFeedbackInterval || Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor));
   const remainingTimeFeedbackInterval = Math.max(minInterval, Math.min(maxInterval, videoDuration * remainingTimeFactor));
+
+  // Convert user feedback interval to FeedbackManager intervals (in milliseconds)
+  const getFeedbackManagerIntervals = (userInterval) => {
+    if (!userInterval) {
+      return {
+        form: 8000,        // 8 seconds
+        encouragement: 15000, // 15 seconds
+        milestone: 30000,   // 30 seconds
+        rest: 5000         // 5 seconds
+      };
+    }
+    
+    const baseInterval = feedbackIntervalOptions[userInterval] * 1000; // Convert to milliseconds
+    return {
+      form: Math.min(baseInterval, 8000),        // Cap at 8 seconds
+      encouragement: Math.min(baseInterval, 15000), // Cap at 15 seconds
+      milestone: Math.min(baseInterval * 2, 30000), // Double the interval, cap at 30 seconds
+      rest: Math.min(baseInterval / 2, 5000)     // Half the interval, cap at 5 seconds
+    };
+  };
+
+  const feedbackManagerIntervals = getFeedbackManagerIntervals(selectedFeedbackInterval);
   
 
   const estimateKalmanParameters = (landmarks) => {
@@ -497,6 +529,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedWearabl
           getVideoEl={() => videoRef.current}
           feedbackVolume={feedbackVolume}
           showSubtitles={showSubtitles}
+          feedbackIntervals={feedbackManagerIntervals}
         />
 
         {/* Maximize Button - Only show when not maximized */}

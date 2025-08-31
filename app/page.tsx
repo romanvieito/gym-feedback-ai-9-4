@@ -17,6 +17,7 @@ export default function Home() {
   const [selectedWearable, setSelectedWearable] = useState('');
   const [selectedFitnessGoal, setSelectedFitnessGoal] = useState('');
   const [selectedFocusArea, setSelectedFocusArea] = useState('');
+  const [selectedFeedbackInterval, setSelectedFeedbackInterval] = useState('');
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showWearableHelp, setShowWearableHelp] = useState(false);
@@ -49,6 +50,12 @@ export default function Home() {
     { id: 'full-body', name: '🌟 Full body', description: 'Complete body workout' }
   ];
 
+  const feedbackIntervals = [
+    { id: '1min', name: '⚡ Every 1 minute', description: 'Frequent feedback for intensive coaching', value: 60 },
+    { id: '2min', name: '🎯 Every 2 minutes', description: 'Balanced feedback for steady progress', value: 120 },
+    { id: '5min', name: '🕐 Every 5 minutes', description: 'Minimal feedback for focused workouts', value: 300 }
+  ];
+
   useEffect(() => {
     // Track page view when component mounts
     mixpanel.track('Page View', {
@@ -57,54 +64,128 @@ export default function Home() {
     });
   }, []);
 
-  // Load saved preferences from localStorage after component mounts
+  // Load saved preferences from localStorage and database
   useEffect(() => {
-    const savedWearable = localStorage.getItem('selectedWearable');
-    const savedFitnessGoal = localStorage.getItem('selectedFitnessGoal');
-    const savedFocusArea = localStorage.getItem('selectedFocusArea');
-    
-    console.log('Loading saved preferences:', { savedWearable, savedFitnessGoal, savedFocusArea });
-    
-    if (savedWearable) {
-      setSelectedWearable(savedWearable);
-    }
-    if (savedFitnessGoal) {
-      setSelectedFitnessGoal(savedFitnessGoal);
-    }
-    if (savedFocusArea) {
-      setSelectedFocusArea(savedFocusArea);
-    }
-    
-    // Try to load existing fitness goal from database if we have a session user ID
-    const loadExistingFitnessGoal = async () => {
+    const loadUserSettings = async () => {
       try {
-        const sessionUserId = sessionStorage.getItem('sessionUserId');
-        if (sessionUserId) {
-          const response = await fetch(`/api/fitness-goal?userId=${sessionUserId}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.data && data.data.length > 0) {
-              const existingGoal = data.data[0];
-              setSelectedFitnessGoal(existingGoal.goal_value);
-              localStorage.setItem('selectedFitnessGoal', existingGoal.goal_value);
-              console.log('Loaded existing fitness goal from database:', existingGoal);
+        // Get or create a consistent user ID for this session
+        let userId = sessionStorage.getItem('sessionUserId');
+        if (!userId) {
+          userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          sessionStorage.setItem('sessionUserId', userId);
+        }
+
+        // First load from localStorage as fallback
+        const savedWearable = localStorage.getItem('selectedWearable');
+        const savedFitnessGoal = localStorage.getItem('selectedFitnessGoal');
+        const savedFocusArea = localStorage.getItem('selectedFocusArea');
+        const savedFeedbackInterval = localStorage.getItem('selectedFeedbackInterval');
+        
+        console.log('Loading saved preferences from localStorage:', { savedWearable, savedFitnessGoal, savedFocusArea, savedFeedbackInterval });
+        
+        // Set initial values from localStorage
+        if (savedWearable) setSelectedWearable(savedWearable);
+        if (savedFitnessGoal) setSelectedFitnessGoal(savedFitnessGoal);
+        if (savedFocusArea) setSelectedFocusArea(savedFocusArea);
+        if (savedFeedbackInterval) setSelectedFeedbackInterval(savedFeedbackInterval);
+        
+        // Then try to load from database and override localStorage values
+        const response = await fetch(`/api/user-settings?userId=${userId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data) {
+            const settings = data.data;
+            console.log('Loaded user settings from database:', settings);
+            
+            // Update state with database values (these take precedence)
+            if (settings.fitness_goal) {
+              setSelectedFitnessGoal(settings.fitness_goal);
+              localStorage.setItem('selectedFitnessGoal', settings.fitness_goal);
+            }
+            if (settings.focus_area) {
+              setSelectedFocusArea(settings.focus_area);
+              localStorage.setItem('selectedFocusArea', settings.focus_area);
+            }
+            if (settings.wearable) {
+              setSelectedWearable(settings.wearable);
+              localStorage.setItem('selectedWearable', settings.wearable);
+            }
+            if (settings.feedback_interval) {
+              setSelectedFeedbackInterval(settings.feedback_interval);
+              localStorage.setItem('selectedFeedbackInterval', settings.feedback_interval);
             }
           }
+        } else {
+          console.log('No existing user settings found in database, using localStorage values');
         }
       } catch (error) {
-        console.error('Failed to load existing fitness goal:', error);
+        console.error('Failed to load user settings:', error);
+        // Continue with localStorage values if database fails
+      } finally {
+        setPreferencesLoaded(true);
       }
     };
     
-    loadExistingFitnessGoal();
-    setPreferencesLoaded(true);
+    loadUserSettings();
   }, []);
 
-  const handleWearableChange = (wearableId: string) => {
+  // Helper function to save all settings to database
+  const saveAllSettingsToDatabase = async (updatedSetting?: {
+    fitnessGoal?: string;
+    focusArea?: string;
+    wearable?: string;
+    feedbackInterval?: string;
+  }) => {
+    try {
+      const userId = sessionStorage.getItem('sessionUserId');
+      if (!userId) {
+        console.error('No user ID found for saving settings');
+        return;
+      }
+
+      // Get all current settings from state
+      const allSettings = {
+        fitnessGoal: selectedFitnessGoal,
+        focusArea: selectedFocusArea,
+        wearable: selectedWearable,
+        feedbackInterval: selectedFeedbackInterval,
+        // Override with any updated setting
+        ...updatedSetting
+      };
+
+      console.log('Saving all settings to database:', allSettings);
+
+      const response = await fetch('/api/user-settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          ...allSettings,
+          updateExisting: true,
+        }),
+      });
+      
+      if (response.ok) {
+        console.log('User settings saved successfully to database');
+      } else {
+        console.error('Failed to save user settings to database');
+      }
+    } catch (error) {
+      console.error('Failed to save user settings to database:', error);
+    }
+  };
+
+  const handleWearableChange = async (wearableId: string) => {
     setSelectedWearable(wearableId);
     if (typeof window !== 'undefined') {
       localStorage.setItem('selectedWearable', wearableId);
     }
+    
+    // Save all settings to database with the updated wearable
+    await saveAllSettingsToDatabase({ wearable: wearableId });
+    
     mixpanel.track('Wearable Selected', {
       wearable: wearableId,
       location: 'settings_menu',
@@ -118,39 +199,8 @@ export default function Home() {
       localStorage.setItem('selectedFitnessGoal', goalId);
     }
     
-    // Save to database with consistent user ID
-    try {
-      // Get or create a consistent user ID for this session
-      let userId = sessionStorage.getItem('sessionUserId');
-      if (!userId) {
-        userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        sessionStorage.setItem('sessionUserId', userId);
-      }
-      
-      const goalText = fitnessGoals.find(g => g.id === goalId)?.name || '';
-      
-      // First try to update existing record, if not exists then insert
-      const response = await fetch('/api/fitness-goal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          goalValue: goalId,
-          goalText,
-          updateExisting: true, // Flag to indicate we want to update existing records
-        }),
-      });
-      
-      if (response.ok) {
-        console.log('Fitness goal saved successfully');
-      } else {
-        console.error('Failed to save fitness goal');
-      }
-    } catch (error) {
-      console.error('Failed to save fitness goal to database:', error);
-    }
+    // Save all settings to database with the updated fitness goal
+    await saveAllSettingsToDatabase({ fitnessGoal: goalId });
     
     mixpanel.track('Fitness Goal Selected', {
       goal: goalId,
@@ -158,15 +208,34 @@ export default function Home() {
     });
   };
 
-  const handleFocusAreaChange = (focusAreaId: string) => {
+  const handleFocusAreaChange = async (focusAreaId: string) => {
     console.log('Focus area changed to:', focusAreaId);
     setSelectedFocusArea(focusAreaId);
     if (typeof window !== 'undefined') {
       localStorage.setItem('selectedFocusArea', focusAreaId);
     }
     
+    // Save all settings to database with the updated focus area
+    await saveAllSettingsToDatabase({ focusArea: focusAreaId });
+    
     mixpanel.track('Focus Area Selected', {
       focusArea: focusAreaId,
+      location: 'settings_menu',
+    });
+  };
+
+  const handleFeedbackIntervalChange = async (intervalId: string) => {
+    console.log('Feedback interval changed to:', intervalId);
+    setSelectedFeedbackInterval(intervalId);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedFeedbackInterval', intervalId);
+    }
+    
+    // Save all settings to database with the updated feedback interval
+    await saveAllSettingsToDatabase({ feedbackInterval: intervalId });
+    
+    mixpanel.track('Feedback Interval Selected', {
+      feedbackInterval: intervalId,
       location: 'settings_menu',
     });
   };
@@ -179,6 +248,7 @@ export default function Home() {
       location: 'workout_list',
       fitnessGoal: selectedFitnessGoal || 'none',
       focusArea: selectedFocusArea || 'none',
+      feedbackInterval: selectedFeedbackInterval || 'none',
       wearable: selectedWearable || 'none',
     });
     setShowApp(true);
@@ -352,7 +422,54 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* Wearable Selection - THIRD PRIORITY */}
+                    {/* Feedback Interval - THIRD PRIORITY */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        className="text-orange-500"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <label htmlFor="feedback-interval-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Coach Feedback Frequency</label>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">How often should the coach provide feedback during workouts?</p>
+                    <select
+                      id="feedback-interval-select"
+                      value={selectedFeedbackInterval}
+                      onChange={(e) => handleFeedbackIntervalChange(e.target.value)}
+                      disabled={!preferencesLoaded}
+                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-orange-200 dark:border-orange-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-orange-400 dark:focus:border-orange-600 transition-all duration-150 shadow-sm hover:border-orange-400 dark:hover:border-orange-500 mb-2 outline-none ${
+                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {!preferencesLoaded ? (
+                        <option value="">Loading preferences...</option>
+                      ) : (
+                        <>
+                          <option value="">Select feedback frequency</option>
+                          {feedbackIntervals.map((interval) => (
+                            <option key={interval.id} value={interval.id}>
+                              {interval.name}
+                            </option>
+                          ))}
+                        </>
+                      )}
+                    </select>
+
+                    {/* Display selected feedback interval description */}
+                    {selectedFeedbackInterval && (
+                      <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800 mb-3">
+                        {feedbackIntervals.find(i => i.id === selectedFeedbackInterval)?.description}
+                      </div>
+                    )}
+
+                    {/* Wearable Selection - FOURTH PRIORITY */}
                     <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
                     <div className="mb-2 flex items-center gap-2">
                       <svg
@@ -501,6 +618,7 @@ export default function Home() {
           <App 
             selectedFitnessGoal={selectedFitnessGoal}
             selectedFocusArea={selectedFocusArea}
+            selectedFeedbackInterval={selectedFeedbackInterval}
             selectedWearable={selectedWearable}
             selectedWorkout={selectedWorkout}
           />

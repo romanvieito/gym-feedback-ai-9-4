@@ -11,6 +11,12 @@ const FeedbackManager = forwardRef(function FeedbackManager(
     getVideoEl,
     feedbackVolume = 0.8,
     showSubtitles = true,
+    feedbackIntervals = {
+      form: 8000,
+      encouragement: 15000,
+      milestone: 30000,
+      rest: 5000
+    },
   },
   ref
 ) {
@@ -80,12 +86,7 @@ const FeedbackManager = forwardRef(function FeedbackManager(
   });
 
   const feedbackTimingRef = useRef({
-    intervals: {
-      form: 8000,
-      encouragement: 15000,
-      milestone: 30000,
-      rest: 5000
-    },
+    intervals: feedbackIntervals,
     lastFeedback: {
       form: 0,
       encouragement: 0,
