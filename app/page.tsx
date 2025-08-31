@@ -486,7 +486,7 @@ export default function Home() {
                       </svg>
                       <label htmlFor="wearable-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Select Wearable</label>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Connect your device for personalized recommendations.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Select your device.</p>
                     <select
                       id="wearable-select"
                       value={selectedWearable}
@@ -532,7 +532,7 @@ export default function Home() {
                       {showWearableHelp && (
                         <div className="absolute left-0 mt-2 w-64 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-30">
                           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-1">
-                            Connect your wearable device to:
+                            Select your wearable device to:
                           </p>
                           <ul className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300 space-y-1">
                             <li>• Get personalized workout intensity recommendations</li>
@@ -563,7 +563,7 @@ export default function Home() {
                   className="rounded-lg mr-2 sm:mr-4 object-cover"
                 />
                 <div className="flex-1 text-left">
-                  <div className="font-medium text-xs sm:text-base">DAY {index + 1}</div>
+                  <div className="font-medium text-xs sm:text-base">CHALLENGE {index + 1}</div>
                   <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{workout.title}</p>
                 </div>
                 <svg
