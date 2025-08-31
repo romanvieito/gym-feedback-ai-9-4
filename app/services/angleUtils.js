@@ -1,6 +1,6 @@
-//import { angleDict, landmarkNames } from '../services/poseUtils'; // Import statement for angleDict and landmarkNames, currently commented out
+import { angleDict, landmarkNames, poseDetectionConfig, PoseConfigManager } from './poseUtils';
+
 const COSINE_DISTANCE_THRESHOLD = 0.15; // Adjustable threshold for cosine distance (kept for reference)
-const ANOMALY_PERCENT_THRESHOLD = 65; // Percent match below which a joint is considered anomalous
 
 // Helper function to calculate angles from 3D points
 export function points3DToAngles(coords) {
@@ -62,7 +62,8 @@ export function cosineDistanceBetweenAngles(angle1, angle2) {
 }
 
 // Calculate angle differences and anomalies
-export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLandmarks, angleDict, landmarkNames) {
+export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLandmarks, config = null) {
+  const currentConfig = config || PoseConfigManager.getCurrentConfig();
   const angleDifferencesMatch = {}; // Initialize an object to store angle differences
   const anomalousIndices = new Set(); // Initialize a set to store indices of anomalous landmarks
   let totalDifferenceMatch = 0; // Initialize a variable to accumulate total differences
@@ -124,8 +125,9 @@ export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLan
       console.log(`angleDifference: ${diff}`);
       validAngles++; // Increment the count of valid angles
 
-      // Decide anomaly using a simple, robust threshold on percent match
-      const isAnomalous = angleDifferencesMatch[angName] < ANOMALY_PERCENT_THRESHOLD;
+      // Use per-joint anomaly threshold from config
+      const jointThreshold = currentConfig.anomalyThresholds[angName] || 65; // Default to 65 if not configured
+      const isAnomalous = angleDifferencesMatch[angName] < jointThreshold;
 
       //console.log(`value: ${(totalDifferenceMatch / (validAngles || 1)) * 0.05}`);
       //console.log(`adaptiveThreshold: ${adaptiveThreshold}`);

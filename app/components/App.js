@@ -7,9 +7,8 @@ import { WorkoutVideoComponent } from './WorkoutVideoComponent';
 import SubtitleComponent from './SubtitleComponent';
 import FeedbackManager from './FeedbackManager';
 import { PoseDetectionService } from '../services/PoseDetectionService';
-import { angleDict, landmarkNames } from '../services/poseUtils';
+import { angleDict, landmarkNames, areLandmarksVisible, poseDetectionConfig, PoseConfigManager } from '../services/poseUtils';
 import { calculateAngleDifferencesAndAnomalies } from '../services/angleUtils';
-import { areLandmarksVisible } from '../services/poseUtils'; // Import the visibility check function
 
 import mixpanel from 'mixpanel-browser';
 import KalmanFilter from '../services/KalmanFilter';
@@ -179,7 +178,8 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
 
   
   const calculatePoseMatch = useCallback((webcamLandmarks, videoLandmarks) => {
-    const requiredIndices = Array.from({ length: landmarkNames.length - 10 }, (_, i) => i + 10); // Indices from 10 onwards
+    const config = PoseConfigManager.getCurrentConfig();
+    const requiredIndices = config.requiredLandmarkIndices;
     
     console.log('webcamLandmarks:', webcamLandmarks);
     // If webcamLandmarks is an array of objects, log each object
@@ -187,8 +187,8 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
       console.log(`Landmark ${index}:`, landmark);
     });
 
-    const webcamVisible = areLandmarksVisible(webcamLandmarks, requiredIndices);
-    const videoVisible = areLandmarksVisible(videoLandmarks, requiredIndices);
+    const webcamVisible = areLandmarksVisible(webcamLandmarks, requiredIndices, config);
+    const videoVisible = areLandmarksVisible(videoLandmarks, requiredIndices, config);
 
     setLandmarksVisible(webcamVisible && videoVisible);
 
@@ -204,8 +204,7 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
     const { angleDifferencesMatch, anomalousIndices, totalDifferenceMatch, validAngles } = calculateAngleDifferencesAndAnomalies(
       webcamLandmarks,
       videoLandmarks,
-      angleDict,
-      landmarkNames
+      config
     );
 
     // the distance close to 0 is perfect so performance so DifferenceMatch is close to 100 and 
