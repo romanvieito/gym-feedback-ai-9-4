@@ -112,19 +112,13 @@ const FeedbackManager = forwardRef(function FeedbackManager(
     if (!text) return;
 
     const seq = ++speakSeqRef.current;
-    
 
-    // Preempt current audio and in-flight fetch
+    // Preempt any current playback
     try {
-      if (ttsAbortRef.current) {
-        try { ttsAbortRef.current.abort(); } catch (_) {}
-      }
       if (currentAudioRef.current) {
         try { currentAudioRef.current.pause(); } catch (_) {}
-        try { currentAudioRef.current.src = ''; } catch (_) {}
         currentAudioRef.current = null;
         restoreVideoVolumeIfIdle();
-        // Explicitly hide any active subtitle when preempting
         if (showSubtitles && window.subtitleComponent) {
           try { window.subtitleComponent.hideSubtitle(); } catch (_) {}
         }
@@ -133,31 +127,57 @@ const FeedbackManager = forwardRef(function FeedbackManager(
     } catch (_) {}
 
     try {
-      const ctrl = new AbortController();
-      ttsAbortRef.current = ctrl;
+      // Ensure speech synthesis is available
+      const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
+      if (!synth) throw new Error('SpeechSynthesis not supported');
 
-      const resp = await fetch('/api/ai/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, voice: options.voice || 'alloy', response_format: 'mp3' }),
-        signal: ctrl.signal,
+      // Cancel any ongoing speech
+      if (synth.speaking) {
+        try { synth.cancel(); } catch (_) {}
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      if (seq !== speakSeqRef.current) return;
+
+      // Ensure audio is unlocked on mobile
+      try { await ensureAudioUnlocked(); } catch (_) {}
+      if (seq !== speakSeqRef.current) return;
+
+      // Pick voice (best-effort)
+      const ensureVoices = () => new Promise((resolve) => {
+        const existing = synth.getVoices();
+        if (existing && existing.length) return resolve(existing);
+        const onChanged = () => {
+          synth.removeEventListener('voiceschanged', onChanged);
+          resolve(synth.getVoices());
+        };
+        synth.addEventListener('voiceschanged', onChanged, { once: true });
+        // Fallback timeout
+        setTimeout(() => {
+          try { synth.removeEventListener('voiceschanged', onChanged); } catch (_) {}
+          resolve(synth.getVoices());
+        }, 500);
       });
 
-      if (seq !== speakSeqRef.current) return;
-      if (!resp.ok) throw new Error('TTS request failed');
+      const voices = await ensureVoices();
+      const requested = (options.voice || '').toString().toLowerCase();
+      const preferred = voices.find(v => v.name.toLowerCase().includes(requested))
+        || voices.find(v => v.lang && v.lang.toLowerCase().startsWith('en'))
+        || voices[0];
 
-      const blob = await resp.blob();
-      if (seq !== speakSeqRef.current) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (preferred) utterance.voice = preferred;
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = Math.max(0, Math.min(1, feedbackVolume));
 
-      const url = URL.createObjectURL(blob);
-      const audioEl = new Audio(url);
-      audioEl.volume = Math.max(0, Math.min(1, feedbackVolume));
-      currentAudioRef.current = audioEl;
+      // Create a small proxy to mimic HTMLAudioElement API parts we use
+      const audioProxy = { paused: true, play: async () => { synth.speak(utterance); audioProxy.paused = false; }, pause: () => { try { synth.cancel(); } catch (_) {} audioProxy.paused = true; } };
+      currentAudioRef.current = audioProxy;
 
       const cleanup = () => {
-        try { URL.revokeObjectURL(url); } catch (_) {}
         restoreVideoVolumeIfIdle();
-        if (currentAudioRef.current === audioEl) {
+        if (currentAudioRef.current === audioProxy) {
           currentAudioRef.current = null;
         }
         if (showSubtitles && window.subtitleComponent) {
@@ -165,19 +185,21 @@ const FeedbackManager = forwardRef(function FeedbackManager(
         }
       };
 
-      audioEl.onended = cleanup;
-      audioEl.onerror = cleanup;
+      utterance.onend = cleanup;
+      utterance.onerror = cleanup;
 
-      try { await ensureAudioUnlocked(); } catch (_) {}
       if (seq !== speakSeqRef.current) { cleanup(); return; }
 
       duckVideoVolume();
+
+      // Show subtitles immediately for speech synthesis
+      if (seq === speakSeqRef.current && showSubtitles && window.subtitleComponent) {
+        try { window.subtitleComponent.displaySubtitle(text, { autoHide: false }); } catch (_) {}
+      }
+
+      // Start speaking
       try {
-        await audioEl.play();
-        // Display subtitles only once playback actually starts
-        if (seq === speakSeqRef.current && showSubtitles && window.subtitleComponent) {
-          try { window.subtitleComponent.displaySubtitle(text, { autoHide: false }); } catch (_) {}
-        }
+        await audioProxy.play();
       } catch (_) {
         cleanup();
       }
