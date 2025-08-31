@@ -8,6 +8,7 @@ import SubtitleComponent from './SubtitleComponent';
 import FeedbackManager from './FeedbackManager';
 import PerformanceSummaryModal from './PerformanceSummaryModal';
 import ProgressDashboard from './ProgressDashboard';
+import Tooltip from './Tooltip';
 import { ProgressTrackingService } from '../services/ProgressTrackingService';
 import { PoseDetectionService } from '../services/PoseDetectionService';
 import { angleDict, landmarkNames, areLandmarksVisible, poseDetectionConfig, PoseConfigManager } from '../services/poseUtils';
@@ -460,20 +461,60 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
     return `rgb(${red},${green},0)`;
   }
 
+  // Save workout progress
+  const saveWorkoutProgress = useCallback((workoutData) => {
+    const savedWorkout = ProgressTrackingService.saveWorkout(workoutData);
+    if (savedWorkout) {
+      console.log('Workout progress saved:', savedWorkout);
+    }
+  }, []);
+
   // Handle workout completion
   const handleWorkoutComplete = useCallback(() => {
     console.log('Workout completed!');
     setWorkoutCompleted(true);
     setIsActive(false); // Stop the workout
     
+    // Calculate performance statistics
+    const averagePerformance = performanceHistory.length > 0 
+      ? performanceHistory.reduce((sum, p) => sum + p.percentage, 0) / performanceHistory.length 
+      : 0;
+    
+    const bestPerformance = performanceHistory.length > 0 
+      ? Math.max(...performanceHistory.map(p => p.percentage))
+      : 0;
+    
+    const worstPerformance = performanceHistory.length > 0 
+      ? Math.min(...performanceHistory.map(p => p.percentage))
+      : 0;
+    
+    const performanceLevels = performanceHistory.reduce((acc, p) => {
+      acc[p.performanceLevel] = (acc[p.performanceLevel] || 0) + 1;
+      return acc;
+    }, {});
+    
+    // Automatically save workout progress
+    const workoutData = {
+      challengeName: selectedWorkout?.title || 'Workout Challenge',
+      totalDuration: videoDuration,
+      averagePerformance,
+      bestPerformance,
+      worstPerformance,
+      performanceHistory,
+      userRating: 0, // Will be updated when user rates
+      fitnessGoal: selectedFitnessGoal,
+      focusArea: selectedFocusArea,
+      performanceLevels
+    };
+    
+    saveWorkoutProgress(workoutData);
+    
     // Track workout completion
     mixpanel.track('Workout Completed', {
       platform: 'web_app',
       challengeName: selectedWorkout?.title || 'Unknown',
       totalDuration: videoDuration,
-      averagePerformance: performanceHistory.length > 0 
-        ? performanceHistory.reduce((sum, p) => sum + p.percentage, 0) / performanceHistory.length 
-        : 0,
+      averagePerformance,
       performanceHistoryLength: performanceHistory.length
     });
 
@@ -481,7 +522,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
     setTimeout(() => {
       setShowPerformanceSummary(true);
     }, 1000);
-  }, [selectedWorkout, videoDuration, performanceHistory]);
+  }, [selectedWorkout, videoDuration, performanceHistory, selectedFitnessGoal, selectedFocusArea, saveWorkoutProgress]);
 
   // Close performance summary modal
   const closePerformanceSummary = useCallback(() => {
@@ -491,11 +532,11 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
     setPerformanceHistory([]);
   }, []);
 
-  // Save workout progress
-  const saveWorkoutProgress = useCallback((workoutData) => {
-    const savedWorkout = ProgressTrackingService.saveWorkout(workoutData);
-    if (savedWorkout) {
-      console.log('Workout progress saved:', savedWorkout);
+  // Update workout rating
+  const updateWorkoutRating = useCallback((challengeName, rating) => {
+    const updatedWorkout = ProgressTrackingService.updateWorkoutRating(challengeName, rating);
+    if (updatedWorkout) {
+      console.log('Workout rating updated:', updatedWorkout);
     }
   }, []);
 
@@ -572,41 +613,45 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="relative w-full">
         {/* Mute Button - YouTube-style floating action button */}
-        <button
-          onClick={() => setIsMuted(!isMuted)}
-          className="absolute bottom-4 left-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
-        >
-          {isMuted ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-              <line x1="23" y1="9" x2="17" y2="15"/>
-              <line x1="17" y1="9" x2="23" y2="15"/>
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
-            </svg>
-          )}
-        </button>
+        <Tooltip content={isMuted ? "Unmute audio feedback" : "Mute audio feedback"} position="bottom">
+          <button
+            onClick={() => setIsMuted(!isMuted)}
+            className="absolute bottom-4 left-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+          >
+            {isMuted ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <line x1="23" y1="9" x2="17" y2="15"/>
+                <line x1="17" y1="9" x2="23" y2="15"/>
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+            )}
+          </button>
+        </Tooltip>
 
         {/* Toggle Pose Lines Button - YouTube-style floating action button */}
-        <button
-          onClick={() => setShowPoseLines(!showPoseLines)}
-          className="absolute bottom-4 left-36 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
-        >
-          {showPoseLines ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-              <line x1="1" y1="1" x2="23" y2="23" />
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          )}
-        </button>
+        <Tooltip content={showPoseLines ? "Hide pose skeleton lines" : "Show pose skeleton lines"} position="bottom">
+          <button
+            onClick={() => setShowPoseLines(!showPoseLines)}
+            className="absolute bottom-4 left-36 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+          >
+            {showPoseLines ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
+        </Tooltip>
 
         {/* Subtitle Component - only render when not maximized */}
         {!isMaximized && (
@@ -629,65 +674,73 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
 
         {/* Maximize Button - Only show when not maximized */}
         {!isMaximized && (
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(true); }}
-            className="absolute bottom-4 left-4 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M8 3H5a2 2 0 0 0-2 2v3m8-3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-            </svg>
-          </button>
+          <Tooltip content="Enter fullscreen mode for immersive workout experience" position="bottom">
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(true); }}
+              className="absolute bottom-4 left-4 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m8-3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+              </svg>
+            </button>
+          </Tooltip>
         )}
 
         {/* Fullscreen overlay when maximized */}
         {isMaximized && (
           <div className="fixed inset-0 z-50 bg-black">
             <div className="relative w-full h-full">
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(false); }}
-                className="absolute bottom-4 left-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-                </svg>
-              </button>
+              <Tooltip content="Exit fullscreen mode" position="bottom">
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(false); }}
+                  className="absolute bottom-4 left-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                  </svg>
+                </button>
+              </Tooltip>
               
               {/* Mute Button - Fullscreen */}
-              <button
-                onClick={() => setIsMuted(!isMuted)}
-                className="absolute bottom-4 left-20 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
-              >
-                {isMuted ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                    <line x1="23" y1="9" x2="17" y2="15"/>
-                    <line x1="17" y1="9" x2="23" y2="15"/>
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                  </svg>
-                )}
-              </button>
+              <Tooltip content={isMuted ? "Unmute audio feedback" : "Mute audio feedback"} position="bottom">
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="absolute bottom-4 left-20 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+                >
+                  {isMuted ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <line x1="23" y1="9" x2="17" y2="15"/>
+                      <line x1="17" y1="9" x2="23" y2="15"/>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                    </svg>
+                  )}
+                </button>
+              </Tooltip>
               
               {/* Toggle Pose Lines Button - Fullscreen */}
-              <button
-                onClick={() => setShowPoseLines(!showPoseLines)}
-                className="absolute bottom-4 left-36 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
-              >
-                {showPoseLines ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
-              </button>
+              <Tooltip content={showPoseLines ? "Hide pose skeleton lines" : "Show pose skeleton lines"} position="bottom">
+                <button
+                  onClick={() => setShowPoseLines(!showPoseLines)}
+                  className="absolute bottom-4 left-36 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+                >
+                  {showPoseLines ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </Tooltip>
               <WorkoutVideoComponent
                 workout={selectedWorkout || workoutTypes[0]}
                 poseLandmarker={landmarkers.videoLandmarker}
@@ -776,75 +829,81 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
       <div className="flex flex-col items-center gap-6 mt-8">
         {/* Main Control Buttons */}
         <div className="flex gap-4">
-          <button 
-            type="button"
-            onClick={async () => {
-              const newIsActive = !isActive;
-              setIsActive(newIsActive);
+          <Tooltip content={isActive ? "Pause the current workout" : "Start the workout and begin pose tracking"}>
+            <button 
+              type="button"
+              onClick={async () => {
+                const newIsActive = !isActive;
+                setIsActive(newIsActive);
 
-              if (newIsActive) {
-                mixpanel.track('Workout Resumed', {
-                  platform: 'web_app'
-                });
-              } else {
-                mixpanel.track('Workout Paused', {
-                  platform: 'web_app'
-                });
-                setWebcamLandmarks([]);
-                setVideoLandmarks([]);
-              }
-            }}
-            className={`
-              px-8 py-4 rounded-full font-semibold text-base
-              flex items-center gap-3
-              transition-all duration-200 shadow-lg hover:shadow-xl
-              ${isActive 
-                ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-2 border-gray-200' 
-                : 'bg-red-600 hover:bg-red-700 text-white border-2 border-red-600'}
-            `}
-          >
-            {isActive ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16"/>
-                <rect x="14" y="4" width="4" height="16"/>
+                if (newIsActive) {
+                  mixpanel.track('Workout Resumed', {
+                    platform: 'web_app'
+                  });
+                } else {
+                  mixpanel.track('Workout Paused', {
+                    platform: 'web_app'
+                  });
+                  setWebcamLandmarks([]);
+                  setVideoLandmarks([]);
+                }
+              }}
+              className={`
+                px-8 py-4 rounded-full font-semibold text-base
+                flex items-center gap-3
+                transition-all duration-200 shadow-lg hover:shadow-xl
+                ${isActive 
+                  ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-2 border-gray-200' 
+                  : 'bg-red-600 hover:bg-red-700 text-white border-2 border-red-600'}
+              `}
+            >
+              {isActive ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16"/>
+                  <rect x="14" y="4" width="4" height="16"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              )}
+              {isActive ? 'Pause Workout' : 'Start Workout'}
+            </button>
+          </Tooltip>
+
+          <Tooltip content={isActive || !poseMatchData ? "Start the workout first to get AI feedback on your form" : "Get personalized AI feedback on your current pose and form"}>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); generateAIFeedback(poseMatchData); }}
+              disabled={isActive || !poseMatchData}
+              className={`
+                px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl
+                ${isActive || !poseMatchData 
+                  ? 'bg-gray-300 cursor-not-allowed border-2 border-gray-300' 
+                  : 'bg-blue-600 hover:bg-blue-700 border-2 border-blue-600'
+                } text-white
+              `}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z"/>
+              Get Feedback
+            </button>
+          </Tooltip>
+
+          <Tooltip content="View your workout history, performance statistics, and progress tracking">
+            <button
+              type="button"
+              onClick={() => setShowProgressDashboard(true)}
+              className="px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl bg-purple-600 hover:bg-purple-700 text-white border-2 border-purple-600"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 3v18h18" />
+                <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
               </svg>
-            )}
-            {isActive ? 'Pause Workout' : 'Start Workout'}
-          </button>
-
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); generateAIFeedback(poseMatchData); }}
-            disabled={isActive || !poseMatchData}
-            className={`
-              px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl
-              ${isActive || !poseMatchData 
-                ? 'bg-gray-300 cursor-not-allowed border-2 border-gray-300' 
-                : 'bg-blue-600 hover:bg-blue-700 border-2 border-blue-600'
-              } text-white
-            `}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            Get Feedback
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowProgressDashboard(true)}
-            className="px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl bg-purple-600 hover:bg-purple-700 text-white border-2 border-purple-600"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 3v18h18" />
-              <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
-            </svg>
-            Progress
-          </button>
+              Progress
+            </button>
+          </Tooltip>
         </div>
 
         {/* Info Text - YouTube-style subtle text */}
@@ -867,6 +926,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         fitnessGoal={selectedFitnessGoal}
         focusArea={selectedFocusArea}
         onSaveProgress={saveWorkoutProgress}
+        onUpdateRating={updateWorkoutRating}
       />
 
       {/* Progress Dashboard */}

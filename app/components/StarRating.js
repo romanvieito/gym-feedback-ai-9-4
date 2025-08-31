@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Tooltip from './Tooltip';
 
 export default function StarRating({ 
   rating = 0, 
@@ -41,31 +42,43 @@ export default function StarRating({
     return starIndex < currentRating ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600';
   };
 
+  const getRatingText = (starIndex) => {
+    const ratings = {
+      1: "Poor - Needs improvement",
+      2: "Fair - Below average", 
+      3: "Good - Average performance",
+      4: "Very Good - Above average",
+      5: "Excellent - Outstanding performance"
+    };
+    return ratings[starIndex + 1] || `Rate ${starIndex + 1} stars`;
+  };
+
   return (
     <div className="flex items-center gap-1">
       {Array.from({ length: maxRating }, (_, index) => (
-        <button
-          key={index}
-          type="button"
-          onClick={() => handleClick(index + 1)}
-          onMouseEnter={() => handleMouseEnter(index + 1)}
-          onMouseLeave={handleMouseLeave}
-          disabled={!interactive}
-          className={`
-            ${sizeClasses[size]}
-            ${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'}
-            transition-all duration-150
-            ${getStarColor(index)}
-          `}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="w-full h-full"
+        <Tooltip key={index} content={getRatingText(index)}>
+          <button
+            type="button"
+            onClick={() => handleClick(index + 1)}
+            onMouseEnter={() => handleMouseEnter(index + 1)}
+            onMouseLeave={handleMouseLeave}
+            disabled={!interactive}
+            className={`
+              ${sizeClasses[size]}
+              ${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'}
+              transition-all duration-150
+              ${getStarColor(index)}
+            `}
           >
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-          </svg>
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-full h-full"
+            >
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </button>
+        </Tooltip>
       ))}
     </div>
   );

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import App from '@/app/components/App'
+import Tooltip from '@/app/components/Tooltip'
 import mixpanel from 'mixpanel-browser';
 import { workoutTypes } from './services/workoutData';
 
@@ -277,47 +278,51 @@ export default function Home() {
       {!showApp ? (
         <div className="w-full max-w-4xl px-2 sm:px-4 pt-4 sm:pt-8">
           <div className="flex flex-row justify-between items-center mb-4 sm:mb-5 w-full">
-            <Link 
-              href="/"
-              className="text-xs sm:text-sm hover:text-gray-600 flex items-center gap-2 font-medium"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <Tooltip content="Return to the main workout selection page">
+              <Link 
+                href="/"
+                className="text-xs sm:text-sm hover:text-gray-600 flex items-center gap-2 font-medium"
               >
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                <polyline points="9 22 9 12 15 12 15 22"></polyline>
-              </svg>
-              Home
-            </Link>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                Home
+              </Link>
+            </Tooltip>
             <div className="flex items-center gap-2">
               {/* Menu Button */}
               <div className="relative">
-                <button
-                  className="text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
-                  onClick={() => setShowMenu((prev) => !prev)}
-                  aria-haspopup="true"
-                  aria-expanded={showMenu}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                <Tooltip content="Open settings menu to configure your fitness goals, focus areas, and preferences">
+                  <button
+                    className="text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                    onClick={() => setShowMenu((prev) => !prev)}
+                    aria-haspopup="true"
+                    aria-expanded={showMenu}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                  <span className="sr-only">Open menu</span>
-                </button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <span className="sr-only">Open menu</span>
+                  </button>
+                </Tooltip>
                 {showMenu && (
                   <div className="absolute right-0 mt-2 w-64 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20">
                     <div className="mb-3">
@@ -509,26 +514,28 @@ export default function Home() {
 
                     {/* Help Option for Wearable Info */}
                     <div className="relative mt-2">
-                      <button
-                        type="button"
-                        className="flex items-center gap-1 text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline focus:outline-none"
-                        onClick={() => setShowWearableHelp((prev) => !prev)}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          className="inline-block text-blue-500"
+                      <Tooltip content="Learn how wearable devices enhance your workout experience">
+                        <button
+                          type="button"
+                          className="flex items-center gap-1 text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline focus:outline-none"
+                          onClick={() => setShowWearableHelp((prev) => !prev)}
                         >
-                          <circle cx="12" cy="12" r="10"></circle>
-                          <path d="M12 16v-4"></path>
-                          <path d="M12 8h.01"></path>
-                        </svg>
-                        Help
-                      </button>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            className="inline-block text-blue-500"
+                          >
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 16v-4"></path>
+                            <path d="M12 8h.01"></path>
+                          </svg>
+                          Help
+                        </button>
+                      </Tooltip>
                       {showWearableHelp && (
                         <div className="absolute left-0 mt-2 w-64 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-30">
                           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-1">
@@ -550,71 +557,76 @@ export default function Home() {
           {/* <h1 className="text-2xl sm:text-4xl font-bold mb-4 sm:mb-6 text-center tracking-tighter">Workouts</h1> */}
           <div className="flex flex-col gap-2 sm:gap-3 w-full max-w-md mx-auto">
             {workoutTypes.map((workout, index) => (
-              <button 
-                key={workout.title}
-                onClick={() => handleWorkoutClick(workout)}
-                className="text-center p-3 sm:p-6 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center group border border-gray-200 dark:border-gray-800 transition-all duration-200"
+              <Tooltip key={workout.title} content={`Start ${workout.title} challenge - Click to begin your workout with AI-powered form feedback`}>
+                <button 
+                  onClick={() => handleWorkoutClick(workout)}
+                  className="text-center p-3 sm:p-6 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center group border border-gray-200 dark:border-gray-800 transition-all duration-200"
+                >
+                  <Image
+                    src={workout.image}
+                    alt={workout.title}
+                    width={40}
+                    height={40}
+                    className="rounded-lg mr-2 sm:mr-4 object-cover"
+                  />
+                  <div className="flex-1 text-left">
+                    <div className="font-medium text-xs sm:text-base">CHALLENGE {index + 1}</div>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{workout.title}</p>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-gray-400 group-hover:text-gray-600 transition-colors"
+                  >
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </Tooltip>
+            ))}
+
+            <Tooltip content="Upgrade to premium to access all workout challenges and advanced features">
+              <Link 
+                href={premiumLink}
+                onClick={handlePremiumClick}
+                className="p-3 sm:p-6 rounded-xl bg-black hover:bg-gray-900 text-white flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 transition-all duration-200"
               >
-                <Image
-                  src={workout.image}
-                  alt={workout.title}
-                  width={40}
-                  height={40}
-                  className="rounded-lg mr-2 sm:mr-4 object-cover"
-                />
-                <div className="flex-1 text-left">
-                  <div className="font-medium text-xs sm:text-base">CHALLENGE {index + 1}</div>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{workout.title}</p>
-                </div>
+                <span className="font-medium text-xs sm:text-base">Go Premium</span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="currentColor"
+                  stroke="currentColor" 
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-gray-400 group-hover:text-gray-600 transition-colors"
+                  className="text-white"
                 >
-                  <polyline points="9 18 15 12 9 6"></polyline>
+                  <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
                 </svg>
-              </button>
-            ))}
-
-            <Link 
-              href={premiumLink}
-              onClick={handlePremiumClick}
-              className="p-3 sm:p-6 rounded-xl bg-black hover:bg-gray-900 text-white flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-3 transition-all duration-200"
-            >
-              <span className="font-medium text-xs sm:text-base">Go Premium</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor" 
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-white"
-              >
-                <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
-              </svg>
-              <p className="text-xs sm:text-sm text-gray-200">Unlock Every Workout!</p>
-            </Link>
+                <p className="text-xs sm:text-sm text-gray-200">Unlock Every Workout!</p>
+              </Link>
+            </Tooltip>
           </div>
         </div>
       ) : (
         <div className="mt-4 w-full max-w-4xl">
-          <button 
-            onClick={handleBackClick}
-            className="mb-6 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-          >
-            ← Home
-          </button>
+          <Tooltip content="Return to workout selection page">
+            <button 
+              onClick={handleBackClick}
+              className="mb-6 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            >
+              ← Home
+            </button>
+          </Tooltip>
           <App 
             selectedFitnessGoal={selectedFitnessGoal}
             selectedFocusArea={selectedFocusArea}

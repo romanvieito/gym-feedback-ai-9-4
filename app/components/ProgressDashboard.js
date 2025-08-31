@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProgressTrackingService } from '../services/ProgressTrackingService';
+import Tooltip from './Tooltip';
 
 export default function ProgressDashboard({ isOpen, onClose }) {
   const [stats, setStats] = useState(null);
@@ -209,19 +210,23 @@ export default function ProgressDashboard({ isOpen, onClose }) {
         {/* Footer */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            >
-              Close
-            </button>
-            {stats && stats.totalWorkouts > 0 && (
+            <Tooltip content="Close progress dashboard">
               <button
-                onClick={() => ProgressTrackingService.exportProgress()}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                onClick={onClose}
+                className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               >
-                Export Data
+                Close
               </button>
+            </Tooltip>
+            {stats && stats.totalWorkouts > 0 && (
+              <Tooltip content="Export your workout data as a CSV file">
+                <button
+                  onClick={() => ProgressTrackingService.exportProgress()}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Export Data
+                </button>
+              </Tooltip>
             )}
           </div>
         </div>

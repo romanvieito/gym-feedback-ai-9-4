@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import StarRating from './StarRating';
+import Tooltip from './Tooltip';
 
 export default function PerformanceSummaryModal({ 
   isOpen, 
@@ -11,7 +12,8 @@ export default function PerformanceSummaryModal({
   totalDuration,
   fitnessGoal,
   focusArea,
-  onSaveProgress
+  onSaveProgress,
+  onUpdateRating
 }) {
   const [aiSummary, setAiSummary] = useState('');
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
@@ -122,21 +124,9 @@ export default function PerformanceSummaryModal({
     setUserRating(rating);
     setHasRated(true);
     
-    // Save workout progress when user rates
-    if (onSaveProgress) {
-      const workoutData = {
-        challengeName,
-        totalDuration,
-        averagePerformance,
-        bestPerformance,
-        worstPerformance,
-        performanceHistory: performanceData,
-        userRating: rating,
-        fitnessGoal,
-        focusArea,
-        performanceLevels
-      };
-      onSaveProgress(workoutData);
+    // Update the rating of the existing workout
+    if (onUpdateRating) {
+      onUpdateRating(challengeName, rating);
     }
     
     // Track rating in analytics
@@ -165,15 +155,17 @@ export default function PerformanceSummaryModal({
                 {challengeName}
               </p>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+            <Tooltip content="Close performance summary">
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -290,12 +282,14 @@ export default function PerformanceSummaryModal({
               <h4 className="font-semibold text-blue-800 dark:text-blue-200">
                 🤖 AI Coach Summary
               </h4>
-              <button
-                onClick={() => setShowSummary(!showSummary)}
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
-              >
-                {showSummary ? 'Hide' : 'Show'} Summary
-              </button>
+              <Tooltip content={showSummary ? "Hide AI-generated workout summary" : "Show AI-generated workout summary"}>
+                <button
+                  onClick={() => setShowSummary(!showSummary)}
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                >
+                  {showSummary ? 'Hide' : 'Show'} Summary
+                </button>
+              </Tooltip>
             </div>
             
             {showSummary && (
@@ -312,12 +306,14 @@ export default function PerformanceSummaryModal({
                 )}
                 
                 {!isLoadingSummary && !aiSummary && (
-                  <button
-                    onClick={generateAISummary}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline"
-                  >
-                    Generate AI Summary
-                  </button>
+                  <Tooltip content="Generate a personalized AI summary of your workout performance">
+                    <button
+                      onClick={generateAISummary}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline"
+                    >
+                      Generate AI Summary
+                    </button>
+                  </Tooltip>
                 )}
               </div>
             )}
@@ -338,21 +334,25 @@ export default function PerformanceSummaryModal({
         {/* Footer */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-            >
-              Close
-            </button>
-            <button
-              onClick={() => {
-                // TODO: Implement retry functionality
-                onClose();
-              }}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Try Again
-            </button>
+            <Tooltip content="Close this performance summary">
+              <button
+                onClick={onClose}
+                className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+            </Tooltip>
+            <Tooltip content="Start this workout challenge again">
+              <button
+                onClick={() => {
+                  // TODO: Implement retry functionality
+                  onClose();
+                }}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

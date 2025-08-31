@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Tooltip from './Tooltip';
 
 const SubtitleComponent = ({ 
   showSubtitles = true, 
@@ -71,23 +72,25 @@ const SubtitleComponent = ({
   return (
     <>
       {/* Toggle Subtitles Button */}
-      <button
-        onClick={onToggleSubtitles}
-        className={`absolute bottom-4 left-52 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl ${className}`}
-      >
-        {showSubtitles ? (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <path d="M8 8h8M8 12h8M8 16h5"/>
-          </svg>
-        ) : (
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <path d="M8 8h8M8 12h8M8 16h5"/>
-            <line x1="2" y1="2" x2="22" y2="22"/>
-          </svg>
-        )}
-      </button>
+      <Tooltip content={showSubtitles ? "Hide subtitles for audio feedback" : "Show subtitles for audio feedback"} position="bottom">
+        <button
+          onClick={onToggleSubtitles}
+          className={`absolute bottom-4 left-52 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl ${className}`}
+        >
+          {showSubtitles ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <path d="M8 8h8M8 12h8M8 16h5"/>
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <path d="M8 8h8M8 12h8M8 16h5"/>
+              <line x1="2" y1="2" x2="22" y2="22"/>
+            </svg>
+          )}
+        </button>
+      </Tooltip>
 
       {/* Subtitles Display */}
       {showSubtitles && subtitleVisible && subtitleText && (

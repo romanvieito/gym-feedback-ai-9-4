@@ -44,6 +44,35 @@ export class ProgressTrackingService {
     }
   }
 
+  // Update the rating of the most recent workout for a challenge
+  static updateWorkoutRating(challengeName, rating) {
+    try {
+      const workouts = this.getAllWorkouts();
+      const challengeWorkouts = workouts.filter(w => w.challengeName === challengeName);
+      
+      if (challengeWorkouts.length === 0) {
+        console.warn('No workouts found for challenge:', challengeName);
+        return null;
+      }
+      
+      // Find the most recent workout for this challenge
+      const mostRecent = challengeWorkouts.reduce((latest, current) => 
+        new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest
+      );
+      
+      // Update the rating
+      mostRecent.userRating = rating;
+      
+      // Save back to localStorage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts));
+      
+      return mostRecent;
+    } catch (error) {
+      console.error('Error updating workout rating:', error);
+      return null;
+    }
+  }
+
   // Get workout history for a specific challenge
   static getChallengeHistory(challengeName) {
     const workouts = this.getAllWorkouts();
