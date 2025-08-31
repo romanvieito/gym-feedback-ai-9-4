@@ -211,9 +211,9 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
     // the distance close to 0 is perfect so performance so DifferenceMatch is close to 100 and 
     //level is excellent
     // hay que jugar aqui pero esto esta de palo
+    // averageDifferenceMatch is already a 0-100 similarity percentage; use it directly
     const averageDifferenceMatch = validAngles > 0 ? totalDifferenceMatch / validAngles : 0;
-    // Normalize the difference to a 0-100 scale, with a maximum difference of 180 degrees
-    const matchPercentage = validAngles > 0 ? Math.max(0, Math.min(100, (1 - (averageDifferenceMatch / 180)) * 100)) : 0;
+    const matchPercentage = validAngles > 0 ? Math.max(0, Math.min(100, averageDifferenceMatch)) : 0;
 
     // TODO: Define adaptive thresholds for ordinal scale
     const excellentAverageThreshold = 85;  // Higher threshold for excellent
@@ -356,13 +356,8 @@ function App({ selectedFitnessGoal = '', selectedWearable = '', selectedWorkout 
           }))
         : webcamLandmarks;
 
-      const kalmanFilteredVideoLandmarks = APPLY_KALMAN
-        ? videoLandmarks.map((landmark, i) => ({
-            x: kalmanFilters.current[i].filter(landmark.x),
-            y: kalmanFilters.current[i].filter(landmark.y),
-            z: kalmanFilters.current[i].filter(landmark.z),
-          }))
-        : videoLandmarks;
+      // Do not apply Kalman filtering to reference video landmarks
+      const kalmanFilteredVideoLandmarks = videoLandmarks;
 
       // Apply Exponential Smoothing after Kalman filtering
       const smoothedWebcamLandmarks = smoothLandmarks(prevWebcamLandmarks, kalmanFilteredWebcamLandmarks, APPLY_SMOOTHING);

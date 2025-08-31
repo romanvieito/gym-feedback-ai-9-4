@@ -1,5 +1,6 @@
 //import { angleDict, landmarkNames } from '../services/poseUtils'; // Import statement for angleDict and landmarkNames, currently commented out
-const COSINE_DISTANCE_THRESHOLD = 0.15; // Adjustable threshold for cosine distance
+const COSINE_DISTANCE_THRESHOLD = 0.15; // Adjustable threshold for cosine distance (kept for reference)
+const ANOMALY_PERCENT_THRESHOLD = 65; // Percent match below which a joint is considered anomalous
 
 // Helper function to calculate angles from 3D points
 export function points3DToAngles(coords) {
@@ -117,18 +118,19 @@ export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLan
 
     if (!isNaN(currentAngle) && !isNaN(videoAngle)) { // Check if both angles are valid numbers
       const diff = cosineDistanceBetweenAngles(currentAngle, videoAngle); // Calculate the cosine distance between angles
-      angleDifferencesMatch[angName] = (1 - diff) * 100; // Store the angle difference as a percentage
-      totalDifferenceMatch += angleDifferencesMatch[angName]; // Accumulate the total difference
+      angleDifferencesMatch[angName] = (1 - diff) * 100; // Store the angle similarity as a percentage (100 = perfect)
+      totalDifferenceMatch += angleDifferencesMatch[angName]; // Accumulate the total similarity
       console.log(`angleDifferencesPercentage: ${angleDifferencesMatch[angName]}`);
       console.log(`angleDifference: ${diff}`);
       validAngles++; // Increment the count of valid angles
 
-      const adaptiveThreshold = COSINE_DISTANCE_THRESHOLD + (totalDifferenceMatch / (validAngles || 1)) * 0.05; // Calculate an adaptive threshold
+      // Decide anomaly using a simple, robust threshold on percent match
+      const isAnomalous = angleDifferencesMatch[angName] < ANOMALY_PERCENT_THRESHOLD;
 
       //console.log(`value: ${(totalDifferenceMatch / (validAngles || 1)) * 0.05}`);
       //console.log(`adaptiveThreshold: ${adaptiveThreshold}`);
 
-      if (angleDifferencesMatch[angName] > adaptiveThreshold) { // Check if the difference exceeds the adaptive threshold
+      if (isAnomalous) { // Low match indicates anomaly
         const landmarkNamesForAngle = angleDict[angName][0]; // Get the landmark names for the angle
         landmarkNamesForAngle.forEach(name => { // Iterate over each landmark name
           const index = landmarkNames.indexOf(name); // Find the index of the landmark name

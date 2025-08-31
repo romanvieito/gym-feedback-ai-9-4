@@ -9,7 +9,12 @@ export const landmarkNames = [
 ];
 
 export function areLandmarksVisible(landmarks, requiredIndices) {
-  return requiredIndices.every(index => landmarks[index] && landmarks[index].visibility > 0.5);
+  return requiredIndices.every(index => {
+    const lm = landmarks[index];
+    if (!lm) return false;
+    // Treat missing visibility as visible; enforce threshold only when present
+    return lm.visibility === undefined || lm.visibility >= 0.5;
+  });
 }
 
 export const angleDict = {
