@@ -13,7 +13,8 @@ export function WorkoutVideoComponent({
   showPoseLines,
   onVideoRef,
   isMaximized = false,
-  onTogglePlayPause
+  onTogglePlayPause,
+  onWorkoutComplete
 }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -33,8 +34,16 @@ export function WorkoutVideoComponent({
       onDurationUpdate(duration); // Update duration based on video
     };
 
+    const handleVideoEnd = () => {
+      console.log('Video ended - workout complete!');
+      if (onWorkoutComplete) {
+        onWorkoutComplete();
+      }
+    };
+
     video.addEventListener('timeupdate', updateTime);
     video.addEventListener('loadedmetadata', updateDuration);
+    video.addEventListener('ended', handleVideoEnd);
 
     if (isActive) {
       video.play().catch(err => console.error("Error playing video:", err));
@@ -45,6 +54,7 @@ export function WorkoutVideoComponent({
     return () => {
       video.removeEventListener('timeupdate', updateTime);
       video.removeEventListener('loadedmetadata', updateDuration);
+      video.removeEventListener('ended', handleVideoEnd);
     };
   }, [isActive, onCurrentTimeUpdate, onDurationUpdate]);
 

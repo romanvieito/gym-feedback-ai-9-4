@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useImperativeHandle, useRef, forwardRef } from 'react';
 
 // FeedbackManager centralizes TTS playback: unlock, ducking, sequencing, subtitles.
-// Usage: const ref = useRef(); <FeedbackManager ref={ref} getVideoEl={() => videoRef.current} feedbackVolume={0.8} showSubtitles={true} />
+// Usage: const ref = useRef(); <FeedbackManager ref={ref} getVideoEl={() => videoRef.current} feedbackVolume={0.8} showSubtitles={true} isMuted={false} />
 // Then call: ref.current?.speak(text, { voice: 'alloy' })
 
 const FeedbackManager = forwardRef(function FeedbackManager(
@@ -11,6 +11,7 @@ const FeedbackManager = forwardRef(function FeedbackManager(
     getVideoEl,
     feedbackVolume = 0.8,
     showSubtitles = true,
+    isMuted = false,
     feedbackIntervals = {
       form: 8000,
       encouragement: 15000,
@@ -152,7 +153,7 @@ const FeedbackManager = forwardRef(function FeedbackManager(
 
   const fadeVideoVolumeTo = useCallback((targetVolume, durationMs = 200) => {
     const videoEl = typeof getVideoEl === 'function' ? getVideoEl() : null;
-    if (!videoEl) return;
+    if (!videoEl || isMuted) return; // Don't change volume if muted
     const startVolume = videoEl.volume;
     const clampedTarget = Math.max(0, Math.min(1, targetVolume));
     if (Math.abs(startVolume - clampedTarget) < 0.01) {
@@ -171,27 +172,27 @@ const FeedbackManager = forwardRef(function FeedbackManager(
       }
     };
     volumeFadeRafRef.current = requestAnimationFrame(step);
-  }, [getVideoEl]);
+  }, [getVideoEl, isMuted]);
 
   const duckVideoVolume = useCallback(() => {
     const videoEl = typeof getVideoEl === 'function' ? getVideoEl() : null;
-    if (!videoEl) return;
+    if (!videoEl || isMuted) return; // Don't duck if muted
     if (speechActiveCountRef.current === 0) {
       originalVideoVolumeRef.current = videoEl.volume ?? 1;
       fadeVideoVolumeTo(0.15, 180);
     }
     speechActiveCountRef.current += 1;
-  }, [fadeVideoVolumeTo, getVideoEl]);
+  }, [fadeVideoVolumeTo, getVideoEl, isMuted]);
 
   const restoreVideoVolumeIfIdle = useCallback(() => {
     const videoEl = typeof getVideoEl === 'function' ? getVideoEl() : null;
-    if (!videoEl) return;
+    if (!videoEl || isMuted) return; // Don't restore if muted
     if (speechActiveCountRef.current <= 0) return;
     speechActiveCountRef.current -= 1;
     if (speechActiveCountRef.current === 0) {
       fadeVideoVolumeTo(originalVideoVolumeRef.current ?? 1, 220);
     }
-  }, [fadeVideoVolumeTo, getVideoEl]);
+  }, [fadeVideoVolumeTo, getVideoEl, isMuted]);
 
   const ensureAudioUnlocked = useCallback(async () => {
     try {
@@ -377,6 +378,21 @@ const FeedbackManager = forwardRef(function FeedbackManager(
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [ensureAudioUnlocked]);
+
+  // Handle mute state changes
+  useEffect(() => {
+    const videoEl = typeof getVideoEl === 'function' ? getVideoEl() : null;
+    if (videoEl) {
+      if (isMuted) {
+        videoEl.volume = 0;
+      } else {
+        // Only restore volume if not currently ducked
+        if (speechActiveCountRef.current === 0) {
+          videoEl.volume = originalVideoVolumeRef.current ?? 1;
+        }
+      }
+    }
+  }, [isMuted, getVideoEl]);
 
   useImperativeHandle(ref, () => ({
     speak,

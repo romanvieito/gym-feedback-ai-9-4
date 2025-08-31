@@ -6,6 +6,9 @@ import { WebcamComponent } from './WebcamComponent';
 import { WorkoutVideoComponent } from './WorkoutVideoComponent';
 import SubtitleComponent from './SubtitleComponent';
 import FeedbackManager from './FeedbackManager';
+import PerformanceSummaryModal from './PerformanceSummaryModal';
+import ProgressDashboard from './ProgressDashboard';
+import { ProgressTrackingService } from '../services/ProgressTrackingService';
 import { PoseDetectionService } from '../services/PoseDetectionService';
 import { angleDict, landmarkNames, areLandmarksVisible, poseDetectionConfig, PoseConfigManager } from '../services/poseUtils';
 import { calculateAngleDifferencesAndAnomalies } from '../services/angleUtils';
@@ -53,11 +56,18 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   const calibrationTimeoutRef = useRef(null);
   const videoRef = useRef(null); // Reference to control video volume
   const [feedbackVolume, setFeedbackVolume] = useState(0.8); // Feedback volume control
+  const [isMuted, setIsMuted] = useState(false); // Mute state for audio feedback
   const lastPlaybackRef = useRef({ time: 0, wasPlaying: false });
   // Audio unlocking, ducking, and playback handled by FeedbackManager
   
   // Subtitle state management
   const [showSubtitles, setShowSubtitles] = useState(true);
+
+  // Workout completion and performance tracking
+  const [workoutCompleted, setWorkoutCompleted] = useState(false);
+  const [performanceHistory, setPerformanceHistory] = useState([]);
+  const [showPerformanceSummary, setShowPerformanceSummary] = useState(false);
+  const [showProgressDashboard, setShowProgressDashboard] = useState(false);
 
   // Initialize Kalman filters for each landmark
   const kalmanFilters = useRef([]);
@@ -189,8 +199,21 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   // Delegate to FeedbackManager instance
   const feedbackMgrRef = useRef(null);
   const speakWithDucking = useCallback(async (text, options = {}) => {
+    if (isMuted) return; // Don't speak if muted
     try { await feedbackMgrRef.current?.speak(text, options); } catch (_) {}
-  }, []);
+  }, [isMuted]);
+
+  // Control video volume based on mute state
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (videoEl) {
+      if (isMuted) {
+        videoEl.volume = 0;
+      } else {
+        videoEl.volume = 1; // Restore to full volume when unmuted
+      }
+    }
+  }, [isMuted]);
 
   useEffect(() => {
     PoseDetectionService.initialize()
@@ -198,11 +221,11 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
       .catch(error => console.error("Error initializing pose landmarkers:", error));
 
     // Welcome message via FeedbackManager (fire-and-forget)
-    if (!welcomePlayedRef.current) {
+    if (!welcomePlayedRef.current && !isMuted) {
       try { feedbackMgrRef.current?.playWelcomeOnce(); } catch (_) {}
       welcomePlayedRef.current = true;
     }
-  }, []);
+  }, [isMuted]);
 
   // Visibility resume handled by FeedbackManager
 
@@ -312,7 +335,9 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         ? `${minutes} minute${minutes !== 1 ? 's' : ''} and ${seconds} second${seconds !== 1 ? 's' : ''}`
         : `${seconds} second${seconds !== 1 ? 's' : ''}`;
         
-      try { feedbackMgrRef.current?.speakEncouragement(timeText); } catch (_) {}
+      if (!isMuted) {
+        try { feedbackMgrRef.current?.speakEncouragement(timeText); } catch (_) {}
+      }
       console.log(`Feedback event triggered at ${timeText}`);
       setLastRemainingTimeFeedback(videoCurrentTime);
     }
@@ -436,6 +461,57 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
     return `rgb(${red},${green},0)`;
   }
 
+  // Handle workout completion
+  const handleWorkoutComplete = useCallback(() => {
+    console.log('Workout completed!');
+    setWorkoutCompleted(true);
+    setIsActive(false); // Stop the workout
+    
+    // Track workout completion
+    mixpanel.track('Workout Completed', {
+      platform: 'web_app',
+      challengeName: selectedWorkout?.title || 'Unknown',
+      totalDuration: videoDuration,
+      averagePerformance: performanceHistory.length > 0 
+        ? performanceHistory.reduce((sum, p) => sum + p.percentage, 0) / performanceHistory.length 
+        : 0,
+      performanceHistoryLength: performanceHistory.length
+    });
+
+    // Show performance summary after a short delay
+    setTimeout(() => {
+      setShowPerformanceSummary(true);
+    }, 1000);
+  }, [selectedWorkout, videoDuration, performanceHistory]);
+
+  // Close performance summary modal
+  const closePerformanceSummary = useCallback(() => {
+    setShowPerformanceSummary(false);
+    setWorkoutCompleted(false);
+    // Reset performance history for next workout
+    setPerformanceHistory([]);
+  }, []);
+
+  // Save workout progress
+  const saveWorkoutProgress = useCallback((workoutData) => {
+    const savedWorkout = ProgressTrackingService.saveWorkout(workoutData);
+    if (savedWorkout) {
+      console.log('Workout progress saved:', savedWorkout);
+    }
+  }, []);
+
+  // Track performance data over time
+  useEffect(() => {
+    if (poseMatchData && isActive) {
+      setPerformanceHistory(prev => [...prev, {
+        timestamp: Date.now(),
+        percentage: poseMatchData.percentage,
+        performanceLevel: poseMatchData.performanceFeedback,
+        timeInWorkout: videoCurrentTime
+      }]);
+    }
+  }, [poseMatchData, isActive, videoCurrentTime]);
+
   // Add new function to generate AI feedback
   const generateAIFeedback = async (performanceData) => {
     try {
@@ -496,10 +572,29 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="relative w-full">
+        {/* Mute Button - YouTube-style floating action button */}
+        <button
+          onClick={() => setIsMuted(!isMuted)}
+          className="absolute bottom-4 left-20 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+        >
+          {isMuted ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <line x1="23" y1="9" x2="17" y2="15"/>
+              <line x1="17" y1="9" x2="23" y2="15"/>
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+          )}
+        </button>
+
         {/* Toggle Pose Lines Button - YouTube-style floating action button */}
         <button
           onClick={() => setShowPoseLines(!showPoseLines)}
-          className="absolute bottom-4 right-4 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+          className="absolute bottom-4 left-36 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
         >
           {showPoseLines ? (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -527,8 +622,9 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         <FeedbackManager
           ref={feedbackMgrRef}
           getVideoEl={() => videoRef.current}
-          feedbackVolume={feedbackVolume}
+          feedbackVolume={isMuted ? 0 : feedbackVolume}
           showSubtitles={showSubtitles}
+          isMuted={isMuted}
           feedbackIntervals={feedbackManagerIntervals}
         />
 
@@ -536,7 +632,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         {!isMaximized && (
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(true); }}
-            className="absolute bottom-4 right-36 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+            className="absolute bottom-4 left-4 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M8 3H5a2 2 0 0 0-2 2v3m8-3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
@@ -550,17 +646,36 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
             <div className="relative w-full h-full">
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(false); }}
-                className="absolute bottom-4 right-36 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+                className="absolute bottom-4 left-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
                 </svg>
               </button>
               
+              {/* Mute Button - Fullscreen */}
+              <button
+                onClick={() => setIsMuted(!isMuted)}
+                className="absolute bottom-4 left-20 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+              >
+                {isMuted ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <line x1="23" y1="9" x2="17" y2="15"/>
+                    <line x1="17" y1="9" x2="23" y2="15"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  </svg>
+                )}
+              </button>
+              
               {/* Toggle Pose Lines Button - Fullscreen */}
               <button
                 onClick={() => setShowPoseLines(!showPoseLines)}
-                className="absolute bottom-4 right-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+                className="absolute bottom-4 left-36 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
               >
                 {showPoseLines ? (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -585,6 +700,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
                 onVideoRef={(el) => { videoRef.current = el; }}
                 isMaximized={true}
                 onTogglePlayPause={toggleVideoPlayPause}
+                onWorkoutComplete={handleWorkoutComplete}
               />
 
               {/* Webcam PiP visible in fullscreen */}
@@ -631,6 +747,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
               onVideoRef={(el) => { videoRef.current = el; }}
               isMaximized={false}
               onTogglePlayPause={toggleVideoPlayPause}
+              onWorkoutComplete={handleWorkoutComplete}
             />
           </div>
         )}
@@ -717,6 +834,18 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
             </svg>
             Get Feedback
           </button>
+
+          <button
+            type="button"
+            onClick={() => setShowProgressDashboard(true)}
+            className="px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl bg-purple-600 hover:bg-purple-700 text-white border-2 border-purple-600"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 3v18h18" />
+              <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" />
+            </svg>
+            Progress
+          </button>
         </div>
 
         {/* Info Text - YouTube-style subtle text */}
@@ -728,6 +857,24 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
           </p>
         </div>
       </div>
+
+      {/* Performance Summary Modal */}
+      <PerformanceSummaryModal
+        isOpen={showPerformanceSummary}
+        onClose={closePerformanceSummary}
+        performanceData={performanceHistory}
+        challengeName={selectedWorkout?.title || 'Workout Challenge'}
+        totalDuration={videoDuration}
+        fitnessGoal={selectedFitnessGoal}
+        focusArea={selectedFocusArea}
+        onSaveProgress={saveWorkoutProgress}
+      />
+
+      {/* Progress Dashboard */}
+      <ProgressDashboard
+        isOpen={showProgressDashboard}
+        onClose={() => setShowProgressDashboard(false)}
+      />
     </div>
   );
 }
