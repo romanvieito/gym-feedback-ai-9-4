@@ -687,6 +687,31 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
                   )}
                 </button>
               </Tooltip>
+              
+              {/* Subtitles Button - Fullscreen */}
+              <Tooltip content={showSubtitles ? "Hide subtitles" : "Show subtitles"} position="bottom">
+                <button
+                  onClick={() => setShowSubtitles(!showSubtitles)}
+                  className="absolute bottom-6 left-52 z-50 w-12 h-12 rounded-xl bg-white/90 hover:bg-white text-gray-700 shadow-lg backdrop-blur-sm transition-all duration-200 flex items-center justify-center"
+                >
+                  {showSubtitles ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <g>
+                        <rect x="2" y="6" width="20" height="12" rx="2" />
+                        <path d="M6 10h2M6 14h6M14 14h4" />
+                      </g>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <g>
+                        <rect x="2" y="6" width="20" height="12" rx="2" />
+                        <path d="M6 10h2M6 14h6M14 14h4" />
+                        <line x1="2" y1="2" x2="22" y2="22" />
+                      </g>
+                    </svg>
+                  )}
+                </button>
+              </Tooltip>
               <WorkoutVideoComponent
                 workout={selectedWorkout || workoutTypes[0]}
                 poseLandmarker={landmarkers.videoLandmarker}
