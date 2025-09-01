@@ -391,6 +391,11 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
 
   // Update the landmark processing effect
   useEffect(() => {
+    console.log('Landmark update check:', { 
+      webcamCount: webcamLandmarks.length, 
+      videoCount: videoLandmarks.length,
+      poseMatchData: !!poseMatchData 
+    });
     if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
       // Estimate Kalman parameters based on current landmarks
       estimateKalmanParameters(webcamLandmarks);
@@ -756,22 +761,16 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
               />
 
               {/* Webcam PiP visible in fullscreen */}
-              {isActive && (
-                <div className="absolute bottom-2 right-2 w-[320px] h-[240px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white z-40">
-                  <WebcamComponent
-                    poseLandmarker={landmarkers.webcamLandmarker}
-                    onLandmarksUpdate={(landmarks) => {
-                      if (isActive) {
-                        setWebcamLandmarks(landmarks);
-                      }
-                    }}
-                    onCurrentTimeUpdate={setVideoCurrentTime}
-                    onFrameIndexUpdate={() => {}}
-                    poseMatchData={poseMatchData}
-                    showPoseLines={showPoseLines}
-                  />
-                </div>
-              )}
+              <div className={`absolute bottom-2 right-2 w-[320px] h-[240px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white z-40 ${!isActive ? 'opacity-50' : ''}`}>
+                <WebcamComponent
+                  poseLandmarker={landmarkers.webcamLandmarker}
+                  onLandmarksUpdate={setWebcamLandmarks}
+                  onCurrentTimeUpdate={setVideoCurrentTime}
+                  onFrameIndexUpdate={() => {}}
+                  poseMatchData={poseMatchData}
+                  showPoseLines={showPoseLines}
+                />
+              </div>
 
               {/* Subtitle Component for fullscreen - only render when maximized */}
               {isMaximized && (
@@ -805,15 +804,11 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         )}
 
         {/* Webcam Overlay - YouTube-style picture-in-picture */}
-        {isActive && !isMaximized && (
-          <div className="absolute bottom-2 right-2 w-[280px] h-[210px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white">
+        {!isMaximized && (
+          <div className={`absolute bottom-2 right-2 w-[280px] h-[210px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white ${!isActive ? 'opacity-50' : ''}`}>
             <WebcamComponent
               poseLandmarker={landmarkers.webcamLandmarker}
-              onLandmarksUpdate={(landmarks) => {
-                if (isActive) {
-                  setWebcamLandmarks(landmarks);
-                }
-              }}
+              onLandmarksUpdate={setWebcamLandmarks}
               onCurrentTimeUpdate={setVideoCurrentTime}
               onFrameIndexUpdate={() => {}}
               poseMatchData={poseMatchData}
@@ -871,17 +866,35 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
             </button>
           </Tooltip>
 
-          <Tooltip content={isActive || !poseMatchData ? "Start the workout first to get AI feedback on your form" : "Get personalized AI feedback on your current pose and form"}>
+          <Tooltip content="Get personalized AI feedback on your pose and form">
             <button
               type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); generateAIFeedback(poseMatchData); }}
-              disabled={isActive || !poseMatchData}
+              onClick={(e) => { 
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                console.log('Button clicked - Debug info:', {
+                  poseMatchData,
+                  webcamLandmarks: webcamLandmarks.length,
+                  videoLandmarks: videoLandmarks.length,
+                  isActive
+                });
+                // If we have any webcam landmarks, allow feedback even if full match isn't computed yet
+                const hasWebcamPose = Array.isArray(webcamLandmarks) && webcamLandmarks.length > 0;
+                if (!hasWebcamPose) {
+                  alert('No pose detected. Please ensure your camera can see you.');
+                  return;
+                }
+
+                const payload = poseMatchData ?? {
+                  performanceFeedback: 'Unknown',
+                  percentage: 0,
+                  mostMisalignedLandmarks: []
+                };
+                generateAIFeedback(payload);
+              }}
               className={`
                 px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl
-                ${isActive || !poseMatchData 
-                  ? 'bg-gray-300 cursor-not-allowed border-2 border-gray-300' 
-                  : 'bg-blue-600 hover:bg-blue-700 border-2 border-blue-600'
-                } text-white
+                bg-blue-600 hover:bg-blue-700 border-2 border-blue-600 text-white
               `}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
