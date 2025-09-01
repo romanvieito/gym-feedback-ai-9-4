@@ -698,7 +698,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
               <Tooltip content="Exit fullscreen mode" position="bottom">
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(false); }}
-                  className="absolute bottom-4 left-4 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+                  className="absolute bottom-6 left-6 z-50 w-12 h-12 rounded-xl bg-white/90 hover:bg-white text-gray-700 shadow-lg backdrop-blur-sm transition-all duration-200 flex items-center justify-center"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
@@ -707,10 +707,10 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
               </Tooltip>
               
               {/* Mute Button - Fullscreen */}
-              <Tooltip content={isMuted ? "Unmute audio feedback" : "Mute audio feedback"} position="bottom">
+              <Tooltip content={isMuted ? "Unmute" : "Mute"} position="bottom">
                 <button
                   onClick={() => setIsMuted(!isMuted)}
-                  className="absolute bottom-4 left-20 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+                  className="absolute bottom-6 left-24 z-50 w-12 h-12 rounded-xl bg-white/90 hover:bg-white text-gray-700 shadow-lg backdrop-blur-sm transition-all duration-200 flex items-center justify-center"
                 >
                   {isMuted ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -728,10 +728,10 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
               </Tooltip>
               
               {/* Toggle Pose Lines Button - Fullscreen */}
-              <Tooltip content={showPoseLines ? "Hide pose skeleton lines" : "Show pose skeleton lines"} position="bottom">
+              <Tooltip content={showPoseLines ? "Hide pose lines" : "Show pose lines"} position="bottom">
                 <button
                   onClick={() => setShowPoseLines(!showPoseLines)}
-                  className="absolute bottom-4 left-36 z-50 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
+                  className="absolute bottom-6 left-42 z-50 w-12 h-12 rounded-xl bg-white/90 hover:bg-white text-gray-700 shadow-lg backdrop-blur-sm transition-all duration-200 flex items-center justify-center"
                 >
                   {showPoseLines ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -761,7 +761,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
               />
 
               {/* Webcam PiP visible in fullscreen */}
-              <div className={`absolute bottom-2 right-2 w-[320px] h-[240px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white z-40 ${!isActive ? 'opacity-50' : ''}`}>
+              <div className={`absolute bottom-6 right-6 w-[320px] h-[240px] rounded-xl overflow-hidden shadow-lg border border-white/20 bg-white/10 backdrop-blur-sm z-40 ${!isActive ? 'opacity-50' : ''} transition-opacity duration-200`}>
                 <WebcamComponent
                   poseLandmarker={landmarkers.webcamLandmarker}
                   onLandmarksUpdate={setWebcamLandmarks}
@@ -784,9 +784,9 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
           </div>
         )}
 
-        {/* Main Video Container - YouTube-style rounded corners and shadow */}
+        {/* Main Video Container - Minimalist rounded design */}
         {!isMaximized && (
-          <div className="w-full rounded-2xl overflow-hidden shadow-2xl bg-white">
+          <div className="w-full rounded-2xl overflow-hidden shadow-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
             <WorkoutVideoComponent
               workout={selectedWorkout || workoutTypes[0]}
               poseLandmarker={landmarkers.videoLandmarker}
@@ -803,9 +803,9 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
           </div>
         )}
 
-        {/* Webcam Overlay - YouTube-style picture-in-picture */}
+        {/* Webcam Overlay - Minimalist picture-in-picture */}
         {!isMaximized && (
-          <div className={`absolute bottom-2 right-2 w-[280px] h-[210px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white bg-white ${!isActive ? 'opacity-50' : ''}`}>
+          <div className={`absolute bottom-4 right-4 w-[280px] h-[210px] rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 ${!isActive ? 'opacity-50' : ''} transition-opacity duration-200`}>
             <WebcamComponent
               poseLandmarker={landmarkers.webcamLandmarker}
               onLandmarksUpdate={setWebcamLandmarks}
@@ -820,11 +820,11 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
 
       </div>
       
-      {/* Controls Section - YouTube-style centered layout */}
+      {/* Controls Section - Minimalist centered layout */}
       <div className="flex flex-col items-center gap-6 mt-8">
-        {/* Main Control Buttons */}
-        <div className="flex gap-4">
-          <Tooltip content={isActive ? "Pause the current workout" : "Start the workout and begin pose tracking"}>
+        {/* Primary Control */}
+        <div className="flex items-center justify-center">
+          <Tooltip content={isActive ? "Pause workout" : "Start workout"}>
             <button 
               type="button"
               onClick={async () => {
@@ -844,29 +844,31 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
                 }
               }}
               className={`
-                px-8 py-4 rounded-full font-semibold text-base
-                flex items-center gap-3
-                transition-all duration-200 shadow-lg hover:shadow-xl
+                w-16 h-16 rounded-2xl font-medium text-base
+                flex items-center justify-center
+                transition-all duration-200 hover:shadow-lg
                 ${isActive 
-                  ? 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-2 border-gray-200' 
-                  : 'bg-red-600 hover:bg-red-700 text-white border-2 border-red-600'}
+                  ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300' 
+                  : 'bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900'}
               `}
             >
               {isActive ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16"/>
-                  <rect x="14" y="4" width="4" height="16"/>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" rx="1"/>
+                  <rect x="14" y="4" width="4" height="16" rx="1"/>
                 </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               )}
-              {isActive ? 'Pause Workout' : 'Start Workout'}
             </button>
           </Tooltip>
+        </div>
 
-          <Tooltip content="Get personalized AI feedback on your pose and form">
+        {/* Secondary Controls */}
+        <div className="flex items-center gap-3">
+          <Tooltip content="AI Feedback">
             <button
               type="button"
               onClick={(e) => { 
@@ -892,27 +894,76 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
                 };
                 generateAIFeedback(payload);
               }}
-              className={`
-                px-8 py-4 rounded-full font-semibold text-base flex items-center gap-3 transition-all duration-200 shadow-lg hover:shadow-xl
-                bg-blue-600 hover:bg-blue-700 border-2 border-blue-600 text-white
-              `}
+              className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
-              Get Feedback
             </button>
           </Tooltip>
 
+          <Tooltip content={isMaximized ? "Exit fullscreen" : "Enter fullscreen"}>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(false); }}
+              className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                {isMaximized ? (
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+                ) : (
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                )}
+              </svg>
+            </button>
+          </Tooltip>
 
+          <Tooltip content={isMuted ? "Unmute" : "Mute"}>
+            <button
+              type="button"
+              onClick={() => setIsMuted(!isMuted)}
+              className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
+            >
+              {isMuted ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <line x1="23" y1="9" x2="17" y2="15"/>
+                  <line x1="17" y1="9" x2="23" y2="15"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+              )}
+            </button>
+          </Tooltip>
+
+          <Tooltip content={showPoseLines ? "Hide pose lines" : "Show pose lines"}>
+            <button
+              type="button"
+              onClick={() => setShowPoseLines(!showPoseLines)}
+              className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
+            >
+              {showPoseLines ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </Tooltip>
         </div>
 
-        {/* Info Text - YouTube-style subtle text */}
-        <div className="px-6 py-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400 text-center font-medium">
-            💡 The more we see, the more precise the feedback!
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-500 text-center mt-2">
+        {/* Info Text - Minimalist subtle text */}
+        <div className="mt-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+            Better poses yield better feedback
           </p>
         </div>
       </div>
