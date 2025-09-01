@@ -58,8 +58,8 @@ export function usePosePipeline({
 
   // Use user-selected feedback interval or fallback to dynamic calculation
   const userFeedbackInterval = selectedFeedbackInterval ? feedbackIntervalOptions[selectedFeedbackInterval] : null;
-  const minInterval = 5;
-  const maxInterval = 30;
+  const minInterval = 30; // Minimum 30 seconds between feedback
+  const maxInterval = 300; // Maximum 5 minutes between feedback
   const feedbackFactor = 0.1;
   const remainingTimeFactor = 0.15;
   
@@ -68,8 +68,11 @@ export function usePosePipeline({
   
   const feedbackInterval = isSmartFeedback 
     ? Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor)) // Dynamic for smart mode
-    : (userFeedbackInterval || Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor)));
+    : (userFeedbackInterval || 150); // Default to balanced (150 seconds) if no selection
   const remainingTimeFeedbackInterval = Math.max(minInterval, Math.min(maxInterval, videoDuration * remainingTimeFactor));
+
+  // Debug logging for feedback intervals
+  console.log(`Feedback intervals - Selected: ${selectedFeedbackInterval}, User interval: ${userFeedbackInterval}, Final interval: ${feedbackInterval}s, Remaining time interval: ${remainingTimeFeedbackInterval}s`);
 
   const estimateKalmanParameters = useCallback((landmarks) => {
     if (!Array.isArray(landmarks) || landmarks.length === 0) return;
@@ -142,6 +145,7 @@ export function usePosePipeline({
         .map(([landmark]) => landmark);
 
       const feedbackText = `Please pay attention to ${worstLandmarks.join(', ')}.`;
+      console.log(`Form feedback triggered at ${videoCurrentTime}s (interval: ${feedbackInterval}s)`);
       try { speak && speak(feedbackText); } catch (_) {}
 
       setLastCurrentTimeFeedback(videoCurrentTime);
@@ -152,6 +156,7 @@ export function usePosePipeline({
       const timeText = minutes > 0
         ? `${minutes} minute${minutes !== 1 ? 's' : ''} and ${seconds} second${seconds !== 1 ? 's' : ''}`
         : `${seconds} second${seconds !== 1 ? 's' : ''}`;
+      console.log(`Encouragement feedback triggered at ${videoCurrentTime}s (interval: ${remainingTimeFeedbackInterval}s)`);
       try { speakEncouragement && speakEncouragement(timeText); } catch (_) {}
       setLastRemainingTimeFeedback(videoCurrentTime);
     }
