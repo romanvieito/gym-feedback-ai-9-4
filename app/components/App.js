@@ -384,6 +384,13 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
           showSubtitles={showSubtitles}
           isMuted={isMuted}
           feedbackIntervals={feedbackManagerIntervals}
+          userSettings={{
+            fitnessGoal: selectedFitnessGoal,
+            focusArea: selectedFocusArea,
+            wearable: selectedWearable,
+            feedbackInterval: selectedFeedbackInterval,
+          }}
+          selectedWorkout={selectedWorkout}
         />
 
 

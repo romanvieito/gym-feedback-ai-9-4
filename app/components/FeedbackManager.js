@@ -18,6 +18,9 @@ const FeedbackManager = forwardRef(function FeedbackManager(
       milestone: 30000,
       rest: 5000
     },
+    // Personalized welcome inputs
+    userSettings = {},
+    selectedWorkout = null,
   },
   ref
 ) {
@@ -28,18 +31,75 @@ const FeedbackManager = forwardRef(function FeedbackManager(
   const ttsAbortRef = useRef(null);
   const welcomePlayedRef = useRef(false);
 
-  const welcomeMessages = [
-    "Hey there! Ready to sweat and shine? Let's make every move count!",
-    "Good to see you! Let's get this session started!",
-    "Time to get fit and feel amazing! I'm here to guide you through your workout.",
-    "Welcome! Get ready for an energizing workout session!",
-    "Let's make today's workout count! Ready when you are!",
-    "It's time to move, groove, and improve! Let's get this session started!",
-    "Every rep brings you closer to your goals. Let's kick things off strong!",
-    "Excited to see you! Let's ignite that energy and have a great workout!",
-    "Here we go! Today's workout is your next step to greatness. Let's begin!",
-    "Welcome! Let's set the tone for an great session. You've got this!",
-  ];
+  // Build a personalized welcome message from user settings and workout
+  const generateWelcomeMessage = useCallback(() => {
+    const { fitnessGoal, focusArea } = userSettings || {};
+    const workoutTitle = selectedWorkout?.title || 'workout';
+
+    // If no key settings selected, encourage user to personalize
+    if (!fitnessGoal && !focusArea) {
+      return `Welcome! Choosing your fitness goal and focus area in settings helps tailor your feedback for this ${workoutTitle}.`;
+    }
+
+    const goalMessages = {
+      'lose-weight': [
+        `Ready to burn calories? Let's make this ${workoutTitle} count toward your goals!`,
+        `Time to sweat and shred! This ${workoutTitle} is your next step to a healthier you!`,
+      ],
+      'build-muscle': [
+        `Strength time! This ${workoutTitle} will help you build lean muscle.`,
+        `Let's get those gains! This ${workoutTitle} is perfect for muscle growth.`,
+      ],
+      'improve-endurance': [
+        `Ready to boost stamina? This ${workoutTitle} will build your endurance!`,
+        `Let's go the distance! This ${workoutTitle} strengthens your cardio.`,
+      ],
+      'flexibility': [
+        `Flow and stretch time! This ${workoutTitle} improves mobility and range.`,
+        `Let's get flexible! This ${workoutTitle} enhances your movement.`,
+      ],
+      'boost-energy': [
+        `Let's energize your day! This ${workoutTitle} will power you up.`,
+        `Time to charge up! This ${workoutTitle} boosts daily performance.`,
+      ],
+      'recover-injury': [
+        `Focus on safe recovery. This ${workoutTitle} supports rebuilding.`,
+        `Gentle and strong. This ${workoutTitle} helps you recover safely.`,
+      ],
+      'stay-active': [
+        `Stay active and feel great! This ${workoutTitle} keeps you moving.`,
+        `Consistency wins. This ${workoutTitle} maintains your momentum.`,
+      ],
+    };
+
+    const focusMessages = {
+      'upper-body': [
+        `Upper body focus today. This ${workoutTitle} targets arms, chest, and shoulders.`,
+      ],
+      'lower-body': [
+        `Leg power on deck! This ${workoutTitle} strengthens your lower body.`,
+      ],
+      'core': [
+        `Core stability time. This ${workoutTitle} builds a strong foundation.`,
+      ],
+      'full-body': [
+        `Full-body flow! This ${workoutTitle} engages your whole body.`,
+      ],
+    };
+
+    let messages = [];
+    if (fitnessGoal && goalMessages[fitnessGoal]) messages = messages.concat(goalMessages[fitnessGoal]);
+    if (focusArea && focusMessages[focusArea]) messages = messages.concat(focusMessages[focusArea]);
+
+    if (messages.length === 0) {
+      messages = [
+        `Ready to move? Let's make this ${workoutTitle} count!`,
+        `Let's get started! This ${workoutTitle} brings you closer to your goals.`,
+      ];
+    }
+
+    return messages[Math.floor(Math.random() * messages.length)];
+  }, [userSettings, selectedWorkout]);
 
   // Contextual feedback categories
   const feedbackCategoriesRef = useRef({
@@ -354,10 +414,10 @@ const FeedbackManager = forwardRef(function FeedbackManager(
 
   const playWelcomeOnce = useCallback(async () => {
     if (welcomePlayedRef.current) return;
-    const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-    await speakWithContext(randomWelcome, { type: 'encouragement' });
+    const personalizedWelcome = generateWelcomeMessage();
+    await speakWithContext(personalizedWelcome, { type: 'encouragement' });
     welcomePlayedRef.current = true;
-  }, [speakWithContext]);
+  }, [speakWithContext, generateWelcomeMessage]);
 
   const speakEncouragement = useCallback(async (timeText) => {
     const phrases = buildEncouragingPhrases(timeText);
