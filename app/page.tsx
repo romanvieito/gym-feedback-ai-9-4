@@ -1,10 +1,11 @@
 'use client'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import App from '@/app/components/App'
 import Tooltip from '@/app/components/Tooltip'
 import ProgressDashboard from '@/app/components/ProgressDashboard'
+import Settings from '@/app/components/Settings'
 import mixpanel from 'mixpanel-browser';
 import { workoutTypes } from './services/workoutData';
 
@@ -22,9 +23,11 @@ export default function Home() {
   const [selectedFeedbackInterval, setSelectedFeedbackInterval] = useState('');
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
-  const [showWearableHelp, setShowWearableHelp] = useState(false);
+
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [showProgressDashboard, setShowProgressDashboard] = useState(false);
+  
+  const menuRef = useRef<HTMLDivElement>(null);
   const premiumLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || 'https://24up.site/pricing';
 
   const wearables = [
@@ -66,6 +69,20 @@ export default function Home() {
       platform: 'web_app'
     });
   }, []);
+
+  // Handle click outside to close menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
 
   // Load saved preferences from localStorage and database
   useEffect(() => {
@@ -325,253 +342,51 @@ export default function Home() {
               </Tooltip>
               
               {/* Menu Button */}
-              <div className="relative">
-                <Tooltip content="Open settings menu to configure your fitness goals, focus areas, and preferences">
+              <div className="relative" ref={menuRef}>
+                <Tooltip content="Settings">
                   <button
-                    className="text-xs sm:text-sm p-2 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                    className={`w-10 h-10 rounded-xl transition-all duration-200 flex items-center justify-center ${
+                      showMenu
+                        ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900 shadow-lg'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md'
+                    }`}
                     onClick={() => setShowMenu((prev) => !prev)}
                     aria-haspopup="true"
                     aria-expanded={showMenu}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
+                      width="18"
+                      height="18"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
+                      className={`transition-transform duration-200 ${showMenu ? 'rotate-90' : ''}`}
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span className="sr-only">Open menu</span>
+                    <span className="sr-only">Settings</span>
                   </button>
                 </Tooltip>
                 {showMenu && (
-                  <div className="absolute right-0 mt-2 w-64 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20">
-                    <div className="mb-3">
-                      <span className="block text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Settings</span>
-                      {!preferencesLoaded && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 text-center">
-                          ⏳ Loading preferences...
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Fitness Goal Selection - FIRST PRIORITY */}
-                    <div className="mb-2 flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        className="text-green-500"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      <label htmlFor="fitness-goal-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Fitness Goal</label>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Choose your primary fitness objective.</p>
-                    <select
-                      id="fitness-goal-select"
-                      value={selectedFitnessGoal}
-                      onChange={(e) => handleFitnessGoalChange(e.target.value)}
-                      disabled={!preferencesLoaded}
-                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-green-200 dark:border-green-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-green-400 dark:focus:border-green-600 transition-all duration-150 shadow-sm hover:border-green-400 dark:hover:border-green-500 mb-2 outline-none ${
-                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {!preferencesLoaded ? (
-                        <option value="">Loading preferences...</option>
-                      ) : (
-                        <>
-                          <option value="">Select your fitness goal</option>
-                          {fitnessGoals.map((goal) => (
-                            <option key={goal.id} value={goal.id}>
-                              {goal.name}
-                            </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
-                    
-                    {/* Display selected goal description */}
-                    {selectedFitnessGoal && (
-                      <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 mb-3">
-                        {fitnessGoals.find(g => g.id === selectedFitnessGoal)?.description}
-                      </div>
-                    )}
-                    
-                    {/* Focus Area Targeting - SECOND PRIORITY */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        className="text-purple-500"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                      <label htmlFor="focus-area-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Focus Area Targeting</label>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Choose which body areas to focus on during workouts.</p>
-                    <select
-                      id="focus-area-select"
-                      value={selectedFocusArea}
-                      onChange={(e) => handleFocusAreaChange(e.target.value)}
-                      disabled={!preferencesLoaded}
-                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-purple-200 dark:border-purple-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-purple-400 dark:focus:border-purple-600 transition-all duration-150 shadow-sm hover:border-purple-400 dark:hover:border-purple-500 mb-2 outline-none ${
-                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {!preferencesLoaded ? (
-                        <option value="">Loading preferences...</option>
-                      ) : (
-                        <>
-                          <option value="">Select focus area</option>
-                          {focusAreas.map((area) => (
-                            <option key={area.id} value={area.id}>
-                              {area.name}
-                            </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
-
-                    {/* Display selected focus area description */}
-                    {selectedFocusArea && (
-                      <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 mb-3">
-                        {focusAreas.find(a => a.id === selectedFocusArea)?.description}
-                      </div>
-                    )}
-
-                    {/* Feedback Interval - THIRD PRIORITY */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        className="text-orange-500"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <label htmlFor="feedback-interval-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Coach Feedback Frequency</label>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">How often should the coach provide feedback during workouts?</p>
-                    <select
-                      id="feedback-interval-select"
-                      value={selectedFeedbackInterval}
-                      onChange={(e) => handleFeedbackIntervalChange(e.target.value)}
-                      disabled={!preferencesLoaded}
-                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-orange-200 dark:border-orange-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-orange-400 dark:focus:border-orange-600 transition-all duration-150 shadow-sm hover:border-orange-400 dark:hover:border-orange-500 mb-2 outline-none ${
-                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {!preferencesLoaded ? (
-                        <option value="">Loading preferences...</option>
-                      ) : (
-                        <>
-                          <option value="">Select feedback frequency</option>
-                          {feedbackIntervals.map((interval) => (
-                            <option key={interval.id} value={interval.id}>
-                              {interval.name}
-                            </option>
-                          ))}
-                        </>
-                      )}
-                    </select>
-
-                    {/* Display selected feedback interval description */}
-                    {selectedFeedbackInterval && (
-                      <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800 mb-3">
-                        {feedbackIntervals.find(i => i.id === selectedFeedbackInterval)?.description}
-                      </div>
-                    )}
-
-                    {/* Wearable Selection - FOURTH PRIORITY */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        className="text-blue-500"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2a4 4 0 0 1 8 0v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      <label htmlFor="wearable-select" className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Select Wearable</label>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Select your device.</p>
-                    <select
-                      id="wearable-select"
-                      value={selectedWearable}
-                      onChange={(e) => handleWearableChange(e.target.value)}
-                      disabled={!preferencesLoaded}
-                      className={`w-full text-xs sm:text-sm p-2 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-black text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-400 dark:focus:border-blue-600 transition-all duration-150 shadow-sm hover:border-blue-400 dark:hover:border-blue-500 mb-2 outline-none ${
-                        !preferencesLoaded ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {!preferencesLoaded ? (
-                        <option value="">Loading preferences...</option>
-                      ) : (
-                        wearables.map((wearable) => (
-                          <option key={wearable.id} value={wearable.id}>
-                            {wearable.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-
-                    {/* Help Option for Wearable Info */}
-                    <div className="relative mt-2">
-                      <Tooltip content="Learn how wearable devices enhance your workout experience">
-                        <button
-                          type="button"
-                          className="flex items-center gap-1 text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline focus:outline-none"
-                          onClick={() => setShowWearableHelp((prev) => !prev)}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            className="inline-block text-blue-500"
-                          >
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M12 16v-4"></path>
-                            <path d="M12 8h.01"></path>
-                          </svg>
-                          Help
-                        </button>
-                      </Tooltip>
-                      {showWearableHelp && (
-                        <div className="absolute left-0 mt-2 w-64 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-30">
-                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-1">
-                            Select your wearable device to:
-                          </p>
-                          <ul className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                            <li>• Get personalized workout intensity recommendations</li>
-                            <li>• Monitor your recovery between sessions</li>
-                            <li>• View detailed performance analytics</li>
-                          </ul>
-                        </div>
-                      )}
-                    </div>
+                  <div className="absolute right-0 mt-2 z-20">
+                    <Settings
+                      selectedFitnessGoal={selectedFitnessGoal}
+                      selectedFocusArea={selectedFocusArea}
+                      selectedFeedbackInterval={selectedFeedbackInterval}
+                      selectedWearable={selectedWearable}
+                      preferencesLoaded={preferencesLoaded}
+                      onFitnessGoalChange={handleFitnessGoalChange}
+                      onFocusAreaChange={handleFocusAreaChange}
+                      onFeedbackIntervalChange={handleFeedbackIntervalChange}
+                      onWearableChange={handleWearableChange}
+                      onClose={() => setShowMenu(false)}
+                      fitnessGoals={fitnessGoals}
+                      focusAreas={focusAreas}
+                      feedbackIntervals={feedbackIntervals}
+                      wearables={wearables}
+                    />
                   </div>
                 )}
               </div>
