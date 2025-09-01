@@ -677,19 +677,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
           feedbackIntervals={feedbackManagerIntervals}
         />
 
-        {/* Maximize Button - Only show when not maximized */}
-        {!isMaximized && (
-          <Tooltip content="Enter fullscreen mode for immersive workout experience" position="bottom">
-            <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(true); }}
-              className="absolute bottom-4 left-4 z-20 p-3 rounded-full text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 shadow-lg border border-gray-200 transition-all duration-200 hover:shadow-xl"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3m8-3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-              </svg>
-            </button>
-          </Tooltip>
-        )}
+
 
         {/* Fullscreen overlay when maximized */}
         {isMaximized && (
@@ -710,7 +698,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
               <Tooltip content={isMuted ? "Unmute" : "Mute"} position="bottom">
                 <button
                   onClick={() => setIsMuted(!isMuted)}
-                  className="absolute bottom-6 left-24 z-50 w-12 h-12 rounded-xl bg-white/90 hover:bg-white text-gray-700 shadow-lg backdrop-blur-sm transition-all duration-200 flex items-center justify-center"
+                  className="absolute bottom-6 left-20 z-50 w-12 h-12 rounded-xl bg-white/90 hover:bg-white text-gray-700 shadow-lg backdrop-blur-sm transition-all duration-200 flex items-center justify-center"
                 >
                   {isMuted ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -731,7 +719,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
               <Tooltip content={showPoseLines ? "Hide pose lines" : "Show pose lines"} position="bottom">
                 <button
                   onClick={() => setShowPoseLines(!showPoseLines)}
-                  className="absolute bottom-6 left-42 z-50 w-12 h-12 rounded-xl bg-white/90 hover:bg-white text-gray-700 shadow-lg backdrop-blur-sm transition-all duration-200 flex items-center justify-center"
+                  className="absolute bottom-6 left-36 z-50 w-12 h-12 rounded-xl bg-white/90 hover:bg-white text-gray-700 shadow-lg backdrop-blur-sm transition-all duration-200 flex items-center justify-center"
                 >
                   {showPoseLines ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -905,7 +893,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
           <Tooltip content={isMaximized ? "Exit fullscreen" : "Enter fullscreen"}>
             <button
               type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(false); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(!isMaximized); }}
               className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
