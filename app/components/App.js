@@ -11,26 +11,13 @@ import PerformanceSummaryModal from './PerformanceSummaryModal';
 import Tooltip from './Tooltip';
 import { ProgressTrackingService } from '../services/ProgressTrackingService';
 import { PoseDetectionService } from '../services/PoseDetectionService';
-import { angleDict, landmarkNames, areLandmarksVisible, poseDetectionConfig, PoseConfigManager } from '../services/poseUtils';
-import { calculateAngleDifferencesAndAnomalies } from '../services/angleUtils';
 
 import mixpanel from 'mixpanel-browser';
-import KalmanFilter from '../services/KalmanFilter';
 
-import { CalibrationService } from '../services/CalibrationService';
+import usePosePipeline from '../hooks/usePosePipeline';
+import ControlsBar from './ControlsBar';
 
-// Exponential Smoothing Function with Control Flag
-const smoothLandmarks = (prevLandmarks, newLandmarks, applySmoothing = true, alpha = 0.6) => {
-  if (!applySmoothing || !prevLandmarks) return newLandmarks;
-  return newLandmarks.map((landmark, i) => ({
-    x: alpha * landmark.x + (1 - alpha) * prevLandmarks[i].x,
-    y: alpha * landmark.y + (1 - alpha) * prevLandmarks[i].y,
-    z: alpha * landmark.z + (1 - alpha) * prevLandmarks[i].z,
-  }));
-};
-
-const APPLY_SMOOTHING = true; // Set to true to enable exponential smoothing
-const APPLY_KALMAN = true;    // Set to true to enable Kalman filtering
+//
 
 function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbackInterval = '', selectedWearable = '', selectedWorkout = null }) {
   const [landmarkers, setLandmarkers] = useState({
@@ -41,20 +28,9 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   const [isMaximized, setIsMaximized] = useState(false);
   const [webcamLandmarks, setWebcamLandmarks] = useState([]);
   const [videoLandmarks, setVideoLandmarks] = useState([]);
-  const [poseMatchData, setPoseMatchData] = useState(null);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
-  const [lastCurrentTimeFeedback, setLastCurrentTimeFeedback] = useState(0);
-  const [lastRemainingTimeFeedback, setLastRemainingTimeFeedback] = useState(0);
-  const [landmarksVisible, setLandmarksVisible] = useState(true);
-  const [landmarkPerformance, setLandmarkPerformance] = useState({});
-  const [prevWebcamLandmarks, setPrevWebcamLandmarks] = useState(null);
-  const [prevVideoLandmarks, setPrevVideoLandmarks] = useState(null);
-  const [kalmanR, setKalmanR] = useState(0.01); // Measurement noise covariance
-  const [kalmanQ, setKalmanQ] = useState(0.1);  // Process noise covariance
   const [showPoseLines, setShowPoseLines] = useState(false);
-  const [isCalibrated, setIsCalibrated] = useState(false);
-  const calibrationTimeoutRef = useRef(null);
   const videoRef = useRef(null); // Reference to control video volume
   const [feedbackVolume, setFeedbackVolume] = useState(0.8); // Feedback volume control
   const [isMuted, setIsMuted] = useState(false); // Mute state for audio feedback
@@ -70,8 +46,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   const [showPerformanceSummary, setShowPerformanceSummary] = useState(false);
 
 
-  // Initialize Kalman filters for each landmark
-  const kalmanFilters = useRef([]);
+  // Initialize Kalman filters for each landmark (moved into usePosePipeline)
 
   // OpenAI client removed - now using server-side API route
 
@@ -129,20 +104,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   const feedbackManagerIntervals = getFeedbackManagerIntervals(selectedFeedbackInterval);
   
 
-  const estimateKalmanParameters = (landmarks) => {
-    // Calculate variance of the landmarks
-    const variance = landmarks.reduce((acc, landmark) => {
-      return acc + Math.pow(landmark.x - landmark.y, 2) + Math.pow(landmark.y - landmark.z, 2);
-    }, 0) / landmarks.length;
-
-    // Adjust Q based on variance
-    const newQ = Math.min(1, Math.max(0.01, variance * 0.1));
-    setKalmanQ(newQ);
-
-    // Optionally adjust R based on some criteria
-    const newR = Math.min(1, Math.max(0.01, variance * 0.01));
-    setKalmanR(newR);
-  };
+  // Kalman estimation moved into usePosePipeline
 
   const welcomePlayedRef = useRef(false);
 
@@ -216,6 +178,18 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
     }
   }, [isMuted]);
 
+  // Wire the processing pipeline
+  const { poseMatchData, isCalibrated, resetCalibration } = usePosePipeline({
+    webcamLandmarks,
+    videoLandmarks,
+    isActive,
+    videoCurrentTime,
+    videoDuration,
+    selectedFeedbackInterval,
+    speak: speakWithDucking,
+    speakEncouragement: (t) => { try { feedbackMgrRef.current?.speakEncouragement(t); } catch (_) {} }
+  });
+
   useEffect(() => {
     PoseDetectionService.initialize()
       .then(setLandmarkers)
@@ -230,215 +204,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
 
   // Visibility resume handled by FeedbackManager
 
-
-
-  
-  const calculatePoseMatch = useCallback((webcamLandmarks, videoLandmarks) => {
-    const config = PoseConfigManager.getCurrentConfig();
-    const requiredIndices = config.requiredLandmarkIndices;
-    
-    console.log('webcamLandmarks:', webcamLandmarks);
-    // If webcamLandmarks is an array of objects, log each object
-    webcamLandmarks.forEach((landmark, index) => {
-      console.log(`Landmark ${index}:`, landmark);
-    });
-
-    const webcamVisible = areLandmarksVisible(webcamLandmarks, requiredIndices, config);
-    const videoVisible = areLandmarksVisible(videoLandmarks, requiredIndices, config);
-
-    setLandmarksVisible(webcamVisible && videoVisible);
-
-    if (!webcamVisible || !videoVisible) {
-      console.log('Required landmarks are not visible. Skipping pose match calculation.');
-      return; // Be strict: do not compute or speak feedback when not visible
-    }
-
-    console.log('webcamVisible:', webcamVisible);
-    console.log('videoVisible:', videoVisible);
-
-    const { angleDifferencesMatch, anomalousIndices, totalDifferenceMatch, validAngles } = calculateAngleDifferencesAndAnomalies(
-      webcamLandmarks,
-      videoLandmarks,
-      config
-    );
-
-    // the distance close to 0 is perfect so performance so DifferenceMatch is close to 100 and 
-    //level is excellent
-    // hay que jugar aqui pero esto esta de palo
-    // averageDifferenceMatch is already a 0-100 similarity percentage; use it directly
-    const averageDifferenceMatch = validAngles > 0 ? totalDifferenceMatch / validAngles : 0;
-    const matchPercentage = validAngles > 0 ? Math.max(0, Math.min(100, averageDifferenceMatch)) : 0;
-
-    // TODO: Define adaptive thresholds for ordinal scale
-    const excellentAverageThreshold = 95;  // Stricter: require very high match
-    const goodAverageThreshold = 85;       // Stricter good threshold
-    const fairAverageThreshold = 70;       // Stricter fair threshold
-
-    // TODO: Determine the performance level and color to be corrected 
-    let performanceLevel, color;
-    if (matchPercentage >= excellentAverageThreshold) {
-      performanceLevel = "Excellent";
-      color = 'rgb(0, 255, 0)'; // Green
-    } else if (matchPercentage >= goodAverageThreshold) {
-      performanceLevel = "Good";
-      color = 'rgb(173, 255, 47)'; // Yellow-green
-    } else if (matchPercentage >= fairAverageThreshold) {
-      performanceLevel = "Fair";
-      color = 'rgb(255, 165, 0)'; // Orange
-    } else {
-      performanceLevel = "Poor";
-      color = 'rgb(255, 0, 0)'; // Red
-    }
-
-    console.log(`Performance Level: ${performanceLevel}`);
-
-    // Identify the top most misaligned landmarks 
-    // TODO: has to move to angles to cope wit the iterval
-    const sortedLandmarks = Object.entries(angleDifferencesMatch)
-      .sort(([, diffA], [, diffB]) => diffB - diffA)
-      .slice(0, 1)
-      .map(([landmark]) => landmark);
-
-    // Accumulate landmark performance
-    Object.entries(angleDifferencesMatch).forEach(([landmark, diff]) => {
-      setLandmarkPerformance(prev => ({
-        ...prev,
-        [landmark]: (prev[landmark] || 0) + diff
-      }));
-    });
-
-    // Provide audio feedback at 5 second intervals
-    if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastCurrentTimeFeedback) >= feedbackInterval) {
-      //  Rank landmarks based on accumulated performance
-      //TODO: this has to be retested
-      const worstLandmarks = Object.entries(landmarkPerformance)
-        .sort(([, totalDiffA], [, totalDiffB]) => totalDiffB - totalDiffA)
-        .slice(0, 1)
-        .map(([landmark]) => landmark);
-
-      const feedbackText = `Please pay attention to ${worstLandmarks.join(', ')}.`;
-
-      speakWithDucking(feedbackText);
-
-      console.log(`Feedback event triggered: ${feedbackText}`);
-      setLastCurrentTimeFeedback(videoCurrentTime); // Update the last feedback time
-
-      // Reset landmark performance for the next interval
-      setLandmarkPerformance({});
-    }
-
-
-    else if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastRemainingTimeFeedback) >= remainingTimeFeedbackInterval) {
-      const minutes = Math.floor(videoCurrentTime / 60);
-      const seconds = Math.floor(videoCurrentTime % 60);
-      const timeText = minutes > 0 
-        ? `${minutes} minute${minutes !== 1 ? 's' : ''} and ${seconds} second${seconds !== 1 ? 's' : ''}`
-        : `${seconds} second${seconds !== 1 ? 's' : ''}`;
-        
-      if (!isMuted) {
-        try { feedbackMgrRef.current?.speakEncouragement(timeText); } catch (_) {}
-      }
-      console.log(`Feedback event triggered at ${timeText}`);
-      setLastRemainingTimeFeedback(videoCurrentTime);
-    }
-
-    console.log('Debug - isActive:', isActive);
-    console.log('Debug - videoRemainingTime:', videoRemainingTime);
-    console.log('Debug - lastRemainingTimeFeedback:', lastRemainingTimeFeedback);
-    console.log('Debug - feedbackInterval:', feedbackInterval);
-    console.log('Debug - remainingTimeFeedbackInterval:', remainingTimeFeedbackInterval);
-
-
-    return {
-      percentage: matchPercentage,
-      color,
-      angleDifferencesMatch,
-      anomalousIndices,
-      performanceFeedback: performanceLevel,
-      mostMisalignedLandmarks: sortedLandmarks
-    };
-  }, [videoCurrentTime, videoRemainingTime, lastCurrentTimeFeedback, lastRemainingTimeFeedback, feedbackInterval, remainingTimeFeedbackInterval, isActive]);
-
-  // Add calibration effect
-  useEffect(() => {
-    if (webcamLandmarks.length > 0 && videoLandmarks.length > 0 && !isCalibrated) {
-      // Clear any existing calibration timeout
-      if (calibrationTimeoutRef.current) {
-        clearTimeout(calibrationTimeoutRef.current);
-      }
-
-      // Set a new calibration timeout
-      calibrationTimeoutRef.current = setTimeout(async () => {
-        const success = await CalibrationService.calibrate(videoLandmarks, webcamLandmarks);
-        setIsCalibrated(success);
-        
-        if (success) {
-          console.log('Calibration successful');
-          // Optionally provide feedback to the user
-          speakWithDucking('Calibration complete. Ready to start.');
-        } else {
-          console.warn('Calibration failed');
-        }
-      }, 1000); // Wait for 1 second of stable poses before calibrating
-    }
-
-    return () => {
-      if (calibrationTimeoutRef.current) {
-        clearTimeout(calibrationTimeoutRef.current);
-      }
-    };
-  }, [webcamLandmarks, videoLandmarks, isCalibrated]);
-
-  // Update the landmark processing effect
-  useEffect(() => {
-    console.log('Landmark update check:', { 
-      webcamCount: webcamLandmarks.length, 
-      videoCount: videoLandmarks.length,
-      poseMatchData: !!poseMatchData 
-    });
-    if (webcamLandmarks.length > 0 && videoLandmarks.length > 0) {
-      // Estimate Kalman parameters based on current landmarks
-      estimateKalmanParameters(webcamLandmarks);
-
-      // Initialize Kalman filters if not already done
-      if (kalmanFilters.current.length === 0) {
-        kalmanFilters.current = webcamLandmarks.map(() => new KalmanFilter());
-      }
-
-      // Update Kalman filter parameters dynamically
-      kalmanFilters.current.forEach(filter => filter.setParameters({ R: kalmanR, Q: kalmanQ }));
-
-      // Apply Kalman filtering if enabled
-      const kalmanFilteredWebcamLandmarks = APPLY_KALMAN
-        ? webcamLandmarks.map((landmark, i) => ({
-            x: kalmanFilters.current[i].filter(landmark.x),
-            y: kalmanFilters.current[i].filter(landmark.y),
-            z: kalmanFilters.current[i].filter(landmark.z),
-          }))
-        : webcamLandmarks;
-
-      // Do not apply Kalman filtering to reference video landmarks
-      const kalmanFilteredVideoLandmarks = videoLandmarks;
-
-      // Apply Exponential Smoothing after Kalman filtering
-      const smoothedWebcamLandmarks = smoothLandmarks(prevWebcamLandmarks, kalmanFilteredWebcamLandmarks, APPLY_SMOOTHING);
-      const smoothedVideoLandmarks = smoothLandmarks(prevVideoLandmarks, kalmanFilteredVideoLandmarks, APPLY_SMOOTHING);
-
-      setPrevWebcamLandmarks(smoothedWebcamLandmarks);
-      setPrevVideoLandmarks(smoothedVideoLandmarks);
-
-      // Apply calibration if available
-      const calibratedLandmarks = CalibrationService.transformLandmarks(smoothedWebcamLandmarks);
-      const matchData = calculatePoseMatch(calibratedLandmarks, smoothedVideoLandmarks);
-      setPoseMatchData(matchData);
-    }
-  }, [webcamLandmarks, videoLandmarks, calculatePoseMatch, kalmanR, kalmanQ]);
-
-  // Add reset calibration function
-  const resetCalibration = useCallback(() => {
-    CalibrationService.resetCalibration();
-    setIsCalibrated(false);
-  }, []);
+  // Calibration and pose processing moved into usePosePipeline
 
   // Add toggle video play/pause function
   const toggleVideoPlayPause = useCallback(() => {
@@ -545,17 +311,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
     }
   }, []);
 
-  // Track performance data over time
-  useEffect(() => {
-    if (poseMatchData && isActive) {
-      setPerformanceHistory(prev => [...prev, {
-        timestamp: Date.now(),
-        percentage: poseMatchData.percentage,
-        performanceLevel: poseMatchData.performanceFeedback,
-        timeInWorkout: videoCurrentTime
-      }]);
-    }
-  }, [poseMatchData, isActive, videoCurrentTime]);
+  // Track performance data over time (will use poseMatchData from pipeline)
 
   // Add new function to generate AI feedback
   const generateAIFeedback = async (performanceData) => {
@@ -616,7 +372,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
 
   return (
     <>
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="relative w-full">
 
 
@@ -773,175 +529,46 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
       </div>
       
       {/* Controls Section - Single row layout */}
-      <div className="flex items-center justify-center gap-4 mt-8">
-        {/* AI Feedback */}
-        <Tooltip content="AI Feedback">
-          <button
-            type="button"
-            onClick={(e) => { 
-              e.preventDefault(); 
-              e.stopPropagation(); 
-              console.log('Button clicked - Debug info:', {
-                poseMatchData,
-                webcamLandmarks: webcamLandmarks.length,
-                videoLandmarks: videoLandmarks.length,
-                isActive
-              });
-              // If we have any webcam landmarks, allow feedback even if full match isn't computed yet
-              const hasWebcamPose = Array.isArray(webcamLandmarks) && webcamLandmarks.length > 0;
-              if (!hasWebcamPose) {
-                alert('No pose detected. Please ensure your camera can see you.');
-                return;
-              }
-
-              const payload = poseMatchData ?? {
-                performanceFeedback: 'Unknown',
-                percentage: 0,
-                mostMisalignedLandmarks: []
-              };
-              generateAIFeedback(payload);
-            }}
-            className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-          </button>
-        </Tooltip>
-
-        {/* Play/Pause - Primary Control */}
-        <Tooltip content={isActive ? "Pause workout" : "Start workout"}>
-          <button 
-            type="button"
-            onClick={async () => {
-              const newIsActive = !isActive;
-              setIsActive(newIsActive);
-
-              if (newIsActive) {
-                mixpanel.track('Workout Resumed', {
-                  platform: 'web_app'
-                });
-              } else {
-                mixpanel.track('Workout Paused', {
-                  platform: 'web_app'
-                });
-                setWebcamLandmarks([]);
-                setVideoLandmarks([]);
-              }
-            }}
-            className={`
-              w-16 h-16 rounded-2xl font-medium text-base
-              flex items-center justify-center
-              transition-all duration-200 hover:shadow-lg mx-2
-              ${isActive 
-                ? 'bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300' 
-                : 'bg-gray-900 hover:bg-gray-800 text-white dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900'}
-            `}
-          >
-            {isActive ? (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16" rx="1"/>
-                <rect x="14" y="4" width="4" height="16" rx="1"/>
-              </svg>
-            ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            )}
-          </button>
-        </Tooltip>
-
-        {/* Fullscreen */}
-        <Tooltip content={isMaximized ? "Exit fullscreen" : "Enter fullscreen"}>
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFullscreenPreservingPlayback(!isMaximized); }}
-            className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {isMaximized ? (
-                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-              ) : (
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-              )}
-            </svg>
-          </button>
-        </Tooltip>
-
-        {/* Mute */}
-        <Tooltip content={isMuted ? "Unmute" : "Mute"}>
-          <button
-            type="button"
-            onClick={() => setIsMuted(!isMuted)}
-            className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
-          >
-            {isMuted ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                <line x1="23" y1="9" x2="17" y2="15"/>
-                <line x1="17" y1="9" x2="23" y2="15"/>
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
-              </svg>
-            )}
-          </button>
-        </Tooltip>
-
-        {/* Subtitles */}
-        <Tooltip content={showSubtitles ? "Hide subtitles" : "Show subtitles"}>
-          <button
-            type="button"
-            onClick={() => setShowSubtitles(!showSubtitles)}
-            className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {showSubtitles ? (
-                <g>
-                  <rect x="2" y="6" width="20" height="12" rx="2" />
-                  <path d="M6 10h2M6 14h6M14 14h4" />
-                </g>
-              ) : (
-                <g>
-                  <rect x="2" y="6" width="20" height="12" rx="2" />
-                  <path d="M6 10h2M6 14h6M14 14h4" />
-                  <line x1="2" y1="2" x2="22" y2="22" />
-                </g>
-              )}
-            </svg>
-          </button>
-        </Tooltip>
-
-        {/* Pose Lines */}
-        <Tooltip content={showPoseLines ? "Hide pose lines" : "Show pose lines"}>
-          <button
-            type="button"
-            onClick={() => setShowPoseLines(!showPoseLines)}
-            className="w-12 h-12 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 hover:shadow-md transition-all duration-200 flex items-center justify-center"
-          >
-            {showPoseLines ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                <line x1="1" y1="1" x2="23" y2="23" />
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            )}
-          </button>
-        </Tooltip>
-      </div>
+      <ControlsBar
+        isActive={isActive}
+        isMaximized={isMaximized}
+        isMuted={isMuted}
+        showSubtitles={showSubtitles}
+        showPoseLines={showPoseLines}
+        onToggleActive={async () => {
+                const newIsActive = !isActive;
+                setIsActive(newIsActive);
+                if (newIsActive) {
+            mixpanel.track('Workout Resumed', { platform: 'web_app' });
+                } else {
+            mixpanel.track('Workout Paused', { platform: 'web_app' });
+                  setWebcamLandmarks([]);
+                  setVideoLandmarks([]);
+                }
+              }}
+        onToggleFullscreen={(e) => { e?.preventDefault?.(); e?.stopPropagation?.(); toggleFullscreenPreservingPlayback(!isMaximized); }}
+        onToggleMute={() => setIsMuted(!isMuted)}
+        onToggleSubtitles={() => setShowSubtitles(!showSubtitles)}
+        onTogglePoseLines={() => setShowPoseLines(!showPoseLines)}
+        onGetFeedback={(e) => {
+          e?.preventDefault?.();
+          e?.stopPropagation?.();
+                const hasWebcamPose = Array.isArray(webcamLandmarks) && webcamLandmarks.length > 0;
+                if (!hasWebcamPose) {
+                  alert('No pose detected. Please ensure your camera can see you.');
+                  return;
+                }
+          const payload = poseMatchData ?? { performanceFeedback: 'Unknown', percentage: 0, mostMisalignedLandmarks: [] };
+                generateAIFeedback(payload);
+              }}
+      />
 
       {/* Info Text - Minimalist subtle text */}
       <div className="mt-4">
         <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          Better poses yield better feedback
-        </p>
-      </div>
+          Better look, sharper feedback
+          </p>
+        </div>
       </div>
 
       {/* Performance Summary Modal */}
