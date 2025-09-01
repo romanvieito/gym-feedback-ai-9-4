@@ -402,7 +402,7 @@ export default function Home() {
                   AI Workout Challenges
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                  Choose your challenge and get real-time AI-powered form feedback to perfect your technique
+                  Pick a challenge, feel the workout like a game.
                 </p>
               </div>
             </div>

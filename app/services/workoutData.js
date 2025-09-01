@@ -52,7 +52,7 @@ export const workoutTypes = [
     title: 'Exercises for Health and Wellness',
     image: '/images/4.png',
     video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/9ExercisesforHealthandWellness.mp4',
-    duration: '22 min',
+    duration: '5 min',
     description: 'Holistic Fitness',
   },
   
