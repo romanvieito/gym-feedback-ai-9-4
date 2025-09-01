@@ -22,4 +22,4 @@ COMMENT ON COLUMN user_settings.user_id IS 'Unique identifier for the user sessi
 COMMENT ON COLUMN user_settings.fitness_goal IS 'User selected fitness goal (e.g., lose-weight, build-muscle)';
 COMMENT ON COLUMN user_settings.focus_area IS 'User selected focus area (e.g., upper-body, lower-body, core, full-body)';
 COMMENT ON COLUMN user_settings.wearable IS 'User selected wearable device (e.g., apple, whoop, garmin, none)';
-COMMENT ON COLUMN user_settings.feedback_interval IS 'User selected feedback frequency (e.g., 1min, 2min, 5min)';
+COMMENT ON COLUMN user_settings.feedback_interval IS 'User selected feedback frequency (e.g., frequent, balanced, minimal, smart)';

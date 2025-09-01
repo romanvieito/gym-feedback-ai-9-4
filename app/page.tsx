@@ -57,9 +57,10 @@ export default function Home() {
   ];
 
   const feedbackIntervals = [
-    { id: '1min', name: '⚡ Every 1 minute', description: 'Frequent feedback for intensive coaching', value: 60 },
-    { id: '2min', name: '🎯 Every 2 minutes', description: 'Balanced feedback for steady progress', value: 120 },
-    { id: '5min', name: '🕐 Every 5 minutes', description: 'Minimal feedback for focused workouts', value: 300 }
+    { id: 'frequent', name: '⚡ Frequent', description: 'Get feedback every minute for intensive coaching and form correction', value: 60 },
+    { id: 'balanced', name: '🎯 Balanced', description: 'Receive feedback every 2-3 minutes for steady progress without interruption', value: 150 },
+    { id: 'minimal', name: '🕐 Minimal', description: 'Get feedback every 5 minutes for focused, uninterrupted workouts', value: 300 },
+    { id: 'smart', name: '🧠 Smart', description: 'AI adapts feedback frequency based on your form and workout intensity', value: 'adaptive' }
   ];
 
   useEffect(() => {

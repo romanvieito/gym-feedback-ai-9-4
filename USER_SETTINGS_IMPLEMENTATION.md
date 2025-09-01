@@ -86,7 +86,7 @@ Saves user settings to database.
   "fitnessGoal": "lose-weight",
   "focusArea": "upper-body", 
   "wearable": "apple",
-  "feedbackInterval": "2min",
+  "feedbackInterval": "balanced",
   "updateExisting": true
 }
 ```
@@ -101,7 +101,7 @@ Saves user settings to database.
     "fitness_goal": "lose-weight",
     "focus_area": "upper-body",
     "wearable": "apple", 
-    "feedback_interval": "2min",
+    "feedback_interval": "balanced",
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z"
   },
@@ -122,7 +122,7 @@ Retrieves user settings from database.
     "fitness_goal": "lose-weight",
     "focus_area": "upper-body",
     "wearable": "apple",
-    "feedback_interval": "2min",
+    "feedback_interval": "balanced",
     "created_at": "2024-01-01T00:00:00Z",
     "updated_at": "2024-01-01T00:00:00Z"
   }

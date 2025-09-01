@@ -64,9 +64,10 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
 
   // Feedback interval options mapping
   const feedbackIntervalOptions = {
-    '1min': 60,   // 1 minute
-    '2min': 120,  // 2 minutes  
-    '5min': 300   // 5 minutes
+    'frequent': 60,   // 1 minute
+    'balanced': 150,  // 2.5 minutes  
+    'minimal': 300,   // 5 minutes
+    'smart': 'adaptive'
   };
 
   // Use user-selected feedback interval or fallback to dynamic calculation
@@ -77,8 +78,13 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   const feedbackFactor = 0.1;  // 10% of total video duration for general feedback
   const remainingTimeFactor = 0.15; // 15% of total video duration for remaining time feedback
   
+  // Handle smart adaptive feedback
+  const isSmartFeedback = userFeedbackInterval === 'adaptive';
+  
   // Use user-selected interval or dynamically calculate intervals
-  const feedbackInterval = userFeedbackInterval || Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor));
+  const feedbackInterval = isSmartFeedback 
+    ? Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor)) // Dynamic for smart mode
+    : (userFeedbackInterval || Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor)));
   const remainingTimeFeedbackInterval = Math.max(minInterval, Math.min(maxInterval, videoDuration * remainingTimeFactor));
 
   // Convert user feedback interval to FeedbackManager intervals (in milliseconds)
@@ -89,6 +95,16 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         encouragement: 15000, // 15 seconds
         milestone: 30000,   // 30 seconds
         rest: 5000         // 5 seconds
+      };
+    }
+    
+    // Handle smart adaptive feedback
+    if (userInterval === 'smart') {
+      return {
+        form: 6000,        // More frequent form feedback for smart mode
+        encouragement: 12000, // Adaptive encouragement
+        milestone: 25000,   // Adaptive milestones
+        rest: 4000         // More frequent rest prompts
       };
     }
     
@@ -353,7 +369,13 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         feedbackLength: feedbackText.length
       });
 
-      speakWithDucking(feedbackText);
+      // Use FeedbackManager's context-aware speaking to respect feedback frequency settings
+      try { 
+        await feedbackMgrRef.current?.speakWithContext(feedbackText, { type: 'form' }); 
+      } catch (_) {
+        // Fallback to direct speaking if context-aware fails
+        speakWithDucking(feedbackText);
+      }
     } catch (error) {
       // Track error in feedback generation
       mixpanel.track('AI Feedback Error', {

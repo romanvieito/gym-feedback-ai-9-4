@@ -50,9 +50,10 @@ export function usePosePipeline({
 
   // Feedback interval options mapping
   const feedbackIntervalOptions = {
-    '1min': 60,
-    '2min': 120,
-    '5min': 300
+    'frequent': 60,
+    'balanced': 150,
+    'minimal': 300,
+    'smart': 'adaptive'
   };
 
   // Use user-selected feedback interval or fallback to dynamic calculation
@@ -61,7 +62,13 @@ export function usePosePipeline({
   const maxInterval = 30;
   const feedbackFactor = 0.1;
   const remainingTimeFactor = 0.15;
-  const feedbackInterval = userFeedbackInterval || Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor));
+  
+  // Handle smart adaptive feedback
+  const isSmartFeedback = userFeedbackInterval === 'adaptive';
+  
+  const feedbackInterval = isSmartFeedback 
+    ? Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor)) // Dynamic for smart mode
+    : (userFeedbackInterval || Math.max(minInterval, Math.min(maxInterval, videoDuration * feedbackFactor)));
   const remainingTimeFeedbackInterval = Math.max(minInterval, Math.min(maxInterval, videoDuration * remainingTimeFactor));
 
   const estimateKalmanParameters = useCallback((landmarks) => {

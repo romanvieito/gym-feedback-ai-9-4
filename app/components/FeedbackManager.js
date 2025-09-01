@@ -439,6 +439,19 @@ const FeedbackManager = forwardRef(function FeedbackManager(
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [ensureAudioUnlocked]);
 
+  // Update feedback timing when intervals change
+  useEffect(() => {
+    feedbackTimingRef.current.intervals = feedbackIntervals;
+    // Reset last feedback times when intervals change to allow immediate feedback with new settings
+    feedbackTimingRef.current.lastFeedback = {
+      form: 0,
+      encouragement: 0,
+      milestone: 0,
+      any: 0
+    };
+    console.log('Feedback intervals updated:', feedbackIntervals);
+  }, [feedbackIntervals]);
+
   // Handle mute state changes
   useEffect(() => {
     const videoEl = typeof getVideoEl === 'function' ? getVideoEl() : null;
