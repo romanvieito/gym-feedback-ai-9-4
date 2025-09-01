@@ -66,7 +66,7 @@ export function WorkoutVideoComponent({
         const videoEl = videoRef.current;
         const canvasEl = canvasRef.current;
         if (!videoEl || !canvasEl) return;
-        if (videoEl.readyState >= 2 && !videoEl.paused) {
+        if (videoEl.readyState >= 2) {
           const result = await PoseDetectionService.detectPoseInVideo(
             poseLandmarker,
             videoEl
@@ -111,15 +111,14 @@ export function WorkoutVideoComponent({
 
     let animationFrameId;
     const detectFrame = async () => {
+      await detectAndDrawPose();
       if (isActive) {
-        await detectAndDrawPose();
         animationFrameId = requestAnimationFrame(detectFrame);
       }
     };
 
-    if (isActive) {
-      detectFrame();
-    }
+    // Always run at least once to populate landmarks even when paused
+    detectFrame();
 
     return () => {
       if (animationFrameId) {

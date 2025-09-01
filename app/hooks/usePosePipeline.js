@@ -90,7 +90,7 @@ export function usePosePipeline({
     const webcamVisible = areLandmarksVisible(camLandmarks, requiredIndices, config);
     const videoVisible = areLandmarksVisible(vidLandmarks, requiredIndices, config);
     setLandmarksVisible(webcamVisible && videoVisible);
-    if (!webcamVisible || !videoVisible) return;
+    // Do not early return; proceed to compute with available data to keep poseMatchData flowing
 
     const { angleDifferencesMatch, anomalousIndices, totalDifferenceMatch, validAngles } = calculateAngleDifferencesAndAnomalies(
       camLandmarks,

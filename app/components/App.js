@@ -583,11 +583,20 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
           e?.preventDefault?.();
           e?.stopPropagation?.();
                 const hasWebcamPose = Array.isArray(webcamLandmarks) && webcamLandmarks.length > 0;
+                const hasVideoPose = Array.isArray(videoLandmarks) && videoLandmarks.length > 0;
                 if (!hasWebcamPose) {
-                  alert('No pose detected. Please ensure your camera can see you.');
+                  alert('No pose detected from your camera. Please ensure your camera can see you.');
                   return;
                 }
-          const payload = poseMatchData ?? { performanceFeedback: 'Unknown', percentage: 0, mostMisalignedLandmarks: [] };
+                if (!hasVideoPose) {
+                  alert('Video pose data not available yet. Please wait for the video to load.');
+                  return;
+                }
+          const payload = poseMatchData ? {
+            performanceFeedback: poseMatchData.performanceFeedback || 'Unknown',
+            percentage: Number.isFinite(poseMatchData.percentage) ? poseMatchData.percentage : 0,
+            mostMisalignedLandmarks: Array.isArray(poseMatchData.mostMisalignedLandmarks) ? poseMatchData.mostMisalignedLandmarks : []
+          } : { performanceFeedback: 'Unknown', percentage: 0, mostMisalignedLandmarks: [] };
                 generateAIFeedback(payload);
               }}
       />

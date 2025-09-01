@@ -21,8 +21,8 @@ export function areLandmarksVisible(landmarks, requiredIndices, config = null) {
     const landmarkName = landmarkNames[index];
     const threshold = currentConfig.landmarkVisibilityThresholds[landmarkName] || currentConfig.defaultVisibilityThreshold;
     
-    // Require visibility to be present and above threshold (be stricter)
-    if (lm.visibility !== undefined && lm.visibility >= threshold) {
+    // Treat missing visibility as visible (MediaPipe may omit it), otherwise enforce threshold
+    if (lm.visibility === undefined || lm.visibility >= threshold) {
       visibleCount++;
     }
   }
@@ -52,7 +52,7 @@ export const angleDict = {
 // Configuration for pose detection thresholds and settings
 export const poseDetectionConfig = {
   // Global visibility threshold (can be overridden per landmark)
-  defaultVisibilityThreshold: 0.7,
+  defaultVisibilityThreshold: 0.5,
   
   // Per-joint anomaly thresholds (percentage similarity below which joint is considered anomalous)
   anomalyThresholds: {
@@ -71,14 +71,14 @@ export const poseDetectionConfig = {
   // Per-landmark visibility thresholds (overrides default)
   landmarkVisibilityThresholds: {
     // Core landmarks that are critical for pose detection
-    'Left Shoulder': 0.8,
-    'Right Shoulder': 0.8,
-    'Left Hip': 0.8,
-    'Right Hip': 0.8,
-    'Left Knee': 0.7,
-    'Right Knee': 0.7,
-    'Left Ankle': 0.6,
-    'Right Ankle': 0.6,
+    'Left Shoulder': 0.6,
+    'Right Shoulder': 0.6,
+    'Left Hip': 0.6,
+    'Right Hip': 0.6,
+    'Left Knee': 0.55,
+    'Right Knee': 0.55,
+    'Left Ankle': 0.5,
+    'Right Ankle': 0.5,
     // Face landmarks can be less strict
     'Nose': 0.5,
     'Left Eye': 0.4,
@@ -91,7 +91,7 @@ export const poseDetectionConfig = {
   },
   
   // Minimum number of landmarks that must be visible for pose detection
-  minVisibleLandmarks: 20,
+  minVisibleLandmarks: 14,
   
   // Required landmark indices for pose matching (indices 10+ are body landmarks)
   requiredLandmarkIndices: Array.from({ length: landmarkNames.length - 10 }, (_, i) => i + 10)

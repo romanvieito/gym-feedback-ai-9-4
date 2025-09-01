@@ -79,9 +79,10 @@ export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLan
       const index = landmarkNames.indexOf(kpt);
       if (index === -1) return false;
       const lm = currentLandmarks[index];
-      if (!lm || lm.visibility === undefined) return false;
-      // Use stricter default threshold aligned with poseDetectionConfig
-      return lm.visibility >= 0.7;
+      if (!lm) return false;
+      // Treat missing visibility as visible (MediaPipe may omit it)
+      const threshold = PoseConfigManager.getLandmarkVisibilityThreshold(kpt);
+      return lm.visibility === undefined || lm.visibility >= threshold;
     });
 
     if (!isAngleVisible) {
