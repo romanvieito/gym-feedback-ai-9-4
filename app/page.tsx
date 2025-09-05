@@ -246,7 +246,7 @@ export default function Home() {
   };
 
   const handleFeedbackIntervalChange = async (intervalId: string) => {
-    console.log('Feedback interval changed to:', intervalId);
+    // console.log('Feedback interval changed to:', intervalId);
     setSelectedFeedbackInterval(intervalId);
     if (typeof window !== 'undefined') {
       localStorage.setItem('selectedFeedbackInterval', intervalId);

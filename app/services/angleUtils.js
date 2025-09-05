@@ -95,16 +95,16 @@ export function calculateAngleDifferencesAndAnomalies(currentLandmarks, videoLan
     const videoAngle = computeAngle(angName, videoLandmarks, angleDict, landmarkNames); // Compute the video angle
 
     // // Debugging: Log the computed angles
-    console.log(`Angle Name: ${angName}`);
-    console.log(`Current Angle: ${currentAngle}`);
-    console.log(`Video Angle: ${videoAngle}`);
+    // console.log(`Angle Name: ${angName}`);
+    // console.log(`Current Angle: ${currentAngle}`);
+    // console.log(`Video Angle: ${videoAngle}`);
 
     if (!isNaN(currentAngle) && !isNaN(videoAngle)) { // Check if both angles are valid numbers
       const diff = cosineDistanceBetweenAngles(currentAngle, videoAngle); // Calculate the cosine distance between angles
       angleDifferencesMatch[angName] = (1 - diff) * 100; // Store the angle similarity as a percentage (100 = perfect)
       totalDifferenceMatch += angleDifferencesMatch[angName]; // Accumulate the total similarity
-      console.log(`angleDifferencesPercentage: ${angleDifferencesMatch[angName]}`);
-      console.log(`angleDifference: ${diff}`);
+      // console.log(`angleDifferencesPercentage: ${angleDifferencesMatch[angName]}`);
+      // console.log(`angleDifference: ${diff}`);
       validAngles++; // Increment the count of valid angles
 
       // Use per-joint anomaly threshold from config

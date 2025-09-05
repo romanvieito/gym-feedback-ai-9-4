@@ -449,7 +449,7 @@ const FeedbackManager = forwardRef(function FeedbackManager(
       milestone: 0,
       any: 0
     };
-    console.log('Feedback intervals updated:', feedbackIntervals);
+    // console.log('Feedback intervals updated:', feedbackIntervals);
   }, [feedbackIntervals]);
 
   // Handle mute state changes
