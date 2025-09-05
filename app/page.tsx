@@ -99,7 +99,7 @@ export default function Home() {
         let userId = user?.id;
         if (!userId) {
           // Fallback to session ID for anonymous users
-          userId = sessionStorage.getItem('sessionUserId') || undefined;
+          userId = sessionStorage.getItem('sessionUserId');
           if (!userId) {
             userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             sessionStorage.setItem('sessionUserId', userId);
@@ -196,7 +196,7 @@ export default function Home() {
     isPremium?: boolean;
   }) => {
     try {
-      const userId = user?.id || sessionStorage.getItem('sessionUserId') || undefined;
+      const userId = user?.id || sessionStorage.getItem('sessionUserId');
       if (!userId) {
         console.error('No user ID found for saving settings');
         return;
@@ -350,7 +350,7 @@ export default function Home() {
     if (!isPremium) return;
 
     try {
-      const userId = user?.id || sessionStorage.getItem('sessionUserId') || undefined;
+      const userId = user?.id || sessionStorage.getItem('sessionUserId');
       if (!userId) return;
 
       const response = await fetch(`/api/user-videos?userId=${userId}`);

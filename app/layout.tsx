@@ -15,7 +15,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      appearance={{
+        baseTheme: undefined,
+        variables: {
+          colorPrimary: '#3b82f6',
+          colorText: '#1f2937',
+        },
+      }}
+    >
       <html lang="en">
         <body className={inter.className}>{children}</body>
       </html>
