@@ -22,6 +22,7 @@ export default function Home() {
   const [selectedFocusArea, setSelectedFocusArea] = useState('');
   const [selectedFeedbackInterval, setSelectedFeedbackInterval] = useState('');
   const [selectedWorkout, setSelectedWorkout] = useState(null);
+  const [isPremium, setIsPremium] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
@@ -103,13 +104,14 @@ export default function Home() {
         const savedFitnessGoal = localStorage.getItem('selectedFitnessGoal');
         const savedFocusArea = localStorage.getItem('selectedFocusArea');
         const savedFeedbackInterval = localStorage.getItem('selectedFeedbackInterval');
+        const savedIsPremium = localStorage.getItem('isPremium') === 'true';
 
         // Load notification dismissal state
         const dismissed = localStorage.getItem('notificationDismissed') === 'true';
         const dismissedTime = localStorage.getItem('notificationDismissedTime');
         const dismissedTimestamp = dismissedTime ? parseInt(dismissedTime) : null;
 
-        console.log('Loading saved preferences from localStorage:', { savedWearable, savedFitnessGoal, savedFocusArea, savedFeedbackInterval });
+        console.log('Loading saved preferences from localStorage:', { savedWearable, savedFitnessGoal, savedFocusArea, savedFeedbackInterval, savedIsPremium });
 
         // Check if notification should be shown again (24 hours after dismissal)
         const now = Date.now();
@@ -132,6 +134,7 @@ export default function Home() {
         if (savedFitnessGoal) setSelectedFitnessGoal(savedFitnessGoal);
         if (savedFocusArea) setSelectedFocusArea(savedFocusArea);
         if (savedFeedbackInterval) setSelectedFeedbackInterval(savedFeedbackInterval);
+        setIsPremium(savedIsPremium);
         
         // Then try to load from database and override localStorage values
         const response = await fetch(`/api/user-settings?userId=${userId}`);
@@ -158,6 +161,10 @@ export default function Home() {
               setSelectedFeedbackInterval(settings.feedback_interval);
               localStorage.setItem('selectedFeedbackInterval', settings.feedback_interval);
             }
+            if (settings.is_premium !== undefined) {
+              setIsPremium(settings.is_premium);
+              localStorage.setItem('isPremium', settings.is_premium.toString());
+            }
           }
         } else {
           console.log('No existing user settings found in database, using localStorage values');
@@ -179,6 +186,7 @@ export default function Home() {
     focusArea?: string;
     wearable?: string;
     feedbackInterval?: string;
+    isPremium?: boolean;
   }) => {
     try {
       const userId = sessionStorage.getItem('sessionUserId');
@@ -193,6 +201,7 @@ export default function Home() {
         focusArea: selectedFocusArea,
         wearable: selectedWearable,
         feedbackInterval: selectedFeedbackInterval,
+        isPremium: isPremium,
         // Override with any updated setting
         ...updatedSetting
       };
@@ -274,12 +283,27 @@ export default function Home() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('selectedFeedbackInterval', intervalId);
     }
-    
+
     // Save all settings to database with the updated feedback interval
     await saveAllSettingsToDatabase({ feedbackInterval: intervalId });
-    
+
     mixpanel.track('Feedback Interval Selected', {
       feedbackInterval: intervalId,
+      location: 'settings_menu',
+    });
+  };
+
+  const handlePremiumChange = async (premium: boolean) => {
+    setIsPremium(premium);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('isPremium', premium.toString());
+    }
+
+    // Save all settings to database with the updated premium status
+    await saveAllSettingsToDatabase({ isPremium: premium });
+
+    mixpanel.track('Premium Status Changed', {
+      isPremium: premium,
       location: 'settings_menu',
     });
   };
@@ -415,11 +439,13 @@ export default function Home() {
                       selectedFocusArea={selectedFocusArea}
                       selectedFeedbackInterval={selectedFeedbackInterval}
                       selectedWearable={selectedWearable}
+                      isPremium={isPremium}
                       preferencesLoaded={preferencesLoaded}
                       onFitnessGoalChange={handleFitnessGoalChange}
                       onFocusAreaChange={handleFocusAreaChange}
                       onFeedbackIntervalChange={handleFeedbackIntervalChange}
                       onWearableChange={handleWearableChange}
+                      onPremiumChange={handlePremiumChange}
                       onClose={() => setShowMenu(false)}
                       fitnessGoals={fitnessGoals}
                       focusAreas={focusAreas}
@@ -485,7 +511,10 @@ export default function Home() {
             {/* Workout Challenges Section */}
             <div className="p-6">
               <div className="space-y-3">
-                {workoutTypes.map((workout, index) => (
+                {/* Filter workouts based on premium status - show first 4 for free users, all for premium */}
+                {workoutTypes
+                  .filter((_, index) => isPremium || index < 4)
+                  .map((workout, index) => (
                   <Tooltip key={workout.title} content={`Start ${workout.title} challenge - Click to begin your workout with AI-powered form feedback`}>
                     <button 
                       onClick={() => handleWorkoutClick(workout)}
@@ -532,51 +561,78 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Premium Section */}
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <Tooltip content="Upgrade to premium to access all workout challenges and advanced features">
-                  <Link 
-                    href={premiumLink}
-                    onClick={handlePremiumClick}
-                    className="block p-4 rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 dark:from-white dark:to-gray-100 dark:hover:from-gray-100 dark:hover:to-gray-200 text-white dark:text-gray-900 flex items-center justify-center gap-3 transition-all duration-200 hover:shadow-lg group"
-                  >
-                    <div className="flex items-center gap-3">
+              {/* Premium Section - Only show for non-premium users */}
+              {!isPremium && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <Tooltip content="Upgrade to premium to access all workout challenges and advanced features">
+                    <Link
+                      href={premiumLink}
+                      onClick={handlePremiumClick}
+                      className="block p-4 rounded-xl bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 dark:from-white dark:to-gray-100 dark:hover:from-gray-100 dark:hover:to-gray-200 text-white dark:text-gray-900 flex items-center justify-center gap-3 transition-all duration-200 hover:shadow-lg group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-yellow-400 dark:text-yellow-600"
+                        >
+                          <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
+                        </svg>
+                        <div className="text-center">
+                          <div className="font-semibold text-sm">Go Premium</div>
+                          <div className="text-xs text-gray-200 dark:text-gray-600">Unlock Every Workout!</div>
+                        </div>
+                      </div>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
+                        width="16"
+                        height="16"
                         viewBox="0 0 24 24"
                         fill="none"
-                        stroke="currentColor" 
+                        stroke="currentColor"
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className="text-yellow-400 dark:text-yellow-600"
+                        className="text-gray-300 dark:text-gray-600 group-hover:text-white dark:group-hover:text-gray-900 transition-colors"
                       >
-                        <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
+                        <polyline points="9 18 15 12 9 6"></polyline>
                       </svg>
-                      <div className="text-center">
-                        <div className="font-semibold text-sm">Go Premium</div>
-                        <div className="text-xs text-gray-200 dark:text-gray-600">Unlock Every Workout!</div>
-                      </div>
-                    </div>
+                    </Link>
+                  </Tooltip>
+                </div>
+              )}
+
+              {/* Premium User Badge */}
+              {isPremium && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
+                      width="20"
+                      height="20"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="text-gray-300 dark:text-gray-600 group-hover:text-white dark:group-hover:text-gray-900 transition-colors"
                     >
-                      <polyline points="9 18 15 12 9 6"></polyline>
+                      <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
                     </svg>
-                  </Link>
-                </Tooltip>
-              </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-sm">Premium Member</div>
+                      <div className="text-xs text-yellow-800">Access to all workouts!</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

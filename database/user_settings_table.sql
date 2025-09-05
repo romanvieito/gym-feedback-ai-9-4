@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
     focus_area VARCHAR(100),
     wearable VARCHAR(100),
     feedback_interval VARCHAR(100),
+    is_premium BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
     UNIQUE(user_id)
@@ -23,3 +24,4 @@ COMMENT ON COLUMN user_settings.fitness_goal IS 'User selected fitness goal (e.g
 COMMENT ON COLUMN user_settings.focus_area IS 'User selected focus area (e.g., upper-body, lower-body, core, full-body)';
 COMMENT ON COLUMN user_settings.wearable IS 'User selected wearable device (e.g., apple, whoop, garmin, none)';
 COMMENT ON COLUMN user_settings.feedback_interval IS 'User selected feedback frequency (e.g., frequent, balanced, minimal, smart)';
+COMMENT ON COLUMN user_settings.is_premium IS 'Whether the user has premium access (true/false)';

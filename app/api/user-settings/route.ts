@@ -3,13 +3,14 @@ import { sql } from '@vercel/postgres';
 
 export async function POST(request: NextRequest) {
   try {
-    const { 
-      userId, 
-      fitnessGoal, 
-      focusArea, 
-      wearable, 
+    const {
+      userId,
+      fitnessGoal,
+      focusArea,
+      wearable,
       feedbackInterval,
-      updateExisting = true 
+      isPremium,
+      updateExisting = true
     } = await request.json();
     
     console.log('Received user settings data:', {
@@ -18,6 +19,7 @@ export async function POST(request: NextRequest) {
       focusArea,
       wearable,
       feedbackInterval,
+      isPremium,
       updateExisting
     });
     
@@ -43,12 +45,13 @@ export async function POST(request: NextRequest) {
         // Update existing record
         console.log('Updating existing user settings record');
         result = await sql`
-          UPDATE user_settings 
-          SET 
-            fitness_goal = ${fitnessGoal || null}, 
-            focus_area = ${focusArea || null}, 
-            wearable = ${wearable || null}, 
-            feedback_interval = ${feedbackInterval || null}, 
+          UPDATE user_settings
+          SET
+            fitness_goal = ${fitnessGoal || null},
+            focus_area = ${focusArea || null},
+            wearable = ${wearable || null},
+            feedback_interval = ${feedbackInterval || null},
+            is_premium = ${isPremium !== undefined ? isPremium : existingSettings.rows[0].is_premium},
             updated_at = NOW()
           WHERE user_id = ${userId}
           RETURNING *
@@ -58,8 +61,8 @@ export async function POST(request: NextRequest) {
         // Insert new record if none exists
         console.log('Creating new user settings record');
         result = await sql`
-          INSERT INTO user_settings (user_id, fitness_goal, focus_area, wearable, feedback_interval, created_at, updated_at)
-          VALUES (${userId}, ${fitnessGoal || null}, ${focusArea || null}, ${wearable || null}, ${feedbackInterval || null}, NOW(), NOW())
+          INSERT INTO user_settings (user_id, fitness_goal, focus_area, wearable, feedback_interval, is_premium, created_at, updated_at)
+          VALUES (${userId}, ${fitnessGoal || null}, ${focusArea || null}, ${wearable || null}, ${feedbackInterval || null}, ${isPremium || false}, NOW(), NOW())
           RETURNING *
         `;
         action = 'inserted';
@@ -67,8 +70,8 @@ export async function POST(request: NextRequest) {
     } else {
       // Simple insert for backward compatibility
       result = await sql`
-        INSERT INTO user_settings (user_id, fitness_goal, focus_area, wearable, feedback_interval, created_at, updated_at)
-        VALUES (${userId}, ${fitnessGoal || null}, ${focusArea || null}, ${wearable || null}, ${feedbackInterval || null}, NOW(), NOW())
+        INSERT INTO user_settings (user_id, fitness_goal, focus_area, wearable, feedback_interval, is_premium, created_at, updated_at)
+        VALUES (${userId}, ${fitnessGoal || null}, ${focusArea || null}, ${wearable || null}, ${feedbackInterval || null}, ${isPremium || false}, NOW(), NOW())
         RETURNING *
       `;
     }
