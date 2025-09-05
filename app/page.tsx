@@ -339,6 +339,62 @@ export default function Home() {
     });
   };
 
+  const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+
+    if (files.length === 0) return;
+
+    // Validate file types and sizes
+    const validFiles = files.filter((file: File) => {
+      if (!file.type.startsWith('video/')) {
+        alert(`${file.name} is not a video file. Please upload video files only.`);
+        return false;
+      }
+      if (file.size > 500 * 1024 * 1024) { // 500MB limit
+        alert(`${file.name} is too large. Please upload files smaller than 500MB.`);
+        return false;
+      }
+      return true;
+    });
+
+    if (validFiles.length === 0) return;
+
+    // Upload each file
+    for (const file of validFiles) {
+      try {
+        const formData = new FormData();
+        formData.append('video', file as Blob);
+        formData.append('userId', sessionStorage.getItem('sessionUserId') || 'unknown');
+
+        const response = await fetch('/api/upload-video', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          alert(`${file.name} uploaded successfully!`);
+
+          mixpanel.track('Custom Video Uploaded', {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            location: 'workout_list'
+          });
+        } else {
+          const error = await response.json().catch(() => ({ error: 'Upload failed' }));
+          alert(`Failed to upload ${file.name}: ${error.error}`);
+        }
+      } catch (error: any) {
+        console.error('Upload error:', error);
+        alert(`Failed to upload ${file.name}: ${error.message}`);
+      }
+    }
+
+    // Reset the input
+    event.target.value = '';
+  };
+
 
 
   return (
@@ -593,27 +649,38 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Premium User Badge */}
+              {/* Premium Upload Section */}
               {isPremium && (
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path>
-                    </svg>
-                    <div className="text-center">
-                      <div className="font-semibold text-sm">Premium Member</div>
-                      <div className="text-xs text-yellow-800">Access to all workouts!</div>
-                    </div>
+                  <div className="flex items-center justify-center">
+                    <label className="flex items-center justify-center gap-3 p-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transition-all duration-200 cursor-pointer shadow-lg hover:shadow-xl">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <path d="m8 13 2.5 2.5 5-5"/>
+                      </svg>
+                      <div className="text-center">
+                        <div className="font-semibold text-sm">Upload Custom Workout</div>
+                        <div className="text-xs text-blue-100">Share your own videos!</div>
+                      </div>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={handleVideoUpload}
+                        className="hidden"
+                        multiple
+                      />
+                    </label>
                   </div>
                 </div>
               )}
