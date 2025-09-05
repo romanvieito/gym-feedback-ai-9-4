@@ -345,7 +345,12 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         body: JSON.stringify({
           performanceFeedback: performanceData.performanceFeedback,
           percentage: performanceData.percentage,
-          mostMisalignedLandmarks: performanceData.mostMisalignedLandmarks
+          mostMisalignedLandmarks: performanceData.mostMisalignedLandmarks,
+          userSettings: {
+            fitnessGoal: selectedFitnessGoal,
+            focusArea: selectedFocusArea,
+          },
+          selectedWorkout: selectedWorkout
         })
       });
 

@@ -48,6 +48,37 @@ export function usePosePipeline({
   const [landmarksVisible, setLandmarksVisible] = useState(true);
   const calibrationTimeoutRef = useRef(null);
 
+  // Contextual landmark cue utilities
+  const humanizeJoint = useCallback((joint) => (joint || '').replace(/_/g, ' '), []);
+  const getCueForLandmark = useCallback((joint) => {
+    const cues = {
+      left_shoulder: 'keep your left shoulder level and steady',
+      right_shoulder: 'keep your right shoulder level and steady',
+      left_elbow: 'keep your left elbow close and controlled',
+      right_elbow: 'keep your right elbow close and controlled',
+      left_wrist: 'align your left wrist with your forearm',
+      right_wrist: 'align your right wrist with your forearm',
+      left_hip: 'keep your left hip square and stable',
+      right_hip: 'keep your right hip square and stable',
+      left_knee: 'track your left knee over your toes',
+      right_knee: 'track your right knee over your toes',
+      left_ankle: 'keep your left ankle steady under your knee',
+      right_ankle: 'keep your right ankle steady under your knee',
+      spine: 'keep your spine long and neutral',
+      neck: 'keep your neck neutral and relaxed'
+    };
+    return cues[joint] || `pay attention to your ${humanizeJoint(joint)}`;
+  }, [humanizeJoint]);
+
+  const formatCuesList = useCallback((joints) => {
+    if (!Array.isArray(joints) || joints.length === 0) return '';
+    const cues = joints.map(j => getCueForLandmark(j));
+    if (cues.length === 1) return cues[0];
+    const rest = cues.slice(0, -1).join(', ');
+    const last = cues[cues.length - 1];
+    return `${rest}, and ${last}`;
+  }, [getCueForLandmark]);
+
   // Feedback interval options mapping
   const feedbackIntervalOptions = {
     'frequent': 60,
@@ -72,7 +103,7 @@ export function usePosePipeline({
   const remainingTimeFeedbackInterval = Math.max(minInterval, Math.min(maxInterval, videoDuration * remainingTimeFactor));
 
   // Debug logging for feedback intervals
-  console.log(`Feedback intervals - Selected: ${selectedFeedbackInterval}, User interval: ${userFeedbackInterval}, Final interval: ${feedbackInterval}s, Remaining time interval: ${remainingTimeFeedbackInterval}s`);
+  // console.log(`Feedback intervals - Selected: ${selectedFeedbackInterval}, User interval: ${userFeedbackInterval}, Final interval: ${feedbackInterval}s, Remaining time interval: ${remainingTimeFeedbackInterval}s`);
 
   const estimateKalmanParameters = useCallback((landmarks) => {
     if (!Array.isArray(landmarks) || landmarks.length === 0) return;
@@ -129,37 +160,13 @@ export function usePosePipeline({
       .slice(0, 1)
       .map(([landmark]) => landmark);
 
-    // Accumulate landmark performance
+    // Accumulate landmark performance only
     Object.entries(angleDifferencesMatch).forEach(([landmark, diff]) => {
       setLandmarkPerformance(prev => ({
         ...prev,
         [landmark]: (prev[landmark] || 0) + diff
       }));
     });
-
-    // Feedback gating (sequence guard with else-if)
-    if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastCurrentTimeFeedback) >= feedbackInterval) {
-      const worstLandmarks = Object.entries(landmarkPerformance)
-        .sort(([, totalDiffA], [, totalDiffB]) => totalDiffB - totalDiffA)
-        .slice(0, 1)
-        .map(([landmark]) => landmark);
-
-      const feedbackText = `Please pay attention to ${worstLandmarks.join(', ')}.`;
-      console.log(`Form feedback triggered at ${videoCurrentTime}s (interval: ${feedbackInterval}s)`);
-      try { speak && speak(feedbackText); } catch (_) {}
-
-      setLastCurrentTimeFeedback(videoCurrentTime);
-      setLandmarkPerformance({});
-    } else if (isActive && videoCurrentTime > 0 && (videoCurrentTime - lastRemainingTimeFeedback) >= remainingTimeFeedbackInterval) {
-      const minutes = Math.floor(videoCurrentTime / 60);
-      const seconds = Math.floor(videoCurrentTime % 60);
-      const timeText = minutes > 0
-        ? `${minutes} minute${minutes !== 1 ? 's' : ''} and ${seconds} second${seconds !== 1 ? 's' : ''}`
-        : `${seconds} second${seconds !== 1 ? 's' : ''}`;
-      console.log(`Encouragement feedback triggered at ${videoCurrentTime}s (interval: ${remainingTimeFeedbackInterval}s)`);
-      try { speakEncouragement && speakEncouragement(timeText); } catch (_) {}
-      setLastRemainingTimeFeedback(videoCurrentTime);
-    }
 
     return {
       percentage: matchPercentage,
@@ -169,7 +176,48 @@ export function usePosePipeline({
       performanceFeedback: performanceLevel,
       mostMisalignedLandmarks: sortedLandmarks
     };
-  }, [isActive, videoCurrentTime, lastCurrentTimeFeedback, lastRemainingTimeFeedback, feedbackInterval, remainingTimeFeedbackInterval, landmarkPerformance, speak, speakEncouragement]);
+  }, []); // important: no dependencies to avoid recreation
+
+  // Separate effect for feedback timing
+  useEffect(() => {
+    if (!isActive || videoCurrentTime <= 0) return;
+
+    const timeSinceLastFeedback = videoCurrentTime - lastCurrentTimeFeedback;
+    const timeSinceLastEncouragement = videoCurrentTime - lastRemainingTimeFeedback;
+
+    // console.log(`Feedback timing check - Current: ${videoCurrentTime}s, Last feedback: ${lastCurrentTimeFeedback}s, Interval: ${feedbackInterval}s, Time since: ${timeSinceLastFeedback}s`);
+
+    // Form feedback gating
+    if (timeSinceLastFeedback >= feedbackInterval) {
+      const worstLandmarks = Object.entries(landmarkPerformance)
+        .sort(([, totalDiffA], [, totalDiffB]) => totalDiffB - totalDiffA)
+        .map(([landmark]) => landmark)
+        .slice(0, 3); // mention up to 3 joints briefly
+
+      const feedbackText = worstLandmarks.length > 0
+        ? `Please ${formatCuesList(worstLandmarks)}.`
+        : 'Keep your alignment steady and move with control.';
+
+      console.log(`Form feedback triggered at ${videoCurrentTime}s (interval: ${feedbackInterval}s)`);
+      try { speak && speak(feedbackText); } catch (_) {}
+
+      setLastCurrentTimeFeedback(videoCurrentTime);
+      setLandmarkPerformance({});
+    }
+    // Encouragement feedback gating
+    else if (timeSinceLastEncouragement >= remainingTimeFeedbackInterval) {
+      const minutes = Math.floor(videoCurrentTime / 60);
+      const seconds = Math.floor(videoCurrentTime % 60);
+      const timeText = minutes > 0
+        ? `${minutes} minute${minutes !== 1 ? 's' : ''} and ${seconds} second${seconds !== 1 ? 's' : ''}`
+        : `${seconds} second${seconds !== 1 ? 's' : ''}`;
+
+      console.log(`Encouragement feedback triggered at ${videoCurrentTime}s (interval: ${remainingTimeFeedbackInterval}s)`);
+      try { speakEncouragement && speakEncouragement(timeText); } catch (_) {}
+      setLastRemainingTimeFeedback(videoCurrentTime);
+    }
+  }, [isActive, videoCurrentTime, lastCurrentTimeFeedback, lastRemainingTimeFeedback, feedbackInterval, remainingTimeFeedbackInterval, landmarkPerformance, speak, speakEncouragement, formatCuesList]);
+
 
   // Calibration effect
   useEffect(() => {
@@ -179,7 +227,7 @@ export function usePosePipeline({
         const success = await CalibrationService.calibrate(videoLandmarks, webcamLandmarks);
         setIsCalibrated(success);
         if (success) {
-          try { speak && speak('Calibration complete. Ready to start.'); } catch (_) {}
+          try { speak && speak('Calibration complete. Form tracking improved.'); } catch (_) {}
         }
       }, 1000);
     }
