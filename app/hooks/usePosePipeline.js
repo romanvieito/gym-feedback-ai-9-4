@@ -48,36 +48,45 @@ export function usePosePipeline({
   const [landmarksVisible, setLandmarksVisible] = useState(true);
   const calibrationTimeoutRef = useRef(null);
 
-  // Contextual landmark cue utilities
-  const humanizeJoint = useCallback((joint) => (joint || '').replace(/_/g, ' '), []);
-  const getCueForLandmark = useCallback((joint) => {
-    const cues = {
-      left_shoulder: 'keep your left shoulder level and steady',
-      right_shoulder: 'keep your right shoulder level and steady',
-      left_elbow: 'keep your left elbow close and controlled',
-      right_elbow: 'keep your right elbow close and controlled',
-      left_wrist: 'align your left wrist with your forearm',
-      right_wrist: 'align your right wrist with your forearm',
-      left_hip: 'keep your left hip square and stable',
-      right_hip: 'keep your right hip square and stable',
-      left_knee: 'track your left knee over your toes',
-      right_knee: 'track your right knee over your toes',
-      left_ankle: 'keep your left ankle steady under your knee',
-      right_ankle: 'keep your right ankle steady under your knee',
-      spine: 'keep your spine long and neutral',
-      neck: 'keep your neck neutral and relaxed'
+  // Holistic movement quality feedback utilities
+  const getMovementQualityFeedback = useCallback((performanceLevel, joint) => {
+    const feedbackSets = {
+      excellent: [
+        "Perfect form! You're moving with exceptional control and precision.",
+        "Outstanding! Your movement quality is exactly what we want to see.",
+        "Excellent control! You're demonstrating real mastery here.",
+        "Perfect! Your body is moving with complete coordination and power.",
+        "Spot on! You're channeling energy through your entire movement."
+      ],
+      good: [
+        "Great work! Keep that smooth, controlled movement going.",
+        "Nice flow! You're building real strength with every rep.",
+        "Good control! Feel that mind-muscle connection building.",
+        "Solid form! Your movement is getting stronger and more precise.",
+        "Well done! You're maintaining excellent control throughout."
+      ],
+      fair: [
+        "Focus on smooth, controlled movement - you're getting there!",
+        "Feel the power flowing from your core to guide the movement.",
+        "Breathe with the motion and maintain that steady control.",
+        "Let your body move as one coordinated unit.",
+        "Channel your energy into smooth, powerful movement."
+      ],
+      poor: [
+        "Find your rhythm and move with controlled power.",
+        "Breathe deeply and let your core guide the movement.",
+        "Focus on coordination - move your whole body together.",
+        "Feel the connection from your foundation to your movement.",
+        "Build control through smooth, deliberate motion."
+      ]
     };
-    return cues[joint] || `pay attention to your ${humanizeJoint(joint)}`;
-  }, [humanizeJoint]);
+    return feedbackSets[performanceLevel] || feedbackSets.fair;
+  }, []);
 
-  const formatCuesList = useCallback((joints) => {
-    if (!Array.isArray(joints) || joints.length === 0) return '';
-    const cues = joints.map(j => getCueForLandmark(j));
-    if (cues.length === 1) return cues[0];
-    const rest = cues.slice(0, -1).join(', ');
-    const last = cues[cues.length - 1];
-    return `${rest}, and ${last}`;
-  }, [getCueForLandmark]);
+  const getRandomFeedback = useCallback((performanceLevel) => {
+    const feedbackArray = getMovementQualityFeedback(performanceLevel);
+    return feedbackArray[Math.floor(Math.random() * feedbackArray.length)];
+  }, [getMovementQualityFeedback]);
 
   // Feedback interval options mapping
   const feedbackIntervalOptions = {
@@ -189,16 +198,16 @@ export function usePosePipeline({
 
     // Form feedback gating
     if (timeSinceLastFeedback >= feedbackInterval) {
-      const worstLandmarks = Object.entries(landmarkPerformance)
-        .sort(([, totalDiffA], [, totalDiffB]) => totalDiffB - totalDiffA)
-        .map(([landmark]) => landmark)
-        .slice(0, 3); // mention up to 3 joints briefly
+      // Determine overall performance level based on pose match data
+      let overallPerformance = 'fair';
+      if (poseMatchData?.percentage >= 90) overallPerformance = 'excellent';
+      else if (poseMatchData?.percentage >= 80) overallPerformance = 'good';
+      else if (poseMatchData?.percentage >= 65) overallPerformance = 'fair';
+      else overallPerformance = 'poor';
 
-      const feedbackText = worstLandmarks.length > 0
-        ? `Please ${formatCuesList(worstLandmarks)}.`
-        : 'Keep your alignment steady and move with control.';
+      const feedbackText = getRandomFeedback(overallPerformance);
 
-      console.log(`Form feedback triggered at ${videoCurrentTime}s (interval: ${feedbackInterval}s)`);
+      console.log(`Form feedback triggered at ${videoCurrentTime}s (interval: ${feedbackInterval}s, performance: ${overallPerformance})`);
       try { speak && speak(feedbackText); } catch (_) {}
 
       setLastCurrentTimeFeedback(videoCurrentTime);
@@ -216,7 +225,7 @@ export function usePosePipeline({
       try { speakEncouragement && speakEncouragement(timeText); } catch (_) {}
       setLastRemainingTimeFeedback(videoCurrentTime);
     }
-  }, [isActive, videoCurrentTime, lastCurrentTimeFeedback, lastRemainingTimeFeedback, feedbackInterval, remainingTimeFeedbackInterval, landmarkPerformance, speak, speakEncouragement, formatCuesList]);
+  }, [isActive, videoCurrentTime, lastCurrentTimeFeedback, lastRemainingTimeFeedback, feedbackInterval, remainingTimeFeedbackInterval, landmarkPerformance, speak, speakEncouragement, getRandomFeedback, poseMatchData]);
 
 
   // Calibration effect
