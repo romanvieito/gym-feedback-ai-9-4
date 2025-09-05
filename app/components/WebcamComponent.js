@@ -15,13 +15,17 @@ export function WebcamComponent({
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const onLandmarksUpdateRef = useRef(onLandmarksUpdate);
+  const onCurrentTimeUpdateRef = useRef(onCurrentTimeUpdate);
+  const onFrameIndexUpdateRef = useRef(onFrameIndexUpdate);
   const poseMatchDataRef = useRef(poseMatchData);
   const frameRate = 30; // Assume a frame rate for the webcam
 
   useEffect(() => {
     onLandmarksUpdateRef.current = onLandmarksUpdate;
+    onCurrentTimeUpdateRef.current = onCurrentTimeUpdate;
+    onFrameIndexUpdateRef.current = onFrameIndexUpdate;
     poseMatchDataRef.current = poseMatchData;
-  }, [onLandmarksUpdate, poseMatchData]);
+  }, [onLandmarksUpdate, onCurrentTimeUpdate, onFrameIndexUpdate, poseMatchData]);
 
   const detectPose = useCallback(async () => {
     if (!webcamRef.current || !poseLandmarker || !canvasRef.current) return;
@@ -99,23 +103,29 @@ export function WebcamComponent({
     };
   }, [poseLandmarker, detectPose]);
 
+  // Stable callbacks for setInterval to prevent infinite re-renders
+  const updateWebcamData = useCallback(() => {
+    const currentTime = performance.now() / 1000; // Use performance.now() for precise timing
+    onCurrentTimeUpdateRef.current(currentTime);
+
+    const frameIndex = Math.floor(currentTime * frameRate);
+    onFrameIndexUpdateRef.current(frameIndex);
+
+    // Simulate landmark detection
+    const landmarks = []; // Replace with actual landmark detection logic
+    onLandmarksUpdateRef.current(landmarks);
+  }, []);
+
   useEffect(() => {
-    const updateWebcamData = () => {
-      const currentTime = performance.now() / 1000; // Use performance.now() for precise timing
-      onCurrentTimeUpdate(currentTime);
-
-      const frameIndex = Math.floor(currentTime * frameRate);
-      onFrameIndexUpdate(frameIndex);
-
-      // Simulate landmark detection
-      const landmarks = []; // Replace with actual landmark detection logic
-      onLandmarksUpdate(landmarks);
-    };
-
-    const intervalId = setInterval(updateWebcamData, 1000 / frameRate);
-
-    return () => clearInterval(intervalId);
+    onCurrentTimeUpdateRef.current = onCurrentTimeUpdate;
+    onFrameIndexUpdateRef.current = onFrameIndexUpdate;
+    onLandmarksUpdateRef.current = onLandmarksUpdate;
   }, [onCurrentTimeUpdate, onFrameIndexUpdate, onLandmarksUpdate]);
+
+  useEffect(() => {
+    const intervalId = setInterval(updateWebcamData, 1000 / frameRate);
+    return () => clearInterval(intervalId);
+  }, [updateWebcamData]);
 
   return (
     <div style={{ 

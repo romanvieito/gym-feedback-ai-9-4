@@ -36,7 +36,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   const [isMuted, setIsMuted] = useState(false); // Mute state for audio feedback
   const lastPlaybackRef = useRef({ time: 0, wasPlaying: false });
   // Audio unlocking, ducking, and playback handled by FeedbackManager
-  
+
   // Subtitle state management
   const [showSubtitles, setShowSubtitles] = useState(true);
 
@@ -44,6 +44,9 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
   const [workoutCompleted, setWorkoutCompleted] = useState(false);
   const [performanceHistory, setPerformanceHistory] = useState([]);
   const [showPerformanceSummary, setShowPerformanceSummary] = useState(false);
+
+  // Stable callback for frame index updates (not used currently)
+  const handleFrameIndexUpdate = useCallback(() => {}, []);
 
 
   // Initialize Kalman filters for each landmark (moved into usePosePipeline)
@@ -497,7 +500,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
                   poseLandmarker={landmarkers.webcamLandmarker}
                   onLandmarksUpdate={setWebcamLandmarks}
                   onCurrentTimeUpdate={setVideoCurrentTime}
-                  onFrameIndexUpdate={() => {}}
+                  onFrameIndexUpdate={handleFrameIndexUpdate}
                   poseMatchData={poseMatchData}
                   showPoseLines={showPoseLines}
                 />
@@ -541,7 +544,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
               poseLandmarker={landmarkers.webcamLandmarker}
               onLandmarksUpdate={setWebcamLandmarks}
               onCurrentTimeUpdate={setVideoCurrentTime}
-              onFrameIndexUpdate={() => {}}
+              onFrameIndexUpdate={handleFrameIndexUpdate}
               poseMatchData={poseMatchData}
               showPoseLines={showPoseLines}
             />
