@@ -21,6 +21,13 @@ export const workoutTypes = [
     description: 'Core Focus',
   },
   {
+    title: 'Best Exercises to Build Your Ab Workouts',
+    image: '/images/2.png',
+    video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/BestExercisestoBuildYourAbWorkouts.mp4',
+    duration: '10 min',
+    description: 'Abdominal Focus',
+  },
+  {
     title: 'Pilates',
     image: '/images/1.png',
     video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/get_down.mp4',
@@ -33,13 +40,6 @@ export const workoutTypes = [
     video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/iso.mp4',
     duration: '14 min',
     description: 'Static Strength',
-  },
-  {
-    title: 'Best Exercises to Build Your Ab Workouts',
-    image: '/images/2.png',
-    video: 'https://pub-ea97a79e7a394fbb8d2dcce44a7779bc.r2.dev/BestExercisestoBuildYourAbWorkouts.mp4',
-    duration: '10 min',
-    description: 'Abdominal Focus',
   },
   {
     title: 'Kettlebell Training for Strength and Conditioning',
