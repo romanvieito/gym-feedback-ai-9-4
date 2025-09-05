@@ -6,13 +6,11 @@ const Settings = ({
   selectedFocusArea,
   selectedFeedbackInterval,
   selectedWearable,
-  isPremium,
   preferencesLoaded,
   onFitnessGoalChange,
   onFocusAreaChange,
   onFeedbackIntervalChange,
   onWearableChange,
-  onPremiumChange,
   fitnessGoals,
   focusAreas,
   feedbackIntervals,
@@ -96,43 +94,6 @@ const Settings = ({
       </div>
 
       <div className="max-h-96 overflow-y-auto">
-        {/* Premium Status - For Testing */}
-        <div className="border-b border-gray-100 dark:border-gray-800">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <svg
-                  className="w-5 h-5 text-yellow-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
-                </svg>
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">Premium Status</span>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Toggle for testing</div>
-                </div>
-              </div>
-              <button
-                onClick={() => onPremiumChange(!isPremium)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                  isPremium ? 'bg-yellow-500' : 'bg-gray-200 dark:bg-gray-700'
-                }`}
-                disabled={!preferencesLoaded}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isPremium ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-            <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-              {isPremium ? 'Premium: Access to all 8 workouts' : 'Free: Access to first 4 workouts only'}
-            </div>
-          </div>
-        </div>
 
         {/* Fitness Goal */}
         <div className="border-b border-gray-100 dark:border-gray-800">

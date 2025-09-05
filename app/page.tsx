@@ -293,20 +293,6 @@ export default function Home() {
     });
   };
 
-  const handlePremiumChange = async (premium: boolean) => {
-    setIsPremium(premium);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('isPremium', premium.toString());
-    }
-
-    // Save all settings to database with the updated premium status
-    await saveAllSettingsToDatabase({ isPremium: premium });
-
-    mixpanel.track('Premium Status Changed', {
-      isPremium: premium,
-      location: 'settings_menu',
-    });
-  };
 
   const handleWorkoutClick = (workout: any) => {
     setSelectedWorkout(workout);
@@ -439,13 +425,11 @@ export default function Home() {
                       selectedFocusArea={selectedFocusArea}
                       selectedFeedbackInterval={selectedFeedbackInterval}
                       selectedWearable={selectedWearable}
-                      isPremium={isPremium}
                       preferencesLoaded={preferencesLoaded}
                       onFitnessGoalChange={handleFitnessGoalChange}
                       onFocusAreaChange={handleFocusAreaChange}
                       onFeedbackIntervalChange={handleFeedbackIntervalChange}
                       onWearableChange={handleWearableChange}
-                      onPremiumChange={handlePremiumChange}
                       onClose={() => setShowMenu(false)}
                       fitnessGoals={fitnessGoals}
                       focusAreas={focusAreas}
