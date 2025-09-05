@@ -7,6 +7,7 @@ import Tooltip from '@/app/components/Tooltip'
 import ProgressDashboard from '@/app/components/ProgressDashboard'
 import Settings from '@/app/components/Settings'
 import mixpanel from 'mixpanel-browser';
+import { useUser } from '@clerk/nextjs';
 import { workoutTypes } from './services/workoutData';
 
 // Initialize Mixpanel with your project token
@@ -16,6 +17,7 @@ mixpanel.init('b98359528baa013898b40c8583f849ce', {
   persistence: "localStorage", });
 
 export default function Home() {
+  const { user, isLoaded } = useUser();
   const [showApp, setShowApp] = useState(false);
   const [selectedWearable, setSelectedWearable] = useState('');
   const [selectedFitnessGoal, setSelectedFitnessGoal] = useState('');
@@ -93,11 +95,15 @@ export default function Home() {
   useEffect(() => {
     const loadUserSettings = async () => {
       try {
-        // Get or create a consistent user ID for this session
-        let userId = sessionStorage.getItem('sessionUserId');
+        // Use Clerk user ID if available, otherwise use session ID
+        let userId = user?.id;
         if (!userId) {
-          userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          sessionStorage.setItem('sessionUserId', userId);
+          // Fallback to session ID for anonymous users
+          userId = sessionStorage.getItem('sessionUserId');
+          if (!userId) {
+            userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            sessionStorage.setItem('sessionUserId', userId);
+          }
         }
 
         // First load from localStorage as fallback
@@ -190,7 +196,7 @@ export default function Home() {
     isPremium?: boolean;
   }) => {
     try {
-      const userId = sessionStorage.getItem('sessionUserId');
+      const userId = user?.id || sessionStorage.getItem('sessionUserId');
       if (!userId) {
         console.error('No user ID found for saving settings');
         return;
@@ -344,7 +350,7 @@ export default function Home() {
     if (!isPremium) return;
 
     try {
-      const userId = sessionStorage.getItem('sessionUserId');
+      const userId = user?.id || sessionStorage.getItem('sessionUserId');
       if (!userId) return;
 
       const response = await fetch(`/api/user-videos?userId=${userId}`);
@@ -387,7 +393,7 @@ export default function Home() {
       try {
         const formData = new FormData();
         formData.append('video', file as Blob);
-        formData.append('userId', sessionStorage.getItem('sessionUserId') || 'unknown');
+        formData.append('userId', user?.id || sessionStorage.getItem('sessionUserId') || 'unknown');
 
         const response = await fetch('/api/upload-video', {
           method: 'POST',
