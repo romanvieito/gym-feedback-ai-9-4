@@ -34,56 +34,56 @@ const FeedbackManager = forwardRef(function FeedbackManager(
   // Build a personalized welcome message from user settings and workout
   const generateWelcomeMessage = useCallback(() => {
     const { fitnessGoal, focusArea } = userSettings || {};
-    const workoutTitle = selectedWorkout?.title || 'workout';
+    const workoutDescription = selectedWorkout?.description || 'workout';
 
-      // If no key settings selected, encourage user to personalize
+      // If no key settings selected
       if (!fitnessGoal && !focusArea) {
         return `Welcome! Press play to begin your workout. Tip: the better the form, the more effective the workout.`;
       }
 
     const goalMessages = {
       'lose-weight': [
-        `Ready to burn calories? Let's make this ${workoutTitle} count toward your goals!`,
-        `Time to sweat and shred! This ${workoutTitle} is your next step to a healthier you!`,
+        `Ready to burn calories? Let's crush this ${workoutDescription} workout!`,
+        `Time to sweat and shred! This ${workoutDescription} session will get you results!`,
       ],
       'build-muscle': [
-        `Strength time! This ${workoutTitle} will help you build lean muscle.`,
-        `Let's get those gains! This ${workoutTitle} is perfect for muscle growth.`,
+        `Strength time! Let's build muscle with this ${workoutDescription} workout.`,
+        `Let's get those gains! This ${workoutDescription} session is perfect for muscle growth.`,
       ],
       'improve-endurance': [
-        `Ready to boost stamina? This ${workoutTitle} will build your endurance!`,
-        `Let's go the distance! This ${workoutTitle} strengthens your cardio.`,
+        `Ready to boost stamina? This ${workoutDescription} workout will build your endurance!`,
+        `Let's go the distance! This ${workoutDescription} session strengthens your cardio.`,
       ],
       'flexibility': [
-        `Flow and stretch time! This ${workoutTitle} improves mobility and range.`,
-        `Let's get flexible! This ${workoutTitle} enhances your movement.`,
+        `Flow and stretch time! Let's improve mobility with this ${workoutDescription} workout.`,
+        `Let's get flexible! This ${workoutDescription} session enhances your movement.`,
       ],
       'boost-energy': [
-        `Let's energize your day! This ${workoutTitle} will power you up.`,
-        `Time to charge up! This ${workoutTitle} boosts daily performance.`,
+        `Let's energize your day! This ${workoutDescription} workout will power you up.`,
+        `Time to charge up! This ${workoutDescription} session boosts daily performance.`,
       ],
       'recover-injury': [
-        `Focus on safe recovery. This ${workoutTitle} supports rebuilding.`,
-        `Gentle and strong. This ${workoutTitle} helps you recover safely.`,
+        `Focus on safe recovery. This ${workoutDescription} workout supports rebuilding.`,
+        `Gentle and strong. This ${workoutDescription} session helps you recover safely.`,
       ],
       'stay-active': [
-        `Stay active and feel great! This ${workoutTitle} keeps you moving.`,
-        `Consistency wins. This ${workoutTitle} maintains your momentum.`,
+        `Stay active and feel great! Let's move with this ${workoutDescription} workout.`,
+        `Consistency wins. This ${workoutDescription} session maintains your momentum.`,
       ],
     };
 
     const focusMessages = {
       'upper-body': [
-        `Upper body focus today. This ${workoutTitle} targets arms, chest, and shoulders.`,
+        `Upper body focus today. Let's target arms, chest, and shoulders with this ${workoutDescription} workout.`,
       ],
       'lower-body': [
-        `Leg power on deck! This ${workoutTitle} strengthens your lower body.`,
+        `Leg power on deck! This ${workoutDescription} workout strengthens your lower body.`,
       ],
       'core': [
-        `Core stability time. This ${workoutTitle} builds a strong foundation.`,
+        `Core stability time. Let's build a strong foundation with this ${workoutDescription} workout.`,
       ],
       'full-body': [
-        `Full-body flow! This ${workoutTitle} engages your whole body.`,
+        `Full-body flow! Let's engage your whole body with this ${workoutDescription} workout.`,
       ],
     };
 
@@ -93,8 +93,8 @@ const FeedbackManager = forwardRef(function FeedbackManager(
 
     if (messages.length === 0) {
       messages = [
-        `Ready to move? Let's make this ${workoutTitle} count!`,
-        `Let's get started! This ${workoutTitle} brings you closer to your goals.`,
+        `Ready to move? Let's crush this ${workoutDescription} workout!`,
+        `Let's get started! This ${workoutDescription} session brings you closer to your goals.`,
       ];
     }
 
