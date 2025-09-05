@@ -122,9 +122,9 @@ const FeedbackManager = forwardRef(function FeedbackManager(
     },
     progress: {
       milestone: [
-        "Amazing! You've completed {timeText} - that's real dedication!",
-        "Incredible progress! {timeText} of consistent effort is paying off!",
-        "You're on fire! {timeText} and still going strong!"
+        "Breathe! You've completed {timeText}!",
+        "Good progress! {timeText}, keep it up!",
+        "{timeText} Inhale... hold... exhale... perfect!"
       ],
       encouragement: [
         "You're building real strength here! Keep pushing!",
