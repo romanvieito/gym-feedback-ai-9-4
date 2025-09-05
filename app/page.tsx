@@ -382,7 +382,8 @@ export default function Home() {
         return false;
       }
       if (file.size > 4 * 1024 * 1024) { // 4MB limit for Vercel
-        alert(`${file.name} is too large. Please upload files smaller than 4MB.`);
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        alert(`❌ File too large!\n\n"${file.name}" is ${fileSizeMB}MB\n\nPlease compress your video to under 4MB before uploading.\n\n💡 Tip: Try using a video compressor or recording in lower quality.`);
         return false;
       }
       return true;
@@ -404,7 +405,7 @@ export default function Home() {
 
         if (response.ok) {
           const result = await response.json();
-          alert(`${file.name} uploaded successfully! Our team will review it and make it available as a workout challenge soon.`);
+          alert(`✅ Upload successful!\n\n"${file.name}" has been uploaded and is pending review.\n\nOur team will review it and make it available as a workout challenge soon!`);
 
           mixpanel.track('Custom Video Uploaded', {
             fileName: file.name,
@@ -414,11 +415,11 @@ export default function Home() {
           });
         } else {
           const error = await response.json().catch(() => ({ error: 'Upload failed' }));
-          alert(`Failed to upload ${file.name}: ${error.error}`);
+          alert(`❌ Upload failed!\n\n"${file.name}" could not be uploaded.\n\nError: ${error.error}\n\nPlease try again or contact support if the problem persists.`);
         }
       } catch (error: any) {
         console.error('Upload error:', error);
-        alert(`Failed to upload ${file.name}: ${error.message}`);
+        alert(`❌ Upload failed!\n\n"${file.name}" could not be uploaded.\n\nError: ${error.message}\n\nPlease try again or contact support if the problem persists.`);
       }
     }
 
