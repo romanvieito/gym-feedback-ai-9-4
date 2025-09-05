@@ -36,10 +36,10 @@ const FeedbackManager = forwardRef(function FeedbackManager(
     const { fitnessGoal, focusArea } = userSettings || {};
     const workoutTitle = selectedWorkout?.title || 'workout';
 
-    // If no key settings selected, encourage user to personalize
-    if (!fitnessGoal && !focusArea) {
-      return `Welcome! Choosing your fitness goal and focus area in settings helps tailor your feedback for this ${workoutTitle}.`;
-    }
+      // If no key settings selected, encourage user to personalize
+      if (!fitnessGoal && !focusArea) {
+        return `Welcome! Press play to begin your workout.`;
+      }
 
     const goalMessages = {
       'lose-weight': [
