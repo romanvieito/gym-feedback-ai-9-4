@@ -325,10 +325,33 @@ export default function PerformanceSummaryModal({
               🎯 Great Job!
             </h4>
             <p className="text-sm text-green-700 dark:text-green-300">
-              You completed the challenge! Every workout brings you closer to your fitness goals. 
+              You completed the challenge! Every workout brings you closer to your fitness goals.
               Keep up the excellent work!
             </p>
           </div>
+
+          {/* Settings Reminder - Only show if no key settings selected */}
+          {(!fitnessGoal && !focusArea) && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                ⚙️ Personalize Your Workouts
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                Want more personalized feedback and workout recommendations? Set your fitness goals and focus areas in settings to unlock tailored coaching for your needs.
+              </p>
+              <div className="flex gap-2 text-xs">
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  🎯 Fitness Goals
+                </span>
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  💪 Focus Areas
+                </span>
+                <span className="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                  📊 Feedback Style
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

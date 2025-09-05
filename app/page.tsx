@@ -26,7 +26,9 @@ export default function Home() {
 
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [showProgressDashboard, setShowProgressDashboard] = useState(false);
-  
+  const [notificationDismissed, setNotificationDismissed] = useState(false);
+  const [notificationDismissedTime, setNotificationDismissedTime] = useState<number | null>(null);
+
   const menuRef = useRef<HTMLDivElement>(null);
   const premiumLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || 'https://24up.site/pricing';
 
@@ -101,8 +103,29 @@ export default function Home() {
         const savedFitnessGoal = localStorage.getItem('selectedFitnessGoal');
         const savedFocusArea = localStorage.getItem('selectedFocusArea');
         const savedFeedbackInterval = localStorage.getItem('selectedFeedbackInterval');
-        
+
+        // Load notification dismissal state
+        const dismissed = localStorage.getItem('notificationDismissed') === 'true';
+        const dismissedTime = localStorage.getItem('notificationDismissedTime');
+        const dismissedTimestamp = dismissedTime ? parseInt(dismissedTime) : null;
+
         console.log('Loading saved preferences from localStorage:', { savedWearable, savedFitnessGoal, savedFocusArea, savedFeedbackInterval });
+
+        // Check if notification should be shown again (24 hours after dismissal)
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+        if (dismissed && dismissedTimestamp && (now - dismissedTimestamp) > twentyFourHours) {
+          // Enough time has passed, show notification again
+          setNotificationDismissed(false);
+          setNotificationDismissedTime(null);
+          localStorage.removeItem('notificationDismissed');
+          localStorage.removeItem('notificationDismissedTime');
+        } else if (dismissed) {
+          // Still within dismissal period
+          setNotificationDismissed(true);
+          setNotificationDismissedTime(dismissedTimestamp);
+        }
         
         // Set initial values from localStorage
         if (savedWearable) setSelectedWearable(savedWearable);
@@ -291,6 +314,21 @@ export default function Home() {
     });
   };
 
+  const handleNotificationClose = () => {
+    const now = Date.now();
+    setNotificationDismissed(true);
+    setNotificationDismissedTime(now);
+
+    // Save to localStorage
+    localStorage.setItem('notificationDismissed', 'true');
+    localStorage.setItem('notificationDismissedTime', now.toString());
+
+    mixpanel.track('Settings Notification Dismissed', {
+      location: 'workout_list',
+      dismissedAt: now,
+    });
+  };
+
 
 
   return (
@@ -407,6 +445,42 @@ export default function Home() {
                 </p>
               </div>
             </div>
+
+            {/* Settings Notification - Only show if no key settings selected and not dismissed */}
+            {(!selectedFitnessGoal && !notificationDismissed) && (
+              <div className="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 relative">
+                <button
+                  onClick={handleNotificationClose}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-800/50 hover:bg-blue-200 dark:hover:bg-blue-700/50 flex items-center justify-center transition-colors duration-200"
+                  aria-label="Dismiss notification"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-blue-600 dark:text-blue-400"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+                <div className="text-center pr-8">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="inline-block w-4 h-4 mr-1 -mt-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <strong>Tip:</strong> Set your fitness goals in Settings for better personalized workout recommendations and feedback
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Workout Challenges Section */}
             <div className="p-6">

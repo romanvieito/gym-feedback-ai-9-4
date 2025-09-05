@@ -38,7 +38,7 @@ const FeedbackManager = forwardRef(function FeedbackManager(
 
       // If no key settings selected, encourage user to personalize
       if (!fitnessGoal && !focusArea) {
-        return `Welcome! Press play to begin your workout.`;
+        return `Welcome! Press play to begin your workout. Tip: the better the form, the more effective the workout.`;
       }
 
     const goalMessages = {
