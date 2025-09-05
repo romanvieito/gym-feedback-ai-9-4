@@ -29,6 +29,7 @@ export default function Home() {
   const [showProgressDashboard, setShowProgressDashboard] = useState(false);
   const [notificationDismissed, setNotificationDismissed] = useState(false);
   const [notificationDismissedTime, setNotificationDismissedTime] = useState<number | null>(null);
+  const [userVideos, setUserVideos] = useState([]);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const premiumLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || 'https://24up.site/pricing';
@@ -339,6 +340,28 @@ export default function Home() {
     });
   };
 
+  const fetchUserVideos = async () => {
+    if (!isPremium) return;
+
+    try {
+      const userId = sessionStorage.getItem('sessionUserId');
+      if (!userId) return;
+
+      const response = await fetch(`/api/user-videos?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUserVideos(data.videos || []);
+      }
+    } catch (error) {
+      console.error('Error fetching user videos:', error);
+    }
+  };
+
+  // Fetch user videos when premium status changes
+  useEffect(() => {
+    fetchUserVideos();
+  }, [isPremium]);
+
   const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
 
@@ -373,7 +396,7 @@ export default function Home() {
 
         if (response.ok) {
           const result = await response.json();
-          alert(`${file.name} uploaded successfully!`);
+          alert(`${file.name} uploaded successfully! You can now use it as a workout challenge.`);
 
           mixpanel.track('Custom Video Uploaded', {
             fileName: file.name,
@@ -381,6 +404,9 @@ export default function Home() {
             fileType: file.type,
             location: 'workout_list'
           });
+
+          // Refresh the page to show the new uploaded video in the workout list
+          window.location.reload();
         } else {
           const error = await response.json().catch(() => ({ error: 'Upload failed' }));
           alert(`Failed to upload ${file.name}: ${error.error}`);
@@ -552,10 +578,11 @@ export default function Home() {
             <div className="p-6">
               <div className="space-y-3">
                 {/* Filter workouts based on premium status - show first 4 for free users, all for premium */}
-                {workoutTypes
-                  .filter((_, index) => isPremium || index < 4)
-                  .map((workout, index) => (
-                  <Tooltip key={workout.title} content={`Start ${workout.title} challenge - Click to begin your workout with AI-powered form feedback`}>
+                {[
+                  ...workoutTypes.filter((_, index) => isPremium || index < 4),
+                  ...(isPremium ? userVideos : [])
+                ].map((workout, index) => (
+                  <Tooltip key={workout.title} content={(workout as any).isUserVideo ? `Start your custom ${workout.title} workout - Mirror this video with AI-powered form feedback` : `Start ${workout.title} challenge - Click to begin your workout with AI-powered form feedback`}>
                     <button 
                       onClick={() => handleWorkoutClick(workout)}
                       className="w-full p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 flex items-center group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 hover:shadow-md"
@@ -570,7 +597,7 @@ export default function Home() {
                             className="rounded-lg object-cover"
                           />
                           <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                            {index + 1}
+                            {(workout as any).isUserVideo ? '★' : (index + 1)}
                           </div>
                         </div>
                         <div className="flex-1 text-left">
@@ -671,7 +698,7 @@ export default function Home() {
                       </svg>
                       <div className="text-center">
                         <div className="font-semibold text-sm">Upload Custom Workout</div>
-                        <div className="text-xs text-blue-100">Share your own videos!</div>
+                        <div className="text-xs text-blue-100">Create your own workout challenges!</div>
                       </div>
                       <input
                         type="file"
