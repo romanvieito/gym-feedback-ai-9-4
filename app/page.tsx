@@ -381,8 +381,8 @@ export default function Home() {
         alert(`${file.name} is not a video file. Please upload video files only.`);
         return false;
       }
-      if (file.size > 500 * 1024 * 1024) { // 500MB limit
-        alert(`${file.name} is too large. Please upload files smaller than 500MB.`);
+      if (file.size > 4 * 1024 * 1024) { // 4MB limit for Vercel
+        alert(`${file.name} is too large. Please upload files smaller than 4MB.`);
         return false;
       }
       return true;
@@ -703,7 +703,7 @@ export default function Home() {
                       </svg>
                       <div className="text-center">
                         <div className="font-semibold text-sm">Upload Custom Workout</div>
-                        <div className="text-xs text-blue-100">Create your own workout challenges!</div>
+                        <div className="text-xs text-blue-100">Create your own workout challenges! (Max 4MB)</div>
                       </div>
                       <input
                         type="file"
