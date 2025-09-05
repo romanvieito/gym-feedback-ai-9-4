@@ -396,7 +396,7 @@ export default function Home() {
 
         if (response.ok) {
           const result = await response.json();
-          alert(`${file.name} uploaded successfully! You can now use it as a workout challenge.`);
+          alert(`${file.name} uploaded successfully! Our team will review it and make it available as a workout challenge soon.`);
 
           mixpanel.track('Custom Video Uploaded', {
             fileName: file.name,
@@ -404,9 +404,6 @@ export default function Home() {
             fileType: file.type,
             location: 'workout_list'
           });
-
-          // Refresh the page to show the new uploaded video in the workout list
-          window.location.reload();
         } else {
           const error = await response.json().catch(() => ({ error: 'Upload failed' }));
           alert(`Failed to upload ${file.name}: ${error.error}`);

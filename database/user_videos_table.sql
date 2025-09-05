@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS user_videos (
     mime_type VARCHAR(100) NOT NULL,
     upload_date TIMESTAMP DEFAULT NOW(),
     is_active BOOLEAN DEFAULT TRUE,
+    is_approved BOOLEAN DEFAULT FALSE,
+    approved_date TIMESTAMP,
+    approved_by VARCHAR(255),
     FOREIGN KEY (user_id) REFERENCES user_settings(user_id) ON DELETE CASCADE
 );
 
@@ -26,3 +29,6 @@ COMMENT ON COLUMN user_videos.file_size IS 'Size of the video file in bytes';
 COMMENT ON COLUMN user_videos.mime_type IS 'MIME type of the video file';
 COMMENT ON COLUMN user_videos.upload_date IS 'When the video was uploaded';
 COMMENT ON COLUMN user_videos.is_active IS 'Whether the video is still available';
+COMMENT ON COLUMN user_videos.is_approved IS 'Whether the video has been reviewed and approved';
+COMMENT ON COLUMN user_videos.approved_date IS 'When the video was approved';
+COMMENT ON COLUMN user_videos.approved_by IS 'Who approved the video';

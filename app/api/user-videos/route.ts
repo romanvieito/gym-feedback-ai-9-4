@@ -10,11 +10,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Get user's uploaded videos
+    // Get user's approved uploaded videos
     const result = await sql`
       SELECT id, filename, original_name, file_size, mime_type, upload_date
       FROM user_videos
-      WHERE user_id = ${userId} AND is_active = true
+      WHERE user_id = ${userId} AND is_active = true AND is_approved = true
       ORDER BY upload_date DESC
     `;
 
