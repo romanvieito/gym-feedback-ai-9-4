@@ -18,18 +18,22 @@ export async function GET(
 
     const userId = filenameParts[0];
 
-    // Verify the video belongs to the requesting user
+    // Verify the video belongs to the requesting user and is approved
     const videoResult = await sql`
-      SELECT id FROM user_videos
-      WHERE user_id = ${userId} AND filename = ${filename} AND is_active = true
+      SELECT id, filename, mime_type FROM user_videos
+      WHERE user_id = ${userId} AND filename = ${filename} AND is_active = true AND is_approved = true
     `;
 
     if (videoResult.rows.length === 0) {
       return NextResponse.json({ error: 'Video not found or access denied' }, { status: 404 });
     }
 
-    // Read the video file
-    const filePath = join(process.cwd(), 'uploads', filename);
+    const video = videoResult.rows[0];
+
+    // Use /tmp directory for Vercel production environment
+    const isProduction = process.env.NODE_ENV === 'production';
+    const uploadDir = isProduction ? '/tmp/uploads' : join(process.cwd(), 'uploads');
+    const filePath = join(uploadDir, filename);
 
     try {
       const fileBuffer = await readFile(filePath);
@@ -37,7 +41,7 @@ export async function GET(
       // Return the video with appropriate headers
       return new NextResponse(fileBuffer, {
         headers: {
-          'Content-Type': 'video/mp4',
+          'Content-Type': video.mime_type || 'video/mp4',
           'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
         },
       });

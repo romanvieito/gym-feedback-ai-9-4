@@ -32,11 +32,15 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now();
     const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const fileName = `${userId}_${timestamp}_${originalName}`;
-    const filePath = join(process.cwd(), 'uploads', fileName);
+    
+    // Use /tmp directory for Vercel production environment
+    const isProduction = process.env.NODE_ENV === 'production';
+    const uploadDir = isProduction ? '/tmp/uploads' : join(process.cwd(), 'uploads');
+    const filePath = join(uploadDir, fileName);
 
     // Create uploads directory if it doesn't exist
     try {
-      await mkdir(join(process.cwd(), 'uploads'), { recursive: true });
+      await mkdir(uploadDir, { recursive: true });
     } catch (error) {
       // Directory might already exist, continue
     }
@@ -49,20 +53,23 @@ export async function POST(request: NextRequest) {
     // Save file metadata to database
     try {
       await sql`
-        INSERT INTO user_videos (user_id, filename, original_name, file_size, mime_type, upload_date)
-        VALUES (${userId}, ${fileName}, ${file.name}, ${file.size}, ${file.type}, NOW())
+        INSERT INTO user_videos (user_id, filename, original_name, file_size, mime_type, upload_date, is_active, is_approved)
+        VALUES (${userId}, ${fileName}, ${file.name}, ${file.size}, ${file.type}, NOW(), TRUE, FALSE)
+        RETURNING id, filename, original_name;
       `;
     } catch (dbError) {
       console.error('Database error:', dbError);
-      // Don't fail the upload if database insert fails
+      return NextResponse.json({ error: 'Failed to save video metadata' }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Video uploaded successfully',
-      fileName: fileName,
-      fileSize: file.size,
-      fileType: file.type
+      message: 'Video uploaded successfully, pending review.',
+      video: {
+        id: fileName,
+        filename: fileName,
+        original_name: file.name
+      }
     });
 
   } catch (error) {
