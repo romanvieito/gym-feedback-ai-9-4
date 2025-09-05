@@ -43,3 +43,6 @@ pyproject.toml
 poetry.lock
 # environment variables
 .env
+
+# uploaded videos
+/uploads/
