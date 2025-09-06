@@ -47,7 +47,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "frame-ancestors 'self' https://24up.vercel.app https://*.vercel.app"
+            value: "frame-ancestors *"
           },
           {
             key: 'X-XSS-Protection',
