@@ -46,8 +46,8 @@ const nextConfig = {
             value: 'nosniff'
           },
           {
-            key: 'X-Frame-Options',
-            value: 'DENY'
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self' https://24up.vercel.app https://*.vercel.app"
           },
           {
             key: 'X-XSS-Protection',
