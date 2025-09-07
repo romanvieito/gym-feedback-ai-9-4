@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile } from 'fs/promises';
+import { readFile, stat } from 'fs/promises';
+import { createReadStream } from 'fs';
+import { Readable } from 'stream';
 import { join } from 'path';
 import { sql } from '@vercel/postgres';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
@@ -36,13 +41,49 @@ export async function GET(
     const filePath = join(uploadDir, filename);
 
     try {
-      const fileBuffer = await readFile(filePath);
+      const fileStat = await stat(filePath);
+      const fileSize = fileStat.size;
+      const range = request.headers.get('range');
+      const contentType = video.mime_type || 'video/mp4';
 
-      // Return the video with appropriate headers
-      return new NextResponse(fileBuffer, {
+      if (range) {
+        // Parse Range: bytes=start-end
+        const bytesPrefix = 'bytes=';
+        if (!range.startsWith(bytesPrefix)) {
+          return NextResponse.json({ error: 'Invalid range header' }, { status: 416 });
+        }
+        const rangeStr = range.substring(bytesPrefix.length);
+        const [startStr, endStr] = rangeStr.split('-');
+        let start = parseInt(startStr, 10);
+        let end = endStr ? parseInt(endStr, 10) : fileSize - 1;
+        if (isNaN(start) || isNaN(end) || start > end || start < 0 || end >= fileSize) {
+          return NextResponse.json({ error: 'Invalid range' }, { status: 416 });
+        }
+        const chunkSize = end - start + 1;
+        const nodeStream = createReadStream(filePath, { start, end });
+        const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream;
+
+        return new NextResponse(webStream, {
+          status: 206,
+          headers: {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': String(chunkSize),
+            'Content-Type': contentType,
+            'Cache-Control': 'public, max-age=31536000',
+          },
+        });
+      }
+
+      // No Range header: return entire file stream
+      const nodeStream = createReadStream(filePath);
+      const webStream = Readable.toWeb(nodeStream) as unknown as ReadableStream;
+      return new NextResponse(webStream, {
         headers: {
-          'Content-Type': video.mime_type || 'video/mp4',
-          'Cache-Control': 'public, max-age=31536000', // Cache for 1 year
+          'Content-Type': contentType,
+          'Content-Length': String(fileSize),
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'public, max-age=31536000',
         },
       });
     } catch (fileError) {
