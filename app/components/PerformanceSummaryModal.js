@@ -21,6 +21,13 @@ export default function PerformanceSummaryModal({
   const [userRating, setUserRating] = useState(0);
   const [hasRated, setHasRated] = useState(false);
 
+  const getApiPath = (path) => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) {
+      return `/app${path}`;
+    }
+    return path;
+  };
+
   // Generate AI summary when modal opens
   useEffect(() => {
     if (isOpen && performanceData.length > 0 && !aiSummary) {
@@ -31,7 +38,7 @@ export default function PerformanceSummaryModal({
   const generateAISummary = async () => {
     setIsLoadingSummary(true);
     try {
-      const response = await fetch('/api/ai/workout-summary', {
+      const response = await fetch(getApiPath('/api/ai/workout-summary'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -20,6 +20,12 @@ import ControlsBar from './ControlsBar';
 //
 
 function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbackInterval = '', selectedWearable = '', selectedWorkout = null }) {
+  const getApiPath = (path) => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) {
+      return `/app${path}`;
+    }
+    return path;
+  };
   const [landmarkers, setLandmarkers] = useState({
     webcamLandmarker: null,
     videoLandmarker: null
@@ -340,7 +346,7 @@ function App({ selectedFitnessGoal = '', selectedFocusArea = '', selectedFeedbac
         platform: 'web_app',
       });
 
-      const response = await fetch('/api/ai/feedback', {
+      const response = await fetch(getApiPath('/api/ai/feedback'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

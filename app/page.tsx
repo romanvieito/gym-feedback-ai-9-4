@@ -17,6 +17,12 @@ mixpanel.init('b98359528baa013898b40c8583f849ce', {
   persistence: "localStorage", });
 
 export default function Home() {
+  const getApiPath = (path: string) => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) {
+      return `/app${path}`;
+    }
+    return path;
+  };
   const { user, isLoaded } = useUser();
   const [showApp, setShowApp] = useState(false);
   const [selectedWearable, setSelectedWearable] = useState('');
@@ -146,7 +152,7 @@ export default function Home() {
         setIsPremium(savedIsPremium);
         
         // Then try to load from database and override localStorage values
-        const response = await fetch(`/api/user-settings?userId=${userId}`);
+        const response = await fetch(getApiPath(`/api/user-settings?userId=${userId}`));
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data) {
@@ -217,7 +223,7 @@ export default function Home() {
 
       console.log('Saving all settings to database:', allSettings);
 
-      const response = await fetch('/api/user-settings', {
+      const response = await fetch(getApiPath('/api/user-settings'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -355,7 +361,7 @@ export default function Home() {
       const userId = user?.id || sessionStorage.getItem('sessionUserId') || undefined;
       if (!userId) return;
 
-      const response = await fetch(`/api/user-videos?userId=${userId}`);
+      const response = await fetch(getApiPath(`/api/user-videos?userId=${userId}`));
       if (response.ok) {
         const data = await response.json();
         setUserVideos(data.videos || []);
@@ -398,7 +404,7 @@ export default function Home() {
         formData.append('video', file as Blob);
         formData.append('userId', user?.id || sessionStorage.getItem('sessionUserId') || 'unknown');
 
-        const response = await fetch('/api/upload-video', {
+        const response = await fetch(getApiPath('/api/upload-video'), {
           method: 'POST',
           body: formData,
         });
