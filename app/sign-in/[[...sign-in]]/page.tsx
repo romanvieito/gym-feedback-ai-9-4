@@ -5,9 +5,9 @@ export default function Page() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <SignIn
-        redirectUrl={(typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) ? '/app/aicoach' : '/aicoach'}
+        redirectUrl={(typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) ? '/app' : '/'}
         signUpUrl={(typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) ? '/app/sign-up' : '/sign-up'}
-        afterSignInUrl={(typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) ? '/app/aicoach' : '/aicoach'}
+        afterSignInUrl={(typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) ? '/app' : '/'}
         appearance={{
           elements: {
             formButtonPrimary: 'bg-blue-600 hover:bg-blue-700',
