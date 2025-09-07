@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,10 +32,14 @@ export async function GET(request: NextRequest) {
       fileSize: row.file_size
     }));
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       videos: userVideos
     });
+    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.headers.set('Pragma', 'no-cache');
+    res.headers.set('Expires', '0');
+    return res;
 
   } catch (error) {
     console.error('Error fetching user videos:', error);

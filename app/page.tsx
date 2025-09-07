@@ -152,7 +152,10 @@ export default function Home() {
         setIsPremium(savedIsPremium);
         
         // Then try to load from database and override localStorage values
-        const response = await fetch(getApiPath(`/api/user-settings?userId=${userId}`));
+        const response = await fetch(
+          getApiPath(`/api/user-settings?userId=${userId}&_ts=${Date.now()}`),
+          { cache: 'no-store' }
+        );
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data) {
@@ -193,7 +196,7 @@ export default function Home() {
     };
     
     loadUserSettings();
-  }, []);
+  }, [isLoaded, user?.id]);
 
   // Helper function to save all settings to database
   const saveAllSettingsToDatabase = async (updatedSetting?: {
@@ -361,7 +364,10 @@ export default function Home() {
       const userId = user?.id || sessionStorage.getItem('sessionUserId') || undefined;
       if (!userId) return;
 
-      const response = await fetch(getApiPath(`/api/user-videos?userId=${userId}`));
+      const response = await fetch(
+        getApiPath(`/api/user-videos?userId=${userId}&_ts=${Date.now()}`),
+        { cache: 'no-store' }
+      );
       if (response.ok) {
         const data = await response.json();
         setUserVideos(data.videos || []);
