@@ -142,6 +142,16 @@ export function WorkoutVideoComponent({
     }
   };
 
+  const resolveVideoSrc = (video) => {
+    if (!video) return '';
+    if (typeof video === 'string' && video.startsWith('/')) {
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/app')) {
+        return `/app${video}`;
+      }
+    }
+    return video;
+  };
+
   return (
     <div className={containerClass}>
       <video 
@@ -150,7 +160,7 @@ export function WorkoutVideoComponent({
           if (onVideoRef) onVideoRef(el);
         }} 
         className={`absolute inset-0 w-full h-full object-contain ${videoBgClass} cursor-pointer`}
-        src={workout.video}
+        src={resolveVideoSrc(workout.video)}
         playsInline
         crossOrigin="anonymous"
         onClick={handleVideoClick}
