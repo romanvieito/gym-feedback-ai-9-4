@@ -152,6 +152,22 @@ export function WorkoutVideoComponent({
     return video;
   };
 
+  const isSameOriginApiVideo = (video) => {
+    if (!video) return false;
+    if (typeof window === 'undefined') return false;
+    try {
+      // Treat root-relative or same-origin /api/uploads as same-origin
+      if (typeof video === 'string' && video.startsWith('/')) return true;
+      const u = new URL(video);
+      return (
+        u.origin === window.location.origin &&
+        (u.pathname.startsWith('/api/uploads/') || u.pathname.startsWith('/app/api/uploads/'))
+      );
+    } catch (_) {
+      return false;
+    }
+  };
+
   const handleVideoError = (e) => {
     const v = e?.currentTarget;
     // Log minimal info to help diagnose proxy/base-path issues
@@ -181,7 +197,7 @@ export function WorkoutVideoComponent({
         className={`absolute inset-0 w-full h-full object-contain ${videoBgClass} cursor-pointer`}
         src={resolveVideoSrc(workout.video)}
         playsInline
-        crossOrigin="anonymous"
+        crossOrigin={isSameOriginApiVideo(workout.video) ? undefined : undefined}
         preload="auto"
         onError={handleVideoError}
         onStalled={handleVideoStalled}
