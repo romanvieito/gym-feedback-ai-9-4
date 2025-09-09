@@ -152,6 +152,25 @@ export function WorkoutVideoComponent({
     return video;
   };
 
+  const handleVideoError = (e) => {
+    const v = e?.currentTarget;
+    // Log minimal info to help diagnose proxy/base-path issues
+    console.error('Workout video error', {
+      src: v?.currentSrc || v?.src,
+      networkState: v?.networkState,
+      readyState: v?.readyState,
+    });
+  };
+
+  const handleVideoStalled = (e) => {
+    const v = e?.currentTarget;
+    console.warn('Workout video stalled', {
+      src: v?.currentSrc || v?.src,
+      networkState: v?.networkState,
+      readyState: v?.readyState,
+    });
+  };
+
   return (
     <div className={containerClass}>
       <video 
@@ -163,6 +182,9 @@ export function WorkoutVideoComponent({
         src={resolveVideoSrc(workout.video)}
         playsInline
         crossOrigin="anonymous"
+        preload="auto"
+        onError={handleVideoError}
+        onStalled={handleVideoStalled}
         onClick={handleVideoClick}
       />
       <canvas 
