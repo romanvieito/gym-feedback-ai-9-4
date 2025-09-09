@@ -152,10 +152,20 @@ export default function Home() {
         setIsPremium(savedIsPremium);
         
         // Then try to load from database and override localStorage values
-        const response = await fetch(
+        let response = await fetch(
           getApiPath(`/api/user-settings?userId=${userId}&_ts=${Date.now()}`),
           { cache: 'no-store' }
         );
+        
+        // If no settings found by userId and user is signed in, try by email
+        if (!response.ok && user?.primaryEmailAddress?.emailAddress) {
+          console.log('No settings found by userId, trying by email:', user.primaryEmailAddress.emailAddress);
+          response = await fetch(
+            getApiPath(`/api/user-settings?email=${encodeURIComponent(user.primaryEmailAddress.emailAddress)}&_ts=${Date.now()}`),
+            { cache: 'no-store' }
+          );
+        }
+        
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.data) {
@@ -182,6 +192,27 @@ export default function Home() {
             if (settings.is_premium !== undefined) {
               setIsPremium(settings.is_premium);
               localStorage.setItem('isPremium', settings.is_premium.toString());
+            }
+
+            // If we found settings via email fallback, persist to Clerk userId to prevent duplicates
+            if (!data.data.user_id && user?.id && (user?.primaryEmailAddress?.emailAddress)) {
+              try {
+                await fetch(getApiPath('/api/user-settings'), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: user.id,
+                    fitnessGoal: settings.fitness_goal || null,
+                    focusArea: settings.focus_area || null,
+                    wearable: settings.wearable || null,
+                    feedbackInterval: settings.feedback_interval || null,
+                    isPremium: settings.is_premium,
+                    updateExisting: true,
+                  }),
+                });
+              } catch (e) {
+                console.warn('Failed to persist email-based settings to userId', e);
+              }
             }
           }
         } else {

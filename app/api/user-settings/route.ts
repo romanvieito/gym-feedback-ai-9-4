@@ -101,21 +101,37 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
+    const email = searchParams.get('email');
     
-    if (!userId) {
+    if (!userId && !email) {
       return NextResponse.json(
-        { error: 'Missing userId parameter' },
+        { error: 'Missing userId or email parameter' },
         { status: 400 }
       );
     }
 
-    // Get the user's settings
-    const result = await sql`
-      SELECT * FROM user_settings 
-      WHERE user_id = ${userId}
-      ORDER BY updated_at DESC
-      LIMIT 1
-    `;
+    let result;
+    
+    if (userId) {
+      // Get the user's settings by userId
+      result = await sql`
+        SELECT * FROM user_settings 
+        WHERE user_id = ${userId}
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `;
+    } else if (email) {
+      // Get the user's settings by email (using email hash)
+      const emailHash = Buffer.from(email).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
+      const emailUserId = `email_${emailHash}`;
+      
+      result = await sql`
+        SELECT * FROM user_settings 
+        WHERE user_id = ${emailUserId}
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `;
+    }
 
     const res = NextResponse.json({ 
       success: true, 
