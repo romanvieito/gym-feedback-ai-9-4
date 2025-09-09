@@ -131,6 +131,9 @@ export async function GET(request: NextRequest) {
         ORDER BY updated_at DESC
         LIMIT 1
       `;
+    } else {
+      // This should never happen due to the validation above, but TypeScript needs it
+      result = { rows: [] };
     }
 
     const res = NextResponse.json({ 
