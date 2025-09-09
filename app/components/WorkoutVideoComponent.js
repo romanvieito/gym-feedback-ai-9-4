@@ -67,6 +67,14 @@ export function WorkoutVideoComponent({
         const canvasEl = canvasRef.current;
         if (!videoEl || !canvasEl) return;
         if (videoEl.readyState >= 2) {
+          // Skip pose detection for cross-origin videos to avoid WebGL SecurityError
+          if (!isSameOriginApiVideo(workout.video)) {
+            onLandmarksUpdate([]);
+            const canvasCtx = canvasEl.getContext('2d');
+            canvasCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+            return;
+          }
+
           const result = await PoseDetectionService.detectPoseInVideo(
             poseLandmarker,
             videoEl
